@@ -1,168 +1,473 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PlayHub | Discover Games</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>PlayHub 3D Runners</title>
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{background:#0c1020;color:white;font-family:Arial,sans-serif;min-height:100vh}
-header{display:flex;justify-content:space-between;align-items:center;padding:18px 6%;background:#151b30;border-bottom:1px solid #303a56}
-.logo{font-size:27px;font-weight:bold;color:#65d8ff}
-nav a{color:white;text-decoration:none;margin-left:18px}
-.hero{padding:60px 6%;background:linear-gradient(120deg,#192b50,#40215e)}
-.hero h1{font-size:clamp(30px,6vw,48px);margin-bottom:12px}
-.hero p{color:#d0dcf5;font-size:16px}
-.search-area{padding:25px 6%}
-#search{width:100%;max-width:550px;padding:15px;border-radius:10px;border:1px solid #465273;background:#171e33;color:white;font-size:16px}
-.section{padding:10px 6% 50px}
-.section h2{font-size:25px;margin-bottom:22px}
-#games{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:20px}
-.game-card{background:#171e33;border:1px solid #303b5b;border-radius:15px;overflow:hidden;transition:.2s}
-.game-card:hover{transform:translateY(-5px);border-color:#65d8ff}
-.cover{height:150px;display:flex;align-items:center;justify-content:center;font-size:65px;background:linear-gradient(135deg,#253d70,#49316c)}
-.info{padding:17px}
-.info h3{font-size:21px;margin-bottom:10px}
-.info p{color:#b5c3dd;font-size:14px;margin-bottom:16px}
-.play{display:block;text-align:center;background:#287cff;color:white;text-decoration:none;padding:12px;border-radius:9px;font-weight:bold}
-.status{padding:35px 10px;color:#bac9e8}
-footer{padding:25px;text-align:center;color:#8795b3;border-top:1px solid #29314b}
-@media(max-width:500px){
-header{padding:15px 5%}
-nav a{margin-left:8px;font-size:13px}
-.hero{padding:40px 5%}
-.section,.search-area{padding-left:5%;padding-right:5%}
-}
+*{box-sizing:border-box}
+body{margin:0;background:#08121b;color:white;font-family:Arial;overflow:hidden}
+#game{position:fixed;inset:0}
+canvas{display:block;width:100%;height:100%;touch-action:none}
+#hud{position:absolute;top:12px;left:12px;right:12px;display:flex;justify-content:space-between;pointer-events:none;gap:8px}
+.stat{background:#071321cc;border:1px solid #ffffff35;padding:10px 13px;border-radius:12px;font-weight:bold;font-size:14px}
+#controls{position:absolute;bottom:20px;left:0;right:0;display:flex;justify-content:space-between;padding:0 20px;pointer-events:none}
+.control-group{display:flex;gap:10px}
+button{pointer-events:auto;border:1px solid #ffffff55;border-radius:14px;padding:14px 18px;background:#172d45dd;color:white;font-size:16px;font-weight:bold}
+#jump{background:#147bdb}
+#slide{background:#a35b19}
+#menu{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#06111bbd;padding:20px}
+.panel{width:min(420px,100%);padding:28px 20px;text-align:center;background:#102238;border:1px solid #ffffff35;border-radius:22px;box-shadow:0 15px 60px #0009}
+.panel h1{font-size:36px;margin:0 0 10px;color:#72dcff}
+.panel p{line-height:1.6;color:#c8d9e8}
+#play{background:#1688ed;padding:15px 35px;font-size:19px}
+#pause{pointer-events:auto}
+#hint{position:absolute;top:68px;left:0;right:0;text-align:center;color:white;text-shadow:0 2px 4px black;font-size:12px;pointer-events:none}
+@media(min-width:750px){#controls{max-width:750px;margin:auto}}
 </style>
 </head>
 <body>
 
-<header>
-<div class="logo">🎮 PlayHub</div>
-<nav>
-<a href="./">Home</a>
-<a href="#games-section">Games</a>
-</nav>
-</header>
+<div id="game"></div>
 
-<section class="hero">
-<h1>Discover Your Next Game 🎮</h1>
-<p>Explore amazing games and start playing!</p>
-</section>
-
-<div class="search-area">
-<input id="search" type="search" placeholder="Search games...">
+<div id="hud">
+ <div class="stat">⭐ <span id="score">0</span></div>
+ <div class="stat">🪙 <span id="coins">0</span></div>
+ <button id="pause">Ⅱ</button>
 </div>
 
-<section class="section" id="games-section">
-<h2>🔥 All Games</h2>
-<div id="games">
-<div class="status">Loading games...</div>
+<div id="hint">Swipe ← → to change lane · ↑ jump · ↓ slide</div>
+
+<div id="controls">
+ <div class="control-group">
+  <button id="left">◀</button>
+  <button id="right">▶</button>
+ </div>
+ <div class="control-group">
+  <button id="slide">SLIDE</button>
+  <button id="jump">JUMP ⬆</button>
+ </div>
 </div>
-</section>
 
-<footer>© 2026 PlayHub. All rights reserved.</footer>
+<div id="menu">
+ <div class="panel">
+  <h1>🏃 3D RUNNERS</h1>
+  <p id="message">Run through the jungle, dodge obstacles and collect coins!</p>
+  <p>← → Change lane<br>↑ Jump · ↓ Slide</p>
+  <button id="play">▶ PLAY NOW</button>
+ </div>
+</div>
 
-<script>
-const OWNER="Ranit-rex";
-const REPO="test-Gameonix";
-const BRANCH="main";
+<script type="importmap">
+{
+ "imports":{
+  "three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
+ }
+}
+</script>
 
-const container=document.getElementById("games");
-const search=document.getElementById("search");
-let allGames=[];
+<script type="module">
+import * as THREE from "three";
 
-function gameName(slug){
-return slug.replace(/[-_]/g," ")
-.replace(/\b\w/g,c=>c.toUpperCase());
+const root=document.getElementById("game");
+const scoreEl=document.getElementById("score");
+const coinsEl=document.getElementById("coins");
+const menu=document.getElementById("menu");
+const message=document.getElementById("message");
+
+let scene,camera,renderer,player;
+let state="ready";
+let lane=0;
+let jumpY=0,jumpV=0;
+let sliding=0;
+let score=0,coins=0,speed=18;
+let spawnTimer=0,coinTimer=0,lastTime=0;
+let objects=[];
+let decorations=[];
+
+const lanes=[-3,0,3];
+const clock=new THREE.Clock();
+
+function material(color,roughness=.8){
+ return new THREE.MeshStandardMaterial({color,roughness});
 }
 
-function renderGames(games){
-container.innerHTML="";
-
-if(!games.length){
-container.innerHTML='<div class="status">No games found.</div>';
-return;
+function box(w,h,d,color){
+ return new THREE.Mesh(
+  new THREE.BoxGeometry(w,h,d),material(color)
+ );
 }
 
-games.forEach(game=>{
-const card=document.createElement("article");
-card.className="game-card";
+function init(){
+ scene=new THREE.Scene();
+ scene.background=new THREE.Color(0x87ceeb);
+ scene.fog=new THREE.Fog(0x87ceeb,35,115);
 
-const cover=document.createElement("div");
-cover.className="cover";
-cover.textContent="🎮";
+ camera=new THREE.PerspectiveCamera(
+  65,innerWidth/innerHeight,.1,180
+ );
+ camera.position.set(0,6,11);
+ camera.lookAt(0,1,-5);
 
-const info=document.createElement("div");
-info.className="info";
+ renderer=new THREE.WebGLRenderer({antialias:true});
+ renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+ renderer.setSize(innerWidth,innerHeight);
+ renderer.shadowMap.enabled=true;
+ renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+ renderer.outputColorSpace=THREE.SRGBColorSpace;
+ root.appendChild(renderer.domElement);
 
-const title=document.createElement("h3");
-title.textContent=game.name;
+ scene.add(new THREE.HemisphereLight(0xffffff,0x466044,2));
 
-const description=document.createElement("p");
-description.textContent="Ready to play? Enter the game world!";
+ const sun=new THREE.DirectionalLight(0xffffff,2.2);
+ sun.position.set(-8,15,8);
+ sun.castShadow=true;
+ scene.add(sun);
 
-const button=document.createElement("a");
-button.className="play";
-button.href=game.path;
-button.textContent="▶ PLAY NOW";
+ // Jungle floor
+ const floor=new THREE.Mesh(
+  new THREE.PlaneGeometry(150,180),
+  material(0x397b36)
+ );
+ floor.rotation.x=-Math.PI/2;
+ floor.position.set(0,-.15,-35);
+ floor.receiveShadow=true;
+ scene.add(floor);
 
-info.append(title,description,button);
-card.append(cover,info);
-container.appendChild(card);
-});
+ // Road
+ const road=new THREE.Mesh(
+  new THREE.PlaneGeometry(10,180),
+  material(0x454d55)
+ );
+ road.rotation.x=-Math.PI/2;
+ road.position.set(0,0,-35);
+ road.receiveShadow=true;
+ scene.add(road);
+
+ // Lane markings
+ for(let z=-120;z<12;z+=8){
+  for(let x of [-1.5,1.5]){
+   const mark=new THREE.Mesh(
+    new THREE.BoxGeometry(.09,.025,3.5),
+    material(0xffffff)
+   );
+   mark.position.set(x,.02,z);
+   scene.add(mark);
+   decorations.push(mark);
+  }
+ }
+
+ // Trees
+ for(let i=0;i<32;i++){
+  for(let side of [-1,1]){
+   const tree=new THREE.Group();
+   const trunk=new THREE.Mesh(
+    new THREE.CylinderGeometry(.25,.4,2.7,7),
+    material(0x71472c)
+   );
+   trunk.position.y=1.35;
+   tree.add(trunk);
+
+   const leaves=new THREE.Mesh(
+    new THREE.ConeGeometry(1.5,4,8),
+    material(i%2?0x17632c:0x237b38)
+   );
+   leaves.position.y=3.8;
+   tree.add(leaves);
+   tree.position.set(side*(8+Math.random()*5),0,-i*5-5);
+   scene.add(tree);
+   decorations.push(tree);
+  }
+ }
+
+ // Player
+ player=new THREE.Group();
+ scene.add(player);
+
+ const body=new THREE.Mesh(
+  new THREE.BoxGeometry(.85,1.1,.5),
+  material(0x1685ef)
+ );
+ body.position.y=1.35;
+ body.castShadow=true;
+ player.add(body);
+
+ const head=new THREE.Mesh(
+  new THREE.SphereGeometry(.43,16,12),
+  material(0xf1bd91)
+ );
+ head.position.y=2.18;
+ head.castShadow=true;
+ player.add(head);
+
+ const hair=new THREE.Mesh(
+  new THREE.SphereGeometry(.44,16,8,0,Math.PI*2,0,Math.PI/2),
+  material(0x33251c)
+ );
+ hair.position.y=2.35;
+ player.add(hair);
+
+ const legMat=material(0x202c4a);
+ player.userData.legs=[];
+ for(let x of [-.23,.23]){
+  const leg=new THREE.Mesh(
+   new THREE.BoxGeometry(.25,.8,.3),legMat
+  );
+  leg.position.set(x,.55,0);
+  player.add(leg);
+  player.userData.legs.push(leg);
+ }
+
+ player.position.set(0,0,4);
+ player.traverse(o=>{if(o.isMesh)o.castShadow=true});
+
+ window.addEventListener("resize",resize);
+ draw();
 }
 
-async function loadGames(){
-try{
-const url=`https://api.github.com/repos/${OWNER}/${REPO}/git/trees/${BRANCH}?recursive=1`;
-
-const response=await fetch(url,{
-headers:{"Accept":"application/vnd.github+json"}
-});
-
-if(!response.ok){
-throw new Error("GitHub API error: "+response.status);
+function resize(){
+ if(!renderer)return;
+ camera.aspect=innerWidth/innerHeight;
+ camera.updateProjectionMatrix();
+ renderer.setSize(innerWidth,innerHeight);
 }
 
-const data=await response.json();
+function addObstacle(laneIndex,type){
+ const group=new THREE.Group();
+ let mesh;
 
-if(data.truncated){
-throw new Error("Repository tree is too large.");
+ if(type==="block"){
+  mesh=box(1.4,1.6,1.1,0xc74b3c);
+  mesh.position.y=.8;
+ }else if(type==="low"){
+  mesh=box(1.5,.65,1,0xf0a22e);
+  mesh.position.y=.32;
+ }else{
+  mesh=box(1.8,.45,.7,0x8d5ce5);
+  mesh.position.y=2.1;
+ }
+
+ mesh.castShadow=true;
+ mesh.receiveShadow=true;
+ group.add(mesh);
+ group.position.set(lanes[laneIndex],0,-85);
+ scene.add(group);
+ objects.push({group,type,lane:laneIndex});
 }
 
-const files=data.tree.filter(item=>
-item.type==="blob" &&
-/^games\/[^/]+\/index\.html$/i.test(item.path)
-);
+function addCoins(laneIndex){
+ for(let i=0;i<5;i++){
+  const coin=new THREE.Mesh(
+   new THREE.TorusGeometry(.35,.1,8,18),
+   new THREE.MeshStandardMaterial({
+    color:0xffd12d,metalness:.65,roughness:.25
+   })
+  );
+  coin.position.set(lanes[laneIndex],1.5,-65-i*2);
+  coin.rotation.y=Math.PI/2;
+  scene.add(coin);
+  objects.push({group:coin,type:"coin",lane:laneIndex});
+ }
+}
 
-allGames=files.map(file=>{
-const slug=file.path.split("/")[1];
+function moveLane(direction){
+ if(state!=="playing")return;
+ lane=Math.max(-1,Math.min(1,lane+direction));
+}
 
-return {
-name:gameName(slug),
-path:`./games/${slug}/index.html`
+function jump(){
+ if(state!=="playing"||jumpY>0)return;
+ jumpV=11;
+}
+
+function slide(){
+ if(state!=="playing")return;
+ sliding=.7;
+}
+
+function start(){
+ objects.forEach(o=>scene.remove(o.group));
+ objects=[];
+ score=0;coins=0;speed=18;
+ lane=0;jumpY=0;jumpV=0;sliding=0;
+ spawnTimer=.5;coinTimer=2;
+ scoreEl.textContent="0";
+ coinsEl.textContent="0";
+ player.position.set(0,0,4);
+ state="playing";
+ menu.style.display="none";
+ lastTime=0;
+ requestAnimationFrame(loop);
+}
+
+function end(){
+ if(state!=="playing")return;
+ state="over";
+ message.textContent="Game Over! Score: "+Math.floor(score)+" · Coins: "+coins;
+ menu.style.display="flex";
+ document.getElementById("play").textContent="↻ PLAY AGAIN";
+}
+
+function togglePause(){
+ if(state==="playing"){
+  state="paused";
+  message.textContent="Game Paused";
+  document.getElementById("play").textContent="▶ RESUME";
+  menu.style.display="flex";
+ }else if(state==="paused"){
+  state="playing";
+  menu.style.display="none";
+  lastTime=0;
+  requestAnimationFrame(loop);
+ }
+}
+
+function update(dt){
+ score+=dt*speed*.6;
+ speed=Math.min(18+score*.025,34);
+ scoreEl.textContent=Math.floor(score);
+
+ // Player lane movement
+ const targetX=lanes[lane];
+ player.position.x+=(targetX-player.position.x)*Math.min(1,dt*12);
+
+ // Jump physics
+ if(jumpY>0||jumpV>0){
+  jumpV-=30*dt;
+  jumpY+=jumpV*dt;
+  if(jumpY<=0){jumpY=0;jumpV=0}
+ }
+ player.position.y=jumpY;
+
+ // Slide
+ if(sliding>0)sliding-=dt;
+ player.scale.y=sliding>0?.55:1;
+ player.position.y=jumpY;
+
+ // Running legs
+ const t=performance.now()*.015;
+ player.userData.legs[0].rotation.x=Math.sin(t)*.7;
+ player.userData.legs[1].rotation.x=-Math.sin(t)*.7;
+
+ // Spawn obstacles
+ spawnTimer-=dt;
+ if(spawnTimer<=0){
+  const l=Math.floor(Math.random()*3);
+  const types=["block","low","high"];
+  addObstacle(l,types[Math.floor(Math.random()*3)]);
+  spawnTimer=Math.max(.65,1.45-score*.0008)+Math.random()*.5;
+ }
+
+ coinTimer-=dt;
+ if(coinTimer<=0){
+  addCoins(Math.floor(Math.random()*3));
+  coinTimer=2.5+Math.random()*1.5;
+ }
+
+ // Move world toward player
+ for(let i=objects.length-1;i>=0;i--){
+  const o=objects[i];
+  const obj=o.group;
+  obj.position.z+=speed*dt;
+
+  if(o.type==="coin"){
+   obj.rotation.z+=dt*5;
+   if(obj.position.z>3&&obj.position.z<5&&
+      Math.abs(player.position.x-lanes[o.lane])<1.1&&
+      Math.abs(player.position.y-1.5)<1.6){
+    scene.remove(obj);
+    objects.splice(i,1);
+    coins++;
+    coinsEl.textContent=coins;
+    score+=20;
+    continue;
+   }
+  }else if(obj.position.z>3&&obj.position.z<5&&
+    Math.abs(player.position.x-lanes[o.lane])<1.1){
+    let safe=false;
+    if(o.type==="low")safe=jumpY>1.05;
+    if(o.type==="high")safe=sliding>0;
+    if(!safe){end();return}
+  }
+
+  if(obj.position.z>15){
+   scene.remove(obj);
+   objects.splice(i,1);
+  }
+ }
+
+ // Move trees and road markings
+ decorations.forEach(obj=>{
+  obj.position.z+=speed*dt;
+  if(obj.position.z>15)obj.position.z=-125;
+ });
+
+ camera.position.x+=(player.position.x*.28-camera.position.x)*dt*2;
+ camera.position.y=6+jumpY*.1;
+ camera.lookAt(player.position.x*.25,1.2,-5);
+}
+
+function draw(){
+ renderer.render(scene,camera);
+}
+
+function loop(time){
+ if(state!=="playing")return;
+ const dt=lastTime?Math.min((time-lastTime)/1000,.04):.016;
+ lastTime=time;
+ update(dt);
+ draw();
+ if(state==="playing")requestAnimationFrame(loop);
+}
+
+// Controls
+document.getElementById("play").onclick=()=>{
+ if(state==="paused")togglePause();
+ else start();
 };
+document.getElementById("pause").onclick=togglePause;
+document.getElementById("left").onclick=()=>moveLane(-1);
+document.getElementById("right").onclick=()=>moveLane(1);
+document.getElementById("jump").onclick=jump;
+document.getElementById("slide").onclick=slide;
+
+let touchX=0,touchY=0;
+rendererPointerSetup();
+
+function rendererPointerSetup(){
+ const el=root;
+ el.addEventListener("touchstart",e=>{
+  const t=e.changedTouches[0];
+  touchX=t.clientX;touchY=t.clientY;
+ },{passive:true});
+
+ el.addEventListener("touchend",e=>{
+  const t=e.changedTouches[0];
+  const dx=t.clientX-touchX;
+  const dy=t.clientY-touchY;
+  if(Math.max(Math.abs(dx),Math.abs(dy))<25)return;
+  if(Math.abs(dx)>Math.abs(dy))moveLane(dx>0?1:-1);
+  else if(dy<0)jump();
+  else slide();
+ },{passive:true});
+}
+
+window.addEventListener("keydown",e=>{
+ if(e.code==="ArrowLeft"||e.code==="KeyA")moveLane(-1);
+ if(e.code==="ArrowRight"||e.code==="KeyD")moveLane(1);
+ if(e.code==="ArrowUp"||e.code==="Space"||e.code==="KeyW")jump();
+ if(e.code==="ArrowDown"||e.code==="KeyS")slide();
+ if(e.code==="Escape")togglePause();
 });
 
-allGames.sort((a,b)=>a.name.localeCompare(b.name));
-renderGames(allGames);
-
+try{
+ init();
 }catch(error){
-console.error(error);
-container.innerHTML=
-'<div class="status">Games load nahi ho paaye. Internet check karke refresh karo.</div>';
+ console.error(error);
+ message.textContent="3D game load failed. Please check internet and reload.";
+ menu.style.display="flex";
 }
-}
-
-search.addEventListener("input",()=>{
-const q=search.value.toLowerCase();
-renderGames(allGames.filter(game=>
-game.name.toLowerCase().includes(q)
-));
-});
-
-loadGames();
 </script>
 </body>
 </html>
