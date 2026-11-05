@@ -4,53 +4,106 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#10111b">
-<title>Runners | PlayHub</title>
+<title>PlayHub - Runners</title>
 <style>
-* { box-sizing: border-box; }
-
-body {
-  margin: 0;
-  min-height: 100vh;
-  background: #10111b;
-  color: white;
-  font-family: Arial, sans-serif;
-  display: grid;
-  place-items: center;
-  text-align: center;
-  padding: 20px;
-}
-
-main {
-  max-width: 500px;
-  background: #191b29;
-  padding: 35px 25px;
-  border-radius: 20px;
-  border: 1px solid #353750;
-}
-
-h1 { color: #ff875b; }
-
-p { color: #aaaec2; line-height: 1.6; }
-
-a {
-  display: inline-block;
-  margin-top: 15px;
-  background: #7657ff;
-  color: white;
-  padding: 12px 22px;
-  border-radius: 9px;
-  text-decoration: none;
-}
+*{box-sizing:border-box}
+body{margin:0;background:#101522;color:white;font-family:Arial;text-align:center}
+header{padding:15px;background:#1c2638}
+a{color:#69d9ff;text-decoration:none}
+h1{margin:8px}
+#game{position:relative;width:100%;max-width:850px;height:400px;margin:25px auto;background:linear-gradient(#68c9ff 0%,#d6f5ff 70%,#70c85b 70%);overflow:hidden;border:3px solid white;border-radius:12px}
+#ground{position:absolute;bottom:0;width:100%;height:12px;background:#378c35}
+#player{position:absolute;left:75px;bottom:12px;width:42px;height:55px;background:#ffcf45;border:3px solid #9c5d00;border-radius:12px 12px 7px 7px}
+#player:before{content:"";position:absolute;width:10px;height:10px;background:#222;border-radius:50%;right:6px;top:10px}
+.obstacle{position:absolute;bottom:12px;width:28px;height:42px;background:#e84b4b;border-radius:7px}
+#score{font-size:22px;font-weight:bold}
+#message{position:absolute;top:35%;width:100%;font-size:27px;font-weight:bold;text-shadow:1px 2px 4px #333}
+.controls{display:flex;justify-content:center;gap:15px;margin:15px}
+button{padding:15px 28px;border:0;border-radius:12px;background:#2979ff;color:white;font-size:18px;font-weight:bold}
+button:active{transform:scale(.95)}
 </style>
 </head>
 <body>
-<main>
-  <h1>🏃 Runners</h1>
-  <h2>Welcome to Runners!</h2>
-  <p>Your adventure is coming soon.</p>
-  <p>This is the independent Runners game homepage.</p>
-  <a href="../../index.html">← Back to PlayHub</a>
-</main>
+<header><a href="../../index.html">← Back to PlayHub</a><h1>🏃 Runners</h1></header>
+<div id="score">Score: 0</div>
+<div id="game">
+ <div id="message">Press START to Play!</div>
+ <div id="player"></div>
+ <div id="ground"></div>
+</div>
+<div class="controls">
+ <button id="start">START / RESTART</button>
+ <button id="jump">JUMP ⬆</button>
+</div>
+<p>Jump over obstacles and survive as long as possible!</p>
+
+<script>
+const player=document.getElementById("player");
+const game=document.getElementById("game");
+const message=document.getElementById("message");
+const scoreText=document.getElementById("score");
+let running=false, jumping=false, y=0, velocity=0, score=0, obstacles=[], last=0, spawn=0;
+
+function jump(){
+ if(!running || jumping)return;
+ jumping=true;
+ velocity=14;
+}
+function start(){
+ obstacles.forEach(o=>o.el.remove());
+ obstacles=[];
+ score=0;y=0;velocity=0;jumping=false;spawn=0;
+ running=true;last=0;
+ player.style.bottom="12px";
+ message.textContent="";
+ scoreText.textContent="Score: 0";
+ requestAnimationFrame(loop);
+}
+function end(){
+ running=false;
+ message.textContent="GAME OVER!";
+}
+function loop(time){
+ if(!running)return;
+ let dt=Math.min((time-last)/16.67||1,2);
+ last=time;
+ score+=dt*.15;
+ scoreText.textContent="Score: "+Math.floor(score);
+
+ if(jumping){
+  y+=velocity*dt;
+  velocity-=.65*dt;
+  if(y<=0){y=0;jumping=false;velocity=0}
+ }
+ player.style.bottom=(12+y)+"px";
+
+ spawn+=dt;
+ if(spawn>85){
+  spawn=0;
+  let el=document.createElement("div");
+  el.className="obstacle";
+  game.appendChild(el);
+  obstacles.push({el,x:game.clientWidth});
+ }
+ obstacles.forEach(o=>{
+  o.x-=5*dt;
+  o.el.style.left=o.x+"px";
+  if(o.x<115 && o.x>65 && y<35){
+   end();
+  }
+ });
+ obstacles=obstacles.filter(o=>{
+  if(o.x< -40){o.el.remove();return false}
+  return true;
+ });
+ if(running)requestAnimationFrame(loop);
+}
+document.getElementById("start").onclick=start;
+document.getElementById("jump").onclick=jump;
+document.addEventListener("keydown",e=>{
+ if(e.code==="Space"||e.code==="ArrowUp"){e.preventDefault();jump()}
+});
+game.addEventListener("touchstart",e=>{e.preventDefault();jump()},{passive:false});
+</script>
 </body>
 </html>
