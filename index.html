@@ -4,19 +4,21 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#090b12">
 <title>PlayHub — Play Together</title>
 
 <style>
 :root{
   --bg:#090b12;--panel:#111522;--panel2:#191f30;
   --text:#f5f6ff;--muted:#929bb0;--accent:#8065ff;
-  --line:#252c40;--green:#48d597;
+  --line:#252c40;--green:#48d597;--red:#ff6b78;
 }
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);
 font-family:Inter,system-ui,Arial,sans-serif}
 button,input{font:inherit}
 button{cursor:pointer}
+button:disabled{opacity:.5;cursor:not-allowed}
 .topbar{height:68px;position:sticky;top:0;z-index:10;
 background:#0d101bee;border-bottom:1px solid var(--line);
 display:flex;align-items:center;justify-content:space-between;
@@ -27,13 +29,14 @@ padding:0 22px;gap:12px}
 .btn{border:0;border-radius:10px;padding:11px 16px;
 background:var(--accent);color:white;font-weight:700}
 .btn.secondary{background:var(--panel2);border:1px solid var(--line)}
-.btn:disabled{opacity:.5;cursor:not-allowed}
-.avatar{width:38px;height:38px;border-radius:50%;object-fit:cover;
-background:var(--panel2)}
-.layout{display:grid;grid-template-columns:220px 1fr;min-height:calc(100vh - 68px)}
+.btn.danger{background:#48212b}
+.avatar{width:38px;height:38px;border-radius:50%;
+object-fit:cover;background:var(--panel2)}
+.layout{display:grid;grid-template-columns:220px 1fr;
+min-height:calc(100vh - 68px)}
 .sidebar{padding:22px 14px;border-right:1px solid var(--line)}
-.nav{width:100%;text-align:left;border:0;background:none;color:var(--muted);
-padding:13px;border-radius:10px;margin-bottom:5px}
+.nav{width:100%;text-align:left;border:0;background:none;
+color:var(--muted);padding:13px;border-radius:10px;margin-bottom:5px}
 .nav.active,.nav:hover{background:var(--panel2);color:white}
 .main{padding:25px;min-width:0;max-width:1500px;width:100%;margin:auto}
 .hero{padding:30px;border:1px solid #39305e;border-radius:20px;
@@ -51,6 +54,8 @@ color:white;padding:12px 14px;border-radius:10px;width:min(100%,280px)}
 border-radius:15px;overflow:hidden;cursor:pointer;transition:.2s}
 .game:hover{transform:translateY(-3px);border-color:#7965d9}
 .game img{width:100%;height:130px;object-fit:cover;background:var(--panel2)}
+.game-placeholder{height:130px;display:grid;place-items:center;
+background:linear-gradient(135deg,#252044,#171d30);font-size:42px}
 .gameinfo{padding:13px}
 .gameinfo h3{margin:0 0 5px;font-size:16px}
 .muted{color:var(--muted);font-size:13px}
@@ -69,16 +74,19 @@ color:white;padding:12px;border-radius:9px;min-width:0}
 .formrow{display:flex;gap:8px;margin:12px 0}
 .formrow input{flex:1;width:100%}
 .hidden{display:none!important}
-#gameOverlay{position:fixed;inset:0;background:#05060a;
-z-index:30;display:flex;flex-direction:column}
-.gamebar{height:58px;display:flex;align-items:center;
-justify-content:space-between;padding:8px 14px}
-#gameFrame{width:100%;height:calc(100% - 58px);border:0;background:white}
 .notice{padding:12px;border-radius:10px;background:#211d37;
-color:#d9d2ff;margin:12px 0;font-size:13px}
+color:#d9d2ff;margin:12px 0;font-size:13px;overflow-wrap:anywhere}
 .empty{padding:28px;text-align:center;color:var(--muted);
 border:1px dashed var(--line);border-radius:12px}
+.status{font-size:12px;color:var(--muted);padding:7px 0}
+.status.error{color:var(--red)}
+.status.ok{color:var(--green)}
 footer{color:var(--muted);font-size:12px;padding:30px 0}
+#gameOverlay{position:fixed;inset:0;background:#05060a;
+z-index:30;display:flex;flex-direction:column}
+.gamebar{min-height:58px;display:flex;align-items:center;
+justify-content:space-between;padding:8px 14px;gap:8px}
+#gameFrame{width:100%;height:calc(100% - 58px);border:0;background:white}
 @media(max-width:720px){
  .layout{grid-template-columns:1fr}
  .sidebar{display:flex;overflow:auto;padding:8px;border-right:0;
@@ -89,12 +97,14 @@ footer{color:var(--muted);font-size:12px;padding:30px 0}
  .hero{padding:22px}
  .search{width:100%}
  .sectionhead{align-items:stretch;flex-direction:column}
+ .gamebar{flex-wrap:wrap}
+ .formrow{flex-wrap:wrap}
+ .formrow input{width:100%;flex-basis:100%}
 }
 </style>
 </head>
 
 <body>
-
 <header class="topbar">
   <div class="logo">PLAY<span>HUB</span></div>
   <div class="actions">
@@ -114,13 +124,14 @@ footer{color:var(--muted);font-size:12px;padding:30px 0}
   </aside>
 
   <main class="main">
+    <div id="appStatus" class="status">Connecting to PlayHub...</div>
+
     <section id="homePage">
       <div class="hero">
         <h1>Your gaming universe.</h1>
         <p>Discover games, meet players and build your PlayHub identity.</p>
-        <button class="btn" onclick="showPage('games')">Explore Games →</button>
+        <button class="btn" id="exploreBtn">Explore Games →</button>
       </div>
-
       <div class="sectionhead">
         <h2>Discover Games</h2>
         <input id="gameSearch" class="search" placeholder="Search games...">
@@ -145,7 +156,6 @@ footer{color:var(--muted);font-size:12px;padding:30px 0}
         <h1>Play together.</h1>
         <p>Find players by their unique PlayHub username.</p>
       </div>
-
       <div class="panel">
         <h2>Find Players</h2>
         <div class="formrow">
@@ -154,22 +164,20 @@ footer{color:var(--muted);font-size:12px;padding:30px 0}
         </div>
         <div id="searchResult"></div>
       </div>
-
       <div class="panel">
         <h2>Friend Requests</h2>
-        <div id="requestsList"><div class="empty">Login to view requests.</div></div>
+        <div id="requestsList"><div class="empty">Loading...</div></div>
       </div>
-
       <div class="panel">
         <h2>My Friends</h2>
-        <div id="friendsList"><div class="empty">Login to view friends.</div></div>
+        <div id="friendsList"><div class="empty">Loading...</div></div>
       </div>
     </section>
 
     <section id="profilePage" class="hidden">
       <h2>My Player Profile</h2>
       <div id="profileContent" class="panel">
-        <div class="empty">Login to view your profile.</div>
+        <div class="empty">Loading profile...</div>
       </div>
     </section>
 
@@ -185,7 +193,9 @@ footer{color:var(--muted);font-size:12px;padding:30px 0}
       <button id="closeGameBtn" class="btn">Back to Hub</button>
     </div>
   </div>
-  <iframe id="gameFrame" allow="fullscreen; autoplay; gamepad"
+  <iframe id="gameFrame"
+    allow="fullscreen; autoplay; gamepad"
+    allowfullscreen
     title="PlayHub game"></iframe>
 </div>
 
@@ -196,7 +206,10 @@ footer{color:var(--muted);font-size:12px;padding:30px 0}
 <script>
 "use strict";
 
-/* FIREBASE */
+/* =====================================
+   PLAYHUB CONFIGURATION
+===================================== */
+
 const firebaseConfig = {
   apiKey: "AIzaSyB_pZ9WfVSx2XHuDeSZ7VrwEr-Pz_m_2QM",
   authDomain: "play-hub-688e8.firebaseapp.com",
@@ -207,20 +220,41 @@ const firebaseConfig = {
   measurementId: "G-HDGCFBSDQH"
 };
 
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
+const $ = id => document.getElementById(id);
 const serverTime = () =>
   firebase.firestore.FieldValue.serverTimestamp();
 
+let auth = null;
+let db = null;
 let currentUser = null;
 let allGames = [];
 let currentPage = "home";
+let authReady = false;
 
-const $ = id => document.getElementById(id);
-const safe = value => String(value || "").replace(/[&<>"']/g, c => ({
-  "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
-}[c]));
+function setStatus(message, type = "") {
+  const el = $("appStatus");
+  el.textContent = message;
+  el.className = "status " + type;
+}
+
+function escapeHTML(value) {
+  return String(value ?? "").replace(/[&<>"']/g, char => ({
+    "&":"&amp;",
+    "<":"&lt;",
+    ">":"&gt;",
+    '"':"&quot;",
+    "'":"&#39;"
+  })[char]);
+}
+
+function showError(message) {
+  console.error(message);
+  setStatus(message, "error");
+}
+
+/* =====================================
+   NAVIGATION
+===================================== */
 
 function showPage(page) {
   if (["friends","profile"].includes(page) && !currentUser) {
@@ -229,6 +263,7 @@ function showPage(page) {
   }
 
   currentPage = page;
+
   ["home","games","friends","profile"].forEach(name => {
     $(name + "Page").classList.toggle("hidden", name !== page);
   });
@@ -241,161 +276,328 @@ function showPage(page) {
   if (page === "profile") loadProfile();
 }
 
-window.showPage = showPage;
-
 document.querySelectorAll(".nav").forEach(button => {
   button.addEventListener("click", () => showPage(button.dataset.page));
 });
 
-/* AUTH */
-$("loginBtn").onclick = async () => {
-  try {
-    const provider = new firebase.auth.GoogleAuthProvider();
-    provider.setCustomParameters({prompt:"select_account"});
-    await auth.signInWithPopup(provider);
-  } catch(error) {
-    console.error(error);
-    alert("Login failed: " + error.message);
-  }
-};
+$("exploreBtn").addEventListener("click", () => showPage("games"));
 
-$("logoutBtn").onclick = async () => {
-  try {
-    await auth.signOut();
-  } catch(error) {
-    alert(error.message);
-  }
-};
+/* =====================================
+   FIREBASE INITIALIZATION
+===================================== */
 
-auth.onAuthStateChanged(async user => {
-  currentUser = user || null;
+async function initializePlayHub() {
+  try {
+    if (!window.firebase) {
+      throw new Error("Firebase SDK did not load. Check your internet connection.");
+    }
+
+    // Prevent duplicate Firebase initialization.
+    if (firebase.apps.length) {
+      firebase.app();
+    } else {
+      firebase.initializeApp(firebaseConfig);
+    }
+
+    auth = firebase.auth();
+    db = firebase.firestore();
+
+    // Keep users signed in across browser restarts.
+    await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+
+    // Handle Google redirect result after returning to the website.
+    try {
+      await auth.getRedirectResult();
+    } catch (error) {
+      console.error("Google redirect result:", error);
+      showStatusForAuthError(error);
+    }
+
+    auth.onAuthStateChanged(async user => {
+      currentUser = user || null;
+      authReady = true;
+      updateHeader();
+
+      if (user) {
+        setStatus("Signed in. Preparing your player profile...", "");
+
+        try {
+          await ensurePlayerProfile(user);
+          setStatus("PlayHub connected · Signed in as " +
+            (user.displayName || "Player"), "ok");
+        } catch (error) {
+          console.error("Player profile error:", error);
+          setStatus("Profile setup issue: " + error.message, "error");
+        }
+
+        if (currentPage === "friends") loadSocial();
+        if (currentPage === "profile") loadProfile();
+      } else {
+        setStatus("PlayHub connected · Guest mode", "ok");
+
+        if (["friends","profile"].includes(currentPage)) {
+          showPage("home");
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error("Firebase initialization failed:", error);
+    setStatus("Firebase connection failed: " + error.message, "error");
+    $("loginBtn").disabled = true;
+  }
+}
+
+function updateHeader() {
+  const user = currentUser;
 
   $("loginBtn").classList.toggle("hidden", !!user);
   $("logoutBtn").classList.toggle("hidden", !user);
   $("userAvatar").classList.toggle("hidden", !user);
-  $("userName").textContent = user ? user.displayName || "Player" : "Guest Player";
 
-  if (user) {
-    $("userAvatar").src = user.photoURL || "";
-    try {
-      await ensurePlayerProfile(user);
-    } catch(error) {
-      console.error("Profile setup:", error);
-      alert("Profile setup failed: " + error.message);
-    }
+  $("userName").textContent = user
+    ? (user.displayName || "Player")
+    : "Guest Player";
+
+  if (user && user.photoURL) {
+    $("userAvatar").src = user.photoURL;
   } else {
     $("userAvatar").removeAttribute("src");
-    if (["friends","profile"].includes(currentPage)) showPage("home");
+  }
+}
+
+/* =====================================
+   GOOGLE LOGIN
+   Redirect flow is more reliable on
+   mobile browsers than popup flow.
+===================================== */
+
+$("loginBtn").addEventListener("click", async () => {
+  if (!auth) {
+    alert("Firebase is still connecting. Please wait a moment.");
+    return;
   }
 
-  if (currentPage === "friends" && user) loadSocial();
-  if (currentPage === "profile" && user) loadProfile();
+  try {
+    $("loginBtn").disabled = true;
+    $("loginBtn").textContent = "Opening Google...";
+
+    const provider = new firebase.auth.GoogleAuthProvider();
+    provider.setCustomParameters({
+      prompt: "select_account"
+    });
+
+    await auth.signInWithRedirect(provider);
+
+  } catch (error) {
+    console.error("Google login error:", error);
+    showStatusForAuthError(error);
+    $("loginBtn").disabled = false;
+    $("loginBtn").textContent = "Google Login";
+  }
 });
 
-/* FIRST PLAYER PROFILE */
+function showStatusForAuthError(error) {
+  const messages = {
+    "auth/unauthorized-domain":
+      "This website domain is not authorized in Firebase Authentication.",
+    "auth/operation-not-allowed":
+      "Google sign-in is not enabled in Firebase Authentication.",
+    "auth/network-request-failed":
+      "Network error. Check your internet connection.",
+    "auth/popup-blocked":
+      "Google sign-in was blocked by the browser. Try again."
+  };
+
+  const message = messages[error.code] ||
+    (error.message || "Google sign-in failed.");
+
+  setStatus(message, "error");
+  console.error(error);
+}
+
+$("logoutBtn").addEventListener("click", async () => {
+  if (!auth) return;
+
+  try {
+    await auth.signOut();
+    showPage("home");
+  } catch (error) {
+    alert("Logout failed: " + error.message);
+  }
+});
+
+/* =====================================
+   PLAYER PROFILE CREATION
+===================================== */
+
 async function ensurePlayerProfile(user) {
   const userRef = db.collection("users").doc(user.uid);
-  const snap = await userRef.get();
+  const existing = await userRef.get();
 
-  if (snap.exists) return;
+  if (existing.exists && existing.data().username) {
+    // Update only fields that are normally editable.
+    await userRef.update({
+      displayName: user.displayName || "Player",
+      photoURL: user.photoURL || null,
+      updatedAt: serverTime()
+    });
+    return;
+  }
 
-  let username = "";
+  // New account OR an older profile without a username.
+  let finished = false;
 
-  while (!username) {
+  while (!finished) {
     const answer = prompt(
       "Choose your unique PlayHub username (3-20 letters, numbers or underscores):"
     );
 
     if (answer === null) {
-      alert("You need a username to finish creating your PlayHub profile.");
+      alert("Username setup cancelled. You can sign in again when ready.");
       await auth.signOut();
       return;
     }
 
-    const candidate = answer.trim().toLowerCase();
+    const username = answer.trim().toLowerCase();
 
-    if (!/^[a-z0-9_]{3,20}$/.test(candidate)) {
-      alert("Use 3-20 lowercase letters, numbers or underscores.");
+    if (!/^[a-z0-9_]{3,20}$/.test(username)) {
+      alert("Username must be 3-20 characters: letters, numbers or underscores.");
       continue;
     }
 
-    const nameRef = db.collection("usernames").doc(candidate);
+    const nameRef = db.collection("usernames").doc(username);
 
     try {
       await db.runTransaction(async transaction => {
         const nameSnap = await transaction.get(nameRef);
-        if (nameSnap.exists) throw new Error("Username is already taken.");
+        const userSnap = await transaction.get(userRef);
 
-        transaction.set(nameRef, {uid:user.uid});
+        if (nameSnap.exists && nameSnap.data().uid !== user.uid) {
+          throw new Error("That username is already taken. Try another.");
+        }
 
-        transaction.set(userRef, {
-          displayName:user.displayName || "Player",
-          photoURL:user.photoURL || null,
-          username:candidate,
-          bio:"",
-          createdAt:serverTime(),
-          updatedAt:serverTime()
-        });
+        transaction.set(nameRef, { uid: user.uid });
+
+        const profileData = {
+          displayName: user.displayName || "Player",
+          photoURL: user.photoURL || null,
+          username: username,
+          bio: "",
+          updatedAt: serverTime()
+        };
+
+        if (!userSnap.exists) {
+          profileData.createdAt = serverTime();
+          transaction.set(userRef, profileData);
+        } else {
+          // Legacy profile: add missing username fields.
+          transaction.update(userRef, profileData);
+        }
       });
 
-      username = candidate;
-    } catch(error) {
-      alert(error.message);
+      finished = true;
+    } catch (error) {
+      console.error(error);
+      alert(error.message || "Could not create profile.");
     }
   }
 }
 
-/* PLAYER PROFILE */
+/* =====================================
+   PROFILE PAGE
+===================================== */
+
 async function loadProfile() {
   if (!currentUser) return;
 
-  const snap = await db.collection("users").doc(currentUser.uid).get();
-  if (!snap.exists) return;
+  $("profileContent").innerHTML =
+    '<div class="empty">Loading profile...</div>';
 
-  const data = snap.data();
+  try {
+    const snap = await db.collection("users")
+      .doc(currentUser.uid).get();
 
-  $("profileContent").innerHTML = `
-    <div class="profilehead">
-      <img class="avatar" src="${safe(data.photoURL)}" alt="">
-      <div>
-        <h2>${safe(data.displayName)}</h2>
-        <div class="muted">@${safe(data.username)}</div>
-      </div>
-    </div>
-    <div class="notice">Player ID: ${safe(currentUser.uid)}</div>
-    <p>${safe(data.bio || "No bio added yet.")}</p>
-    <div class="formrow">
-      <input id="bioInput" maxlength="120" placeholder="Write a short bio"
-        value="${safe(data.bio || "")}">
-      <button class="btn" id="saveBioBtn">Save</button>
-    </div>
-    <p class="muted">Google account: ${safe(currentUser.email)}</p>
-  `;
-
-  $("saveBioBtn").onclick = async () => {
-    try {
-      await db.collection("users").doc(currentUser.uid).update({
-        bio:$("bioInput").value.trim(),
-        updatedAt:serverTime()
-      });
-      alert("Profile updated!");
-      loadProfile();
-    } catch(error) {
-      alert(error.message);
+    if (!snap.exists) {
+      $("profileContent").innerHTML =
+        '<div class="empty">Profile not found. Please sign in again.</div>';
+      return;
     }
-  };
+
+    const data = snap.data();
+
+    $("profileContent").innerHTML = `
+      <div class="profilehead">
+        <img class="avatar"
+          src="${escapeHTML(data.photoURL || "")}" alt="Player">
+        <div>
+          <h2>${escapeHTML(data.displayName || "Player")}</h2>
+          <div class="muted">@${escapeHTML(data.username || "player")}</div>
+        </div>
+      </div>
+
+      <div class="notice">
+        Player ID: ${escapeHTML(currentUser.uid)}
+      </div>
+
+      <p>${escapeHTML(data.bio || "No bio added yet.")}</p>
+
+      <div class="formrow">
+        <input id="bioInput" maxlength="120"
+          placeholder="Write a short bio"
+          value="${escapeHTML(data.bio || "")}">
+        <button class="btn" id="saveBioBtn">Save</button>
+      </div>
+
+      <p class="muted">
+        Google account: ${escapeHTML(currentUser.email || "")}
+      </p>
+    `;
+
+    $("saveBioBtn").addEventListener("click", saveBio);
+
+  } catch (error) {
+    console.error(error);
+    $("profileContent").innerHTML =
+      '<div class="empty">Could not load profile: ' +
+      escapeHTML(error.message) + '</div>';
+  }
 }
 
-/* FIND PLAYERS */
-$("searchPlayerBtn").onclick = searchPlayer;
+async function saveBio() {
+  if (!currentUser) return;
+
+  const bio = $("bioInput").value.trim();
+
+  try {
+    await db.collection("users").doc(currentUser.uid).update({
+      bio: bio,
+      updatedAt: serverTime()
+    });
+
+    alert("Profile updated!");
+    loadProfile();
+
+  } catch (error) {
+    alert("Could not update profile: " + error.message);
+  }
+}
+
+/* =====================================
+   PLAYER SEARCH
+===================================== */
+
+$("searchPlayerBtn").addEventListener("click", searchPlayer);
+
 $("playerSearch").addEventListener("keydown", event => {
   if (event.key === "Enter") searchPlayer();
 });
 
 async function searchPlayer() {
-  if (!currentUser) return alert("Login first.");
+  if (!currentUser) return alert("Please login first.");
 
   const username = $("playerSearch").value.trim().toLowerCase();
+
   if (!/^[a-z0-9_]{3,20}$/.test(username)) {
     return alert("Enter a valid username.");
   }
@@ -404,7 +606,8 @@ async function searchPlayer() {
   result.textContent = "Searching...";
 
   try {
-    const nameSnap = await db.collection("usernames").doc(username).get();
+    const nameSnap = await db.collection("usernames")
+      .doc(username).get();
 
     if (!nameSnap.exists || nameSnap.data().uid === currentUser.uid) {
       result.innerHTML = '<div class="empty">Player not found.</div>';
@@ -415,209 +618,36 @@ async function searchPlayer() {
     const userSnap = await db.collection("users").doc(uid).get();
 
     if (!userSnap.exists) {
-      result.innerHTML = '<div class="empty">Player profile unavailable.</div>';
+      result.innerHTML =
+        '<div class="empty">Player profile unavailable.</div>';
       return;
     }
 
     const player = userSnap.data();
+
     result.innerHTML = `
       <div class="row">
         <div class="rowinfo">
-          <strong>${safe(player.displayName)}</strong>
-          <span class="muted">@${safe(player.username)}</span>
+          <strong>${escapeHTML(player.displayName || "Player")}</strong>
+          <span class="muted">@${escapeHTML(player.username || username)}</span>
         </div>
         <button class="btn" id="sendRequestBtn">Add Friend</button>
       </div>
     `;
 
-    $("sendRequestBtn").onclick = () => sendFriendRequest(uid);
+    $("sendRequestBtn").addEventListener("click", () => {
+      sendFriendRequest(uid);
+    });
 
-  } catch(error) {
+  } catch (error) {
     console.error(error);
     result.textContent = "Search failed: " + error.message;
   }
 }
 
-/* SEND FRIEND REQUEST */
+/* =====================================
+   FRIEND REQUESTS
+===================================== */
+
 async function sendFriendRequest(targetUid) {
-  if (!currentUser || targetUid === currentUser.uid) return;
-
-  const requestId = currentUser.uid + "_" + targetUid;
-  const reverseId = targetUid + "_" + currentUser.uid;
-
-  try {
-    const requestRef = db.collection("friendRequests").doc(requestId);
-    const reverseRef = db.collection("friendRequests").doc(reverseId);
-
-    const existing = await requestRef.get();
-    const reverse = await reverseRef.get();
-
-    if (existing.exists || reverse.exists) {
-      return alert("A friend request already exists.");
-    }
-
-    await requestRef.set({
-      fromUid:currentUser.uid,
-      toUid:targetUid,
-      status:"pending",
-      createdAt:serverTime()
-    });
-
-    alert("Friend request sent!");
-  } catch(error) {
-    alert("Could not send request: " + error.message);
-  }
-}
-
-/* FRIEND REQUESTS + FRIEND LIST */
-async function loadSocial() {
-  if (!currentUser) return;
-
-  $("requestsList").innerHTML = '<div class="muted">Loading...</div>';
-  $("friendsList").innerHTML = '<div class="muted">Loading...</div>';
-
-  try {
-    const requests = await db.collection("friendRequests")
-      .where("toUid","==",currentUser.uid)
-      .where("status","==","pending").get();
-
-    if (requests.empty) {
-      $("requestsList").innerHTML = '<div class="empty">No pending requests.</div>';
-    } else {
-      $("requestsList").innerHTML = "";
-      for (const request of requests.docs) {
-        const data = request.data();
-        const playerSnap = await db.collection("users").doc(data.fromUid).get();
-        if (!playerSnap.exists) continue;
-
-        const player = playerSnap.data();
-        const row = document.createElement("div");
-        row.className = "row";
-        row.innerHTML = `
-          <div class="rowinfo">
-            <strong>${safe(player.displayName)}</strong>
-            <span class="muted">@${safe(player.username)}</span>
-          </div>
-          <button class="btn">Accept</button>
-        `;
-        row.querySelector("button").onclick =
-          () => acceptRequest(request.id, data.fromUid);
-        $("requestsList").appendChild(row);
-      }
-    }
-
-    const friends = await db.collection("friendships")
-      .doc(currentUser.uid).collection("friends").get();
-
-    if (friends.empty) {
-      $("friendsList").innerHTML = '<div class="empty">No friends yet.</div>';
-    } else {
-      $("friendsList").innerHTML = "";
-      for (const friendDoc of friends.docs) {
-        const playerSnap = await db.collection("users")
-          .doc(friendDoc.id).get();
-
-        if (!playerSnap.exists) continue;
-        const player = playerSnap.data();
-        const row = document.createElement("div");
-        row.className = "row";
-        row.innerHTML = `
-          <div class="rowinfo">
-            <strong>${safe(player.displayName)}</strong>
-            <span class="muted">@${safe(player.username)}</span>
-          </div>
-          <span class="tag">FRIEND</span>
-        `;
-        $("friendsList").appendChild(row);
-      }
-    }
-
-  } catch(error) {
-    console.error(error);
-    $("requestsList").textContent = error.message;
-    $("friendsList").textContent = error.message;
-  }
-}
-
-/* ACCEPT REQUEST */
-async function acceptRequest(requestId, senderUid) {
-  if (!currentUser) return;
-
-  try {
-    const requestRef = db.collection("friendRequests").doc(requestId);
-    const snap = await requestRef.get();
-
-    if (!snap.exists || snap.data().toUid !== currentUser.uid) {
-      throw new Error("Request not found.");
-    }
-
-    await requestRef.update({status:"accepted"});
-
-    const batch = db.batch();
-    const now = serverTime();
-
-    const myFriendRef = db.collection("friendships")
-      .doc(currentUser.uid).collection("friends").doc(senderUid);
-
-    const theirFriendRef = db.collection("friendships")
-      .doc(senderUid).collection("friends").doc(currentUser.uid);
-
-    batch.set(myFriendRef,{uid:senderUid,createdAt:now});
-    batch.set(theirFriendRef,{uid:currentUser.uid,createdAt:now});
-
-    await batch.commit();
-
-    alert("Friend added!");
-    loadSocial();
-  } catch(error) {
-    console.error(error);
-    alert("Could not accept request: " + error.message);
-  }
-}
-
-/* GITHUB GAME DISCOVERY */
-async function discoverGames() {
-  const url =
-    "https://api.github.com/repos/Ranit-rex/test-Gameonix/git/trees/main?recursive=1";
-
-  try {
-    const response = await fetch(url);
-    if (!response.ok) throw new Error("GitHub API unavailable.");
-
-    const data = await response.json();
-    const paths = (data.tree || [])
-      .filter(item => /^games\/[^/]+\/index\.html$/.test(item.path));
-
-    allGames = paths.map(item => {
-      const slug = item.path.split("/")[1];
-      return {
-        slug,
-        title:slug.replace(/[-_]/g," ").replace(/\b\w/g,c=>c.toUpperCase()),
-        url:"./games/" + slug + "/",
-        image:""
-      };
-    });
-
-    renderGames(allGames);
-  } catch(error) {
-    console.error(error);
-    $("homeGames").innerHTML =
-      '<div class="empty">Could not load games. Please refresh.</div>';
-    $("allGames").innerHTML =
-      '<div class="empty">Could not load games. Please refresh.</div>';
-  }
-}
-
-function renderGames(games) {
-  const html = games.length ? games.map(game => `
-    <article class="game" data-url="${safe(game.url)}"
-      data-title="${safe(game.title)}">
-      <img src="${safe(game.image)}"
-        onerror="this.style.display='none'" alt="">
-      <div class="gameinfo">
-        <h3>${safe(game.title)}</h3>
-        <div class="muted">PlayHub Game</div>
-        <p><span class="tag">▶ PLAY NOW</span></p>
-      </div>
-    </article>
-  `).join("") : '<div class="empty">No games found 
+  if (!currentUser || target
