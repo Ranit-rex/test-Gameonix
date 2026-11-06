@@ -1,71 +1,65 @@
 
-const PlayHubLoader = (() => {
-  let activeFrame = null;
-  let activeGame = null;
+window.PlayHubLoader = {
+  activeFrame: null,
 
-  function launch(game, container) {
-    if (!game || !game.url || !container) {
-      throw new Error("Game or container missing");
-    }
-
-    close();
+  launch(game, container) {
+    this.close();
 
     const frame = document.createElement("iframe");
 
     frame.src = game.url;
     frame.title = game.title || "PlayHub Game";
-    frame.allow = "fullscreen; autoplay; gamepad";
-    frame.allowFullscreen = true;
 
-    Object.assign(frame.style, {
-      width: "100%",
-      height: "100%",
-      border: "0",
-      display: "block",
-      background: "#080e18"
-    });
+    frame.allow = [
+      "fullscreen",
+      "autoplay",
+      "gamepad",
+      "accelerometer",
+      "gyroscope",
+      "clipboard-read",
+      "clipboard-write"
+    ].join("; ");
+
+    frame.allowFullscreen = true;
+    frame.style.cssText = `
+      width: 100%;
+      height: 100%;
+      border: none;
+      display: block;
+      background: #000;
+    `;
+
+    frame.onload = () => {
+      console.log("PlayHub game loaded:", game.title);
+    };
+
+    frame.onerror = () => {
+      console.error("Game failed to load:", game.url);
+    };
 
     container.replaceChildren(frame);
+    this.activeFrame = frame;
 
-    activeFrame = frame;
-    activeGame = game;
+    window.dispatchEvent(
+      new CustomEvent("playhub:game-launched", {
+        detail: game
+      })
+    );
+  },
 
-    container.style.display = "block";
-
-    window.dispatchEvent(new CustomEvent(
-      "playhub:game-launched",
-      { detail: game }
-    ));
-
-    return frame;
-  }
-
-  function close() {
-    if (activeFrame) {
-      activeFrame.src = "about:blank";
-      activeFrame.remove();
+  close() {
+    if (this.activeFrame) {
+      this.activeFrame.src = "about:blank";
+      this.activeFrame.remove();
+      this.activeFrame = null;
     }
 
-    activeFrame = null;
+    window.dispatchEvent(
+      new CustomEvent("playhub:game-closed")
+    );
+  },
 
-    const previousGame = activeGame;
-    activeGame = null;
-
-    window.dispatchEvent(new CustomEvent(
-      "playhub:game-closed",
-      { detail: previousGame }
-    ));
+  getActiveGame() {
+    return this.activeFrame;
   }
-
-  function getActiveGame() {
-    return activeGame;
-  }
-
-  return {
-    launch,
-    close,
-    getActiveGame
-  };
-})();
-
-window.PlayHubLoader = PlayHubLoader;
+};
