@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>PlayHub — Jungle Runner</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#07151b;color:#fff;font-family:Arial,sans-serif;touch-action:none}canvas{display:block}#hud{position:fixed;z-index:3;top:14px;left:14px;right:14px;display:flex;justify-content:space-between;pointer-events:none}.pill{background:#071923d9;border:1px solid #ffffff35;border-radius:14px;padding:10px 14px;backdrop-filter:blur(8px);font-weight:700}.score{font-size:21px;color:#ffdc59}#coins{color:#ffdc59}#pause{position:fixed;z-index:4;right:14px;top:76px;background:#102c38;color:#fff;border:1px solid #ffffff44;border-radius:10px;padding:9px 13px;font-weight:bold}#overlay{position:fixed;z-index:8;inset:0;display:flex;align-items:center;justify-content:center;padding:18px;background:linear-gradient(#07151b9c,#07151be8);text-align:center}.card{width:min(440px,96vw);padding:26px 22px;border-radius:22px;background:#102b38ed;border:1px solid #ffffff30;box-shadow:0 22px 70px #0009}.card h1{font-size:clamp(30px,8vw,44px);color:#ffd34d;margin:0 0 8px}.card p{color:#d4e4e9;line-height:1.55}.mainbtn{border:0;border-radius:12px;padding:14px 25px;background:#ffd04a;color:#18232a;font-weight:900;font-size:16px}#loading{position:fixed;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;background:#07151b;text-align:center;padding:25px}#loading small{color:#b5cbd3}#mobile{position:fixed;z-index:5;left:0;right:0;bottom:18px;display:flex;justify-content:space-between;padding:0 16px;pointer-events:none}.pad{display:flex;gap:9px}.ctrl{pointer-events:auto;width:58px;height:58px;border-radius:50%;border:1px solid #ffffff66;background:#092432d9;color:white;font-size:22px;font-weight:bold}#hint{position:fixed;z-index:2;bottom:88px;left:0;right:0;text-align:center;font-size:11px;color:#fff;opacity:.7;pointer-events:none}
+</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"}}</script>
+</head>
+<body>
+<div id="hud"><div class="pill">🏃 PLAYHUB</div><div class="pill"><div class="score">SCORE <span id="score">0</span></div><div id="coins">🪙 0</div></div></div>
+<button id="pause">Ⅱ PAUSE</button><div id="hint">SWIPE OR USE BUTTONS · ← → MOVE · ↑ JUMP · ↓ SLIDE</div>
+<div id="mobile"><div class="pad"><button class="ctrl" id="left">◀</button><button class="ctrl" id="right">▶</button></div><div class="pad"><button class="ctrl" id="slide">▼</button><button class="ctrl" id="jump">▲</button></div></div>
+<div id="loading"><div><h2>Loading Jungle Runner…</h2><small id="loadmsg">Preparing 3D models</small></div></div>
+<div id="overlay" style="display:none"><div class="card"><h1 id="title">JUNGLE RUNNER</h1><p id="message">Run through the lost temple, dodge traps and collect ancient coins.</p><button class="mainbtn" id="start">START RUNNING</button><p style="font-size:11px">A PLAYHUB GAME</p></div></div>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
+
+const $=id=>document.getElementById(id);
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x87c9dc);scene.fog=new THREE.Fog(0x87c9dc,35,125);
+const camera=new THREE.PerspectiveCamera(64,innerWidth/innerHeight,.1,220);camera.position.set(0,5.2,10);camera.lookAt(0,1,-4);
+const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.12;document.body.appendChild(renderer.domElement);
+scene.add(new THREE.HemisphereLight(0xd9f5ff,0x30452a,2.0));const sun=new THREE.DirectionalLight(0xffedcf,3.1);sun.position.set(-12,22,9);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);scene.add(sun);
+const mat=(c,r=.9)=>new THREE.MeshStandardMaterial({color:c,roughness:r});
+const groundMat=mat(0x345b31),roadMat=mat(0x5b5549),edgeMat=mat(0xb6a078),lineMat=mat(0xe8d8a7);
+const ground=new THREE.Mesh(new THREE.PlaneGeometry(240,240),groundMat);ground.rotation.x=-Math.PI/2;ground.position.y=-.18;ground.receiveShadow=true;scene.add(ground);
+const road=new THREE.Mesh(new THREE.BoxGeometry(7.4,.22,190),roadMat);road.position.set(0,-.04,-72);road.receiveShadow=true;scene.add(road);
+for(const x of [-3.78,3.78]){const e=new THREE.Mesh(new THREE.BoxGeometry(.18,.28,190),edgeMat);e.position.set(x,.04,-72);scene.add(e)}
+const laneMarks=[];for(let z=15;z>-175;z-=8)for(const x of [-1.23,1.23]){const m=new THREE.Mesh(new THREE.BoxGeometry(.055,.025,3.2),lineMat);m.position.set(x,.09,z);scene.add(m);laneMarks.push(m)}
+
+const loader=new GLTFLoader();const base='./assets/';const modelFiles={hero:'runner_hero.glb',tree:'jungle_tree.glb',temple:'temple_ruin.glb',coin:'gold_coin.glb',rock:'jungle_boulder.glb',barrier:'wood_barrier.glb',gate:'temple_spike_gate.glb'};const models={};
+function loadModel(key,file){return new Promise((resolve,reject)=>loader.load(base+file,g=>{const root=g.scene;root.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;if(o.material){o.material.side=THREE.FrontSide}}});models[key]=root;resolve(root)},undefined,reject))}
+const loadEntries=Object.entries(modelFiles);let loaded=0;
+await Promise.all(loadEntries.map(async([key,file])=>{try{await loadModel(key,file)}catch(err){console.error('Could not load '+file,err);$('loadmsg').textContent='Could not load '+file+' — check games/runners/assets/';throw err}finally{loaded++;$('loadmsg').textContent=`Loaded ${loaded}/${loadEntries.length} 3D models`}}));
+function fitModel(source,targetHeight){const g=source.clone(true);g.updateMatrixWorld(true);const b=new THREE.Box3().setFromObject(g);const size=b.getSize(new THREE.Vector3());const center=b.getCenter(new THREE.Vector3());const h=Math.max(size.y,.001);g.position.sub(center);g.scale.setScalar(targetHeight/h);g.position.y=0;g.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true}});return g}
+function addModel(key,height,x,y,z,parent=scene){const g=fitModel(models[key],height);g.position.set(x,y,z);parent.add(g);return g}
+
+// Actual GLB jungle trees and temple ruins
+const scenery=[];
+for(let z=12;z>-175;z-=12){for(const side of [-1,1]){const tree=addModel('tree',5.4,side*(6.2+Math.random()*1.8),0,z-(side===1?4:0));tree.rotation.y=Math.random()*Math.PI*2;scenery.push(tree)}}
+for(let z=-14;z>-170;z-=29){for(const side of [-1,1]){const temple=addModel('temple',4.2,side*5.1,0,z+(side===1?-9:0));temple.rotation.y=side===1?Math.PI/2:-Math.PI/2;scenery.push(temple)}}
+
+// Hero GLB — model contains separate named body meshes for procedural animation
+const hero=fitModel(models.hero,2.65);hero.position.set(0,0,4);scene.add(hero);
+const parts={};hero.traverse(o=>{if(o.isMesh&&o.name)parts[o.name]=o});
+const heroBox=new THREE.Box3().setFromObject(hero);const heroSize=heroBox.getSize(new THREE.Vector3());
+// The GLB has no embedded animation clips, so animate its named limbs procedurally.
+
+const obstacles=[],coins=[];let running=false,paused=false,over=false,lane=0,jumpY=0,jumpV=0,sliding=false,slideTimer=0,score=0,coinCount=0,speed=19,spawnTimer=0;
+const clock=new THREE.Clock();
+function addObstacle(type,l,z){const key=type==='rock'?'rock':type==='barrier'?'barrier':'gate';const g=addModel(key,type==='rock'?1.45:type==='barrier'?1.65:2.05,l*2,0,z);obstacles.push({mesh:g,type,lane:l})}
+function addCoin(l,z){const g=addModel('coin',.72,l*2,1.15,z);coins.push(g)}
+function spawnRow(z){const l=Math.floor(Math.random()*3)-1;const types=['rock','barrier','gate'];addObstacle(types[Math.floor(Math.random()*types.length)],l,z);const cl=Math.floor(Math.random()*3)-1;for(let i=0;i<5;i++)addCoin(cl,z-2.5-i*1.5)}
+function clearObjects(){for(const o of obstacles)scene.remove(o.mesh);for(const c of coins)scene.remove(c);obstacles.length=0;coins.length=0}
+function updateHUD(){$('score').textContent=Math.floor(score);$('coins').textContent='🪙 '+coinCount}
+function showMenu(title,msg,button){$('title').textContent=title;$('message').textContent=msg;$('start').textContent=button;$('overlay').style.display='flex'}
+function startGame(){clearObjects();score=0;coinCount=0;speed=19;lane=0;jumpY=0;jumpV=0;sliding=false;slideTimer=0;spawnTimer=0;over=false;paused=false;hero.position.set(0,0,4);hero.rotation.set(0,0,0);hero.scale.y=1;for(let z=-22;z>-115;z-=15)spawnRow(z);updateHUD();running=true;$('overlay').style.display='none';$('pause').textContent='Ⅱ PAUSE'}
+function endGame(){running=false;over=true;showMenu('GAME OVER',`Score: ${Math.floor(score)} · Coins: ${coinCount}`,'PLAY AGAIN')}
+function moveLeft(){if(running&&!paused)lane=Math.max(-1,lane-1)}function moveRight(){if(running&&!paused)lane=Math.min(1,lane+1)}function jump(){if(running&&!paused&&jumpY<=0.01&&!sliding)jumpV=10.2}function slide(){if(running&&!paused&&jumpY<=.1){sliding=true;slideTimer=.72}}
+function togglePause(){if(!running)return;paused=!paused;$('pause').textContent=paused?'▶ RESUME':'Ⅱ PAUSE'}
+$('start').onclick=startGame;$('pause').onclick=togglePause;$('left').onclick=moveLeft;$('right').onclick=moveRight;$('jump').onclick=jump;$('slide').onclick=slide;
+addEventListener('keydown',e=>{if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown',' '].includes(e.key))e.preventDefault();if(e.key==='ArrowLeft'||e.key==='a')moveLeft();if(e.key==='ArrowRight'||e.key==='d')moveRight();if(e.key==='ArrowUp'||e.key==='w'||e.key===' ')jump();if(e.key==='ArrowDown'||e.key==='s')slide();if(e.key==='Escape')togglePause()});
+let sx=0,sy=0;renderer.domElement.addEventListener('touchstart',e=>{sx=e.changedTouches[0].clientX;sy=e.changedTouches[0].clientY},{passive:true});renderer.domElement.addEventListener('touchend',e=>{const dx=e.changedTouches[0].clientX-sx,dy=e.changedTouches[0].clientY-sy;if(Math.max(Math.abs(dx),Math.abs(dy))<24)return;if(Math.abs(dx)>Math.abs(dy)){dx>0?moveRight():moveLeft()}else{dy<0?jump():slide()}},{passive:true});
+
+function animate(){requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.04),t=clock.elapsedTime;
+ if(running&&!paused){score+=dt*speed*.55;speed=Math.min(34,19+score*.009);updateHUD();hero.position.x=THREE.MathUtils.damp(hero.position.x,lane*2,11,dt);
+  if(jumpV!==0||jumpY>0){jumpV-=25*dt;jumpY+=jumpV*dt;if(jumpY<=0){jumpY=0;jumpV=0}}
+  if(sliding){slideTimer-=dt;if(slideTimer<=0)sliding=false}
+  hero.position.y=jumpY+(sliding?-.28:0);hero.scale.y=sliding?.78:1;
+  const swing=Math.sin(t*speed*.62)*.62;
+  if(parts.leg_L)parts.leg_L.rotation.x=swing;if(parts.leg_R)parts.leg_R.rotation.x=-swing;
+  if(parts.boot_L)parts.boot_L.rotation.x=swing;if(parts.boot_R)parts.boot_R.rotation.x=-swing;
+  if(parts.arm_L)parts.arm_L.rotation.x=-swing*.75;if(parts.arm_R)parts.arm_R.rotation.x=swing*.75;
+  if(parts.shoulder_L)parts.shoulder_L.rotation.x=-swing*.5;if(parts.shoulder_R)parts.shoulder_R.rotation.x=swing*.5;
+  hero.rotation.z=THREE.MathUtils.damp(hero.rotation.z,Math.sin(t*speed*.3)*.025,5,dt);
+  for(const m of laneMarks){m.position.z+=speed*dt;if(m.position.z>17)m.position.z-=190}
+  for(const s of scenery){s.position.z+=speed*dt;if(s.position.z>22)s.position.z-=190}
+  for(let i=obstacles.length-1;i>=0;i--){const o=obstacles[i];o.mesh.position.z+=speed*dt;if(o.mesh.position.z>9){scene.remove(o.mesh);obstacles.splice(i,1);continue}const near=Math.abs(o.mesh.position.z-4)<1.15,same=Math.abs(o.mesh.position.x-hero.position.x)<.9;if(near&&same){let hit=true;if(o.type==='rock'&&jumpY>1.05)hit=false;if(o.type==='barrier'&&jumpY>1.15)hit=false;if(o.type==='gate'&&sliding)hit=false;if(hit){endGame();break}}}
+  for(let i=coins.length-1;i>=0;i--){const c=coins[i];c.position.z+=speed*dt;c.rotation.y+=dt*2.8;if(c.position.z>9){scene.remove(c);coins.splice(i,1);continue}if(Math.abs(c.position.z-4)<1.05&&Math.abs(c.position.x-hero.position.x)<.9&&Math.abs(c.position.y-(1.05+jumpY))<1.5){coinCount++;scene.remove(c);coins.splice(i,1);updateHUD()}}
+  spawnTimer+=dt;if(spawnTimer>1.55){spawnRow(-120);spawnTimer=0}
+ }
+ camera.position.x=THREE.MathUtils.damp(camera.position.x,hero.position.x*.22,3,dt);camera.lookAt(hero.position.x*.16,1.15,-4);renderer.render(scene,camera)}
+
+$('loading').style.display='none';showMenu('JUNGLE RUNNER','Run through the lost temple, dodge traps and collect ancient coins.','START RUNNING');animate();
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+</script>
+</body></html>
