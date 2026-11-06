@@ -1,282 +1,622 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#090b14">
-<title>PlayHub — Play Beyond Limits</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PlayHub — Play Together</title>
 
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
-
 :root{
- --bg:#090b14;
- --panel:#111522;
- --panel2:#171c2d;
- --line:#252b40;
- --text:#f4f5ff;
- --muted:#929bb4;
- --purple:#895cff;
- --blue:#38a9ff;
+  --bg:#090b12;--panel:#111522;--panel2:#191f30;
+  --text:#f5f6ff;--muted:#929bb0;--accent:#8065ff;
+  --line:#252c40;--green:#48d597;
 }
 *{box-sizing:border-box}
-body{
- margin:0;background:var(--bg);color:var(--text);
- font-family:Inter,Arial,sans-serif;
- min-height:100vh;
-}
+body{margin:0;background:var(--bg);color:var(--text);
+font-family:Inter,system-ui,Arial,sans-serif}
 button,input{font:inherit}
 button{cursor:pointer}
-a{color:inherit;text-decoration:none}
-#playhub-app{min-height:100vh}
-.ph-layout{display:flex;min-height:100vh}
-.ph-sidebar{
- width:235px;flex-shrink:0;position:fixed;
- top:0;bottom:0;left:0;z-index:20;
- background:#0d101b;border-right:1px solid var(--line);
- padding:26px 16px;display:flex;flex-direction:column;
-}
-.ph-brand{display:flex;align-items:center;gap:11px;
- padding:0 10px 30px;font-size:23px;font-weight:900}
-.ph-logo{
- width:38px;height:38px;border-radius:12px;
- display:grid;place-items:center;
- background:linear-gradient(135deg,#a16bff,#397bff);
- box-shadow:0 5px 25px #825aff55;font-size:21px
-}
-.ph-side-label{
- color:#68718a;font-size:10px;font-weight:800;
- letter-spacing:1.7px;padding:12px 12px 9px
-}
-.ph-nav{
- display:flex;align-items:center;gap:13px;
- width:100%;padding:12px;border-radius:11px;
- color:#a4abc0;background:transparent;
- border:0;text-align:left;font-size:13px;
- font-weight:600;margin:2px 0
-}
-.ph-nav:hover,.ph-nav.active{
- background:#20213a;color:white
-}
-.ph-nav.active{box-shadow:inset 3px 0 #9a70ff}
-.ph-nav-icon{font-size:18px;width:23px;text-align:center}
-.ph-sidebar-bottom{margin-top:auto}
-.ph-main{
- margin-left:235px;width:calc(100% - 235px);
- padding:0 36px 60px;min-width:0
-}
-.ph-topbar{
- height:84px;display:flex;align-items:center;
- justify-content:space-between;gap:18px;
- border-bottom:1px solid #ffffff0c;
-}
-.ph-search{
- width:min(430px,55vw);position:relative
-}
-.ph-search input{
- width:100%;padding:13px 17px 13px 43px;
- color:white;background:#151a29;
- border:1px solid var(--line);border-radius:12px;
- outline:none;font-size:13px
-}
-.ph-search input:focus{border-color:var(--purple)}
-.ph-search-icon{
- position:absolute;left:15px;top:11px;
- color:#8c95ae;font-size:18px
-}
-.ph-top-right{display:flex;align-items:center;gap:12px}
-.ph-online{
- border:1px solid #2c7552;background:#123225;
- color:#65e5a2;padding:8px 12px;border-radius:30px;
- font-size:11px;font-weight:700
-}
-.ph-avatar{
- width:39px;height:39px;border-radius:50%;
- display:grid;place-items:center;
- background:linear-gradient(135deg,#875bff,#28a9ef);
- font-weight:800
-}
-.ph-content{max-width:1450px;margin:auto}
-.ph-welcome{padding:30px 0 18px}
-.ph-eyebrow{
- color:#a78aff;font-size:11px;font-weight:800;
- letter-spacing:2px;text-transform:uppercase
-}
-.ph-welcome h1{
- font-size:clamp(25px,4vw,38px);
- margin:10px 0 7px;letter-spacing:-1.5px
-}
-.ph-welcome p{color:var(--muted);font-size:13px;margin:0}
-.ph-hero{
- min-height:290px;position:relative;overflow:hidden;
- border-radius:22px;padding:35px;
- display:flex;align-items:center;
- background:
- radial-gradient(ellipse at 80% 20%,#965aff77,transparent 38%),
- radial-gradient(ellipse at 95% 100%,#158bd477,transparent 45%),
- linear-gradient(110deg,#242047,#111a36 65%,#172b4b);
- border:1px solid #ffffff18;
-}
-.ph-hero:after{
- content:"";position:absolute;width:330px;height:330px;
- right:8%;top:-25px;border-radius:50%;
- border:1px solid #ffffff18;
- box-shadow:0 0 0 30px #ffffff06,0 0 0 65px #ffffff04;
-}
-.ph-hero-content{position:relative;z-index:2;max-width:520px}
-.ph-hero-tag{
- display:inline-flex;padding:7px 11px;border-radius:30px;
- background:#ffffff17;border:1px solid #ffffff25;
- font-size:10px;font-weight:800;letter-spacing:1px
-}
-.ph-hero h2{
- font-size:clamp(30px,5vw,48px);
- line-height:1.08;margin:17px 0 12px;
- letter-spacing:-1.8px
-}
-.ph-hero p{color:#c4c9df;font-size:13px;line-height:1.7}
-.ph-hero button{
- border:0;border-radius:11px;padding:13px 19px;
- color:white;font-weight:800;margin-top:12px;
- background:linear-gradient(100deg,#9862ff,#497fff);
- box-shadow:0 8px 25px #865aff44
-}
-.ph-hero-art{
- position:absolute;right:11%;top:50%;
- transform:translateY(-50%);font-size:clamp(90px,16vw,175px);
- filter:drop-shadow(0 20px 35px #0008);z-index:1
-}
-.ph-section{margin-top:34px}
-.ph-section-head{
- display:flex;justify-content:space-between;
- align-items:center;gap:15px;margin-bottom:17px
-}
-.ph-section h2{font-size:20px;margin:0;letter-spacing:-.5px}
-.ph-section-sub{font-size:11px;color:var(--muted);margin-top:5px}
-.ph-count{
- color:#a99aff;background:#292044;padding:6px 10px;
- border-radius:20px;font-size:11px;font-weight:800
-}
-.ph-categories{display:flex;gap:9px;flex-wrap:wrap;margin:20px 0}
-.ph-category{
- padding:9px 15px;border-radius:30px;
- background:#151a29;border:1px solid var(--line);
- color:#aab1c5;font-size:12px;font-weight:700
-}
-.ph-category.active,.ph-category:hover{
- color:white;background:#33245a;border-color:#8058d8
-}
-.ph-games{
- display:grid;
- grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
- gap:19px
-}
-.ph-card{
- background:var(--panel);border:1px solid var(--line);
- border-radius:16px;overflow:hidden;min-width:0;
- transition:transform .2s,border-color .2s
-}
-.ph-card:hover{
- transform:translateY(-5px);border-color:#7755c4
-}
-.ph-cover{
- width:100%;aspect-ratio:16/10;position:relative;
- background:linear-gradient(135deg,#29204b,#12344c);
- overflow:hidden;display:grid;place-items:center
-}
-.ph-cover img{width:100%;height:100%;object-fit:cover}
-.ph-cover-fallback{font-size:55px;position:absolute}
-.ph-card-body{padding:14px}
-.ph-card-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.ph-card h3{font-size:15px;margin:0;overflow-wrap:anywhere}
-.ph-tag{
- color:#a999ff;background:#2b2246;
- border-radius:20px;padding:5px 8px;
- font-size:9px;font-weight:800;white-space:nowrap
-}
-.ph-card p{
- color:var(--muted);font-size:11px;line-height:1.6;
- min-height:35px;margin:10px 0 13px
-}
-.ph-play{
- width:100%;padding:10px;border-radius:9px;
- border:1px solid #7454c4;background:#30204e;
- color:white;font-weight:800;font-size:12px
-}
-.ph-play:hover{background:#754bce}
-.ph-status{
- color:var(--muted);font-size:13px;
- padding:22px 0
-}
-.ph-empty{
- padding:35px;text-align:center;
- color:var(--muted);background:var(--panel);
- border:1px dashed var(--line);border-radius:16px;
- grid-column:1/-1
-}
-.ph-footer{
- margin-top:60px;padding-top:22px;
- border-top:1px solid var(--line);
- color:#707991;font-size:11px
-}
-.ph-game-view{
- position:fixed;inset:0;background:#05070d;z-index:50;
- display:flex;flex-direction:column
-}
-.ph-game-bar{
- height:57px;flex-shrink:0;background:#111522;
- display:flex;align-items:center;justify-content:space-between;
- gap:10px;padding:0 15px;border-bottom:1px solid var(--line)
-}
-.ph-game-bar strong{font-size:13px}
-.ph-game-bar button{
- background:#262d43;border:1px solid #3a4562;
- color:white;border-radius:8px;padding:9px 12px;
- font-size:12px;font-weight:700
-}
-.ph-game-container{flex:1;min-height:0}
-.ph-game-container iframe{width:100%;height:100%;border:0}
-[hidden]{display:none!important}
-@media(max-width:850px){
- .ph-sidebar{width:68px;padding:20px 8px}
- .ph-brand{padding:0 7px 25px}
- .ph-brand-name,.ph-nav-text,.ph-side-label{display:none}
- .ph-nav{justify-content:center;padding:13px 5px}
- .ph-main{margin-left:68px;width:calc(100% - 68px);padding:0 18px 40px}
- .ph-hero{padding:25px;min-height:260px}
- .ph-hero-art{right:3%;opacity:.55}
- .ph-hero-content{max-width:75%}
-}
-@media(max-width:540px){
- .ph-main{padding:0 13px 35px}
- .ph-topbar{height:68px}
- .ph-search{width:100%}
- .ph-online{display:none}
- .ph-welcome{padding:23px 0 15px}
- .ph-hero{min-height:245px;padding:22px}
- .ph-hero-content{max-width:100%}
- .ph-hero-art{right:-5%;top:15%;font-size:105px;opacity:.2}
- .ph-hero h2{font-size:32px}
- .ph-games{grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}
- .ph-card-body{padding:10px}
- .ph-card h3{font-size:12px}
- .ph-card p{font-size:10px;min-height:48px}
- .ph-play{font-size:11px}
- .ph-section h2{font-size:17px}
- .ph-avatar{width:34px;height:34px}
+.topbar{height:68px;position:sticky;top:0;z-index:10;
+background:#0d101bee;border-bottom:1px solid var(--line);
+display:flex;align-items:center;justify-content:space-between;
+padding:0 22px;gap:12px}
+.logo{font-size:23px;font-weight:900;letter-spacing:-1px}
+.logo span{color:#9b85ff}
+.actions{display:flex;align-items:center;gap:10px}
+.btn{border:0;border-radius:10px;padding:11px 16px;
+background:var(--accent);color:white;font-weight:700}
+.btn.secondary{background:var(--panel2);border:1px solid var(--line)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.avatar{width:38px;height:38px;border-radius:50%;object-fit:cover;
+background:var(--panel2)}
+.layout{display:grid;grid-template-columns:220px 1fr;min-height:calc(100vh - 68px)}
+.sidebar{padding:22px 14px;border-right:1px solid var(--line)}
+.nav{width:100%;text-align:left;border:0;background:none;color:var(--muted);
+padding:13px;border-radius:10px;margin-bottom:5px}
+.nav.active,.nav:hover{background:var(--panel2);color:white}
+.main{padding:25px;min-width:0;max-width:1500px;width:100%;margin:auto}
+.hero{padding:30px;border:1px solid #39305e;border-radius:20px;
+background:radial-gradient(circle at 85% 20%,#5944a5 0,transparent 36%),
+linear-gradient(120deg,#1c1936,#151a2c);margin-bottom:25px}
+.hero h1{font-size:clamp(28px,5vw,44px);margin:0 0 8px}
+.hero p{color:#c4c1df;max-width:550px}
+.sectionhead{display:flex;align-items:center;justify-content:space-between;
+gap:12px;margin:25px 0 14px}
+.sectionhead h2{font-size:20px;margin:0}
+.search{background:var(--panel);border:1px solid var(--line);
+color:white;padding:12px 14px;border-radius:10px;width:min(100%,280px)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(205px,1fr));gap:16px}
+.game{background:var(--panel);border:1px solid var(--line);
+border-radius:15px;overflow:hidden;cursor:pointer;transition:.2s}
+.game:hover{transform:translateY(-3px);border-color:#7965d9}
+.game img{width:100%;height:130px;object-fit:cover;background:var(--panel2)}
+.gameinfo{padding:13px}
+.gameinfo h3{margin:0 0 5px;font-size:16px}
+.muted{color:var(--muted);font-size:13px}
+.panel{background:var(--panel);border:1px solid var(--line);
+border-radius:15px;padding:18px;margin-bottom:16px}
+.profilehead{display:flex;align-items:center;gap:14px}
+.profilehead .avatar{width:62px;height:62px}
+.row{display:flex;align-items:center;justify-content:space-between;
+gap:10px;padding:12px 0;border-bottom:1px solid var(--line)}
+.row:last-child{border-bottom:0}
+.rowinfo{min-width:0;flex:1}
+.rowinfo strong{display:block;overflow-wrap:anywhere}
+.tag{font-size:11px;color:var(--green)}
+input{background:#0b0f19;border:1px solid var(--line);
+color:white;padding:12px;border-radius:9px;min-width:0}
+.formrow{display:flex;gap:8px;margin:12px 0}
+.formrow input{flex:1;width:100%}
+.hidden{display:none!important}
+#gameOverlay{position:fixed;inset:0;background:#05060a;
+z-index:30;display:flex;flex-direction:column}
+.gamebar{height:58px;display:flex;align-items:center;
+justify-content:space-between;padding:8px 14px}
+#gameFrame{width:100%;height:calc(100% - 58px);border:0;background:white}
+.notice{padding:12px;border-radius:10px;background:#211d37;
+color:#d9d2ff;margin:12px 0;font-size:13px}
+.empty{padding:28px;text-align:center;color:var(--muted);
+border:1px dashed var(--line);border-radius:12px}
+footer{color:var(--muted);font-size:12px;padding:30px 0}
+@media(max-width:720px){
+ .layout{grid-template-columns:1fr}
+ .sidebar{display:flex;overflow:auto;padding:8px;border-right:0;
+ border-bottom:1px solid var(--line)}
+ .nav{white-space:nowrap;width:auto;margin:0 3px}
+ .main{padding:15px}
+ .topbar{padding:0 12px}
+ .hero{padding:22px}
+ .search{width:100%}
+ .sectionhead{align-items:stretch;flex-direction:column}
 }
 </style>
- 
-<script defer src="./engine/playhub-sdk.js"></script>
-<script defer src="./engine/discovery.js"></script>
-<script defer src="./engine/game-loader.js"></script>
-<script defer src="./engine/ui.js"></script>
 </head>
 
 <body>
-<div id="playhub-app">
-  <div style="padding:40px;color:white">Loading PlayHub...</div>
+
+<header class="topbar">
+  <div class="logo">PLAY<span>HUB</span></div>
+  <div class="actions">
+    <span id="userName" class="muted">Guest Player</span>
+    <img id="userAvatar" class="avatar hidden" alt="Player">
+    <button id="loginBtn" class="btn">Google Login</button>
+    <button id="logoutBtn" class="btn secondary hidden">Logout</button>
+  </div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar">
+    <button class="nav active" data-page="home">⌂ Home</button>
+    <button class="nav" data-page="games">🎮 Games</button>
+    <button class="nav" data-page="friends">👥 Friends</button>
+    <button class="nav" data-page="profile">👤 Profile</button>
+  </aside>
+
+  <main class="main">
+    <section id="homePage">
+      <div class="hero">
+        <h1>Your gaming universe.</h1>
+        <p>Discover games, meet players and build your PlayHub identity.</p>
+        <button class="btn" onclick="showPage('games')">Explore Games →</button>
+      </div>
+
+      <div class="sectionhead">
+        <h2>Discover Games</h2>
+        <input id="gameSearch" class="search" placeholder="Search games...">
+      </div>
+      <div id="homeGames" class="grid">
+        <div class="empty">Loading games...</div>
+      </div>
+    </section>
+
+    <section id="gamesPage" class="hidden">
+      <div class="sectionhead">
+        <h2>All Games</h2>
+        <input id="allSearch" class="search" placeholder="Search games...">
+      </div>
+      <div id="allGames" class="grid">
+        <div class="empty">Loading games...</div>
+      </div>
+    </section>
+
+    <section id="friendsPage" class="hidden">
+      <div class="hero">
+        <h1>Play together.</h1>
+        <p>Find players by their unique PlayHub username.</p>
+      </div>
+
+      <div class="panel">
+        <h2>Find Players</h2>
+        <div class="formrow">
+          <input id="playerSearch" placeholder="Enter exact username">
+          <button id="searchPlayerBtn" class="btn">Search</button>
+        </div>
+        <div id="searchResult"></div>
+      </div>
+
+      <div class="panel">
+        <h2>Friend Requests</h2>
+        <div id="requestsList"><div class="empty">Login to view requests.</div></div>
+      </div>
+
+      <div class="panel">
+        <h2>My Friends</h2>
+        <div id="friendsList"><div class="empty">Login to view friends.</div></div>
+      </div>
+    </section>
+
+    <section id="profilePage" class="hidden">
+      <h2>My Player Profile</h2>
+      <div id="profileContent" class="panel">
+        <div class="empty">Login to view your profile.</div>
+      </div>
+    </section>
+
+    <footer>PLAYHUB · Your games. Your people. Your universe.</footer>
+  </main>
 </div>
-</body>
-</html>
+
+<div id="gameOverlay" class="hidden">
+  <div class="gamebar">
+    <strong id="playingTitle">Playing</strong>
+    <div class="actions">
+      <button id="fullscreenBtn" class="btn secondary">Fullscreen</button>
+      <button id="closeGameBtn" class="btn">Back to Hub</button>
+    </div>
+  </div>
+  <iframe id="gameFrame" allow="fullscreen; autoplay; gamepad"
+    title="PlayHub game"></iframe>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+
+<script>
+"use strict";
+
+/* FIREBASE */
+const firebaseConfig = {
+  apiKey: "AIzaSyB_pZ9WfVSx2XHuDeSZ7VrwEr-Pz_m_2QM",
+  authDomain: "play-hub-688e8.firebaseapp.com",
+  projectId: "play-hub-688e8",
+  storageBucket: "play-hub-688e8.firebasestorage.app",
+  messagingSenderId: "195222206861",
+  appId: "1:195222206861:web:828a8cf16991f982a925c4",
+  measurementId: "G-HDGCFBSDQH"
+};
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+const serverTime = () =>
+  firebase.firestore.FieldValue.serverTimestamp();
+
+let currentUser = null;
+let allGames = [];
+let currentPage = "home";
+
+const $ = id => document.getElementById(id);
+const safe = value => String(value || "").replace(/[&<>"']/g, c => ({
+  "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+}[c]));
+
+function showPage(page) {
+  if (["friends","profile"].includes(page) && !currentUser) {
+    alert("Please login first.");
+    return;
+  }
+
+  currentPage = page;
+  ["home","games","friends","profile"].forEach(name => {
+    $(name + "Page").classList.toggle("hidden", name !== page);
+  });
+
+  document.querySelectorAll(".nav").forEach(button => {
+    button.classList.toggle("active", button.dataset.page === page);
+  });
+
+  if (page === "friends") loadSocial();
+  if (page === "profile") loadProfile();
+}
+
+window.showPage = showPage;
+
+document.querySelectorAll(".nav").forEach(button => {
+  button.addEventListener("click", () => showPage(button.dataset.page));
+});
+
+/* AUTH */
+$("loginBtn").onclick = async () => {
+  try {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    provider.setCustomParameters({prompt:"select_account"});
+    await auth.signInWithPopup(provider);
+  } catch(error) {
+    console.error(error);
+    alert("Login failed: " + error.message);
+  }
+};
+
+$("logoutBtn").onclick = async () => {
+  try {
+    await auth.signOut();
+  } catch(error) {
+    alert(error.message);
+  }
+};
+
+auth.onAuthStateChanged(async user => {
+  currentUser = user || null;
+
+  $("loginBtn").classList.toggle("hidden", !!user);
+  $("logoutBtn").classList.toggle("hidden", !user);
+  $("userAvatar").classList.toggle("hidden", !user);
+  $("userName").textContent = user ? user.displayName || "Player" : "Guest Player";
+
+  if (user) {
+    $("userAvatar").src = user.photoURL || "";
+    try {
+      await ensurePlayerProfile(user);
+    } catch(error) {
+      console.error("Profile setup:", error);
+      alert("Profile setup failed: " + error.message);
+    }
+  } else {
+    $("userAvatar").removeAttribute("src");
+    if (["friends","profile"].includes(currentPage)) showPage("home");
+  }
+
+  if (currentPage === "friends" && user) loadSocial();
+  if (currentPage === "profile" && user) loadProfile();
+});
+
+/* FIRST PLAYER PROFILE */
+async function ensurePlayerProfile(user) {
+  const userRef = db.collection("users").doc(user.uid);
+  const snap = await userRef.get();
+
+  if (snap.exists) return;
+
+  let username = "";
+
+  while (!username) {
+    const answer = prompt(
+      "Choose your unique PlayHub username (3-20 letters, numbers or underscores):"
+    );
+
+    if (answer === null) {
+      alert("You need a username to finish creating your PlayHub profile.");
+      await auth.signOut();
+      return;
+    }
+
+    const candidate = answer.trim().toLowerCase();
+
+    if (!/^[a-z0-9_]{3,20}$/.test(candidate)) {
+      alert("Use 3-20 lowercase letters, numbers or underscores.");
+      continue;
+    }
+
+    const nameRef = db.collection("usernames").doc(candidate);
+
+    try {
+      await db.runTransaction(async transaction => {
+        const nameSnap = await transaction.get(nameRef);
+        if (nameSnap.exists) throw new Error("Username is already taken.");
+
+        transaction.set(nameRef, {uid:user.uid});
+
+        transaction.set(userRef, {
+          displayName:user.displayName || "Player",
+          photoURL:user.photoURL || null,
+          username:candidate,
+          bio:"",
+          createdAt:serverTime(),
+          updatedAt:serverTime()
+        });
+      });
+
+      username = candidate;
+    } catch(error) {
+      alert(error.message);
+    }
+  }
+}
+
+/* PLAYER PROFILE */
+async function loadProfile() {
+  if (!currentUser) return;
+
+  const snap = await db.collection("users").doc(currentUser.uid).get();
+  if (!snap.exists) return;
+
+  const data = snap.data();
+
+  $("profileContent").innerHTML = `
+    <div class="profilehead">
+      <img class="avatar" src="${safe(data.photoURL)}" alt="">
+      <div>
+        <h2>${safe(data.displayName)}</h2>
+        <div class="muted">@${safe(data.username)}</div>
+      </div>
+    </div>
+    <div class="notice">Player ID: ${safe(currentUser.uid)}</div>
+    <p>${safe(data.bio || "No bio added yet.")}</p>
+    <div class="formrow">
+      <input id="bioInput" maxlength="120" placeholder="Write a short bio"
+        value="${safe(data.bio || "")}">
+      <button class="btn" id="saveBioBtn">Save</button>
+    </div>
+    <p class="muted">Google account: ${safe(currentUser.email)}</p>
+  `;
+
+  $("saveBioBtn").onclick = async () => {
+    try {
+      await db.collection("users").doc(currentUser.uid).update({
+        bio:$("bioInput").value.trim(),
+        updatedAt:serverTime()
+      });
+      alert("Profile updated!");
+      loadProfile();
+    } catch(error) {
+      alert(error.message);
+    }
+  };
+}
+
+/* FIND PLAYERS */
+$("searchPlayerBtn").onclick = searchPlayer;
+$("playerSearch").addEventListener("keydown", event => {
+  if (event.key === "Enter") searchPlayer();
+});
+
+async function searchPlayer() {
+  if (!currentUser) return alert("Login first.");
+
+  const username = $("playerSearch").value.trim().toLowerCase();
+  if (!/^[a-z0-9_]{3,20}$/.test(username)) {
+    return alert("Enter a valid username.");
+  }
+
+  const result = $("searchResult");
+  result.textContent = "Searching...";
+
+  try {
+    const nameSnap = await db.collection("usernames").doc(username).get();
+
+    if (!nameSnap.exists || nameSnap.data().uid === currentUser.uid) {
+      result.innerHTML = '<div class="empty">Player not found.</div>';
+      return;
+    }
+
+    const uid = nameSnap.data().uid;
+    const userSnap = await db.collection("users").doc(uid).get();
+
+    if (!userSnap.exists) {
+      result.innerHTML = '<div class="empty">Player profile unavailable.</div>';
+      return;
+    }
+
+    const player = userSnap.data();
+    result.innerHTML = `
+      <div class="row">
+        <div class="rowinfo">
+          <strong>${safe(player.displayName)}</strong>
+          <span class="muted">@${safe(player.username)}</span>
+        </div>
+        <button class="btn" id="sendRequestBtn">Add Friend</button>
+      </div>
+    `;
+
+    $("sendRequestBtn").onclick = () => sendFriendRequest(uid);
+
+  } catch(error) {
+    console.error(error);
+    result.textContent = "Search failed: " + error.message;
+  }
+}
+
+/* SEND FRIEND REQUEST */
+async function sendFriendRequest(targetUid) {
+  if (!currentUser || targetUid === currentUser.uid) return;
+
+  const requestId = currentUser.uid + "_" + targetUid;
+  const reverseId = targetUid + "_" + currentUser.uid;
+
+  try {
+    const requestRef = db.collection("friendRequests").doc(requestId);
+    const reverseRef = db.collection("friendRequests").doc(reverseId);
+
+    const existing = await requestRef.get();
+    const reverse = await reverseRef.get();
+
+    if (existing.exists || reverse.exists) {
+      return alert("A friend request already exists.");
+    }
+
+    await requestRef.set({
+      fromUid:currentUser.uid,
+      toUid:targetUid,
+      status:"pending",
+      createdAt:serverTime()
+    });
+
+    alert("Friend request sent!");
+  } catch(error) {
+    alert("Could not send request: " + error.message);
+  }
+}
+
+/* FRIEND REQUESTS + FRIEND LIST */
+async function loadSocial() {
+  if (!currentUser) return;
+
+  $("requestsList").innerHTML = '<div class="muted">Loading...</div>';
+  $("friendsList").innerHTML = '<div class="muted">Loading...</div>';
+
+  try {
+    const requests = await db.collection("friendRequests")
+      .where("toUid","==",currentUser.uid)
+      .where("status","==","pending").get();
+
+    if (requests.empty) {
+      $("requestsList").innerHTML = '<div class="empty">No pending requests.</div>';
+    } else {
+      $("requestsList").innerHTML = "";
+      for (const request of requests.docs) {
+        const data = request.data();
+        const playerSnap = await db.collection("users").doc(data.fromUid).get();
+        if (!playerSnap.exists) continue;
+
+        const player = playerSnap.data();
+        const row = document.createElement("div");
+        row.className = "row";
+        row.innerHTML = `
+          <div class="rowinfo">
+            <strong>${safe(player.displayName)}</strong>
+            <span class="muted">@${safe(player.username)}</span>
+          </div>
+          <button class="btn">Accept</button>
+        `;
+        row.querySelector("button").onclick =
+          () => acceptRequest(request.id, data.fromUid);
+        $("requestsList").appendChild(row);
+      }
+    }
+
+    const friends = await db.collection("friendships")
+      .doc(currentUser.uid).collection("friends").get();
+
+    if (friends.empty) {
+      $("friendsList").innerHTML = '<div class="empty">No friends yet.</div>';
+    } else {
+      $("friendsList").innerHTML = "";
+      for (const friendDoc of friends.docs) {
+        const playerSnap = await db.collection("users")
+          .doc(friendDoc.id).get();
+
+        if (!playerSnap.exists) continue;
+        const player = playerSnap.data();
+        const row = document.createElement("div");
+        row.className = "row";
+        row.innerHTML = `
+          <div class="rowinfo">
+            <strong>${safe(player.displayName)}</strong>
+            <span class="muted">@${safe(player.username)}</span>
+          </div>
+          <span class="tag">FRIEND</span>
+        `;
+        $("friendsList").appendChild(row);
+      }
+    }
+
+  } catch(error) {
+    console.error(error);
+    $("requestsList").textContent = error.message;
+    $("friendsList").textContent = error.message;
+  }
+}
+
+/* ACCEPT REQUEST */
+async function acceptRequest(requestId, senderUid) {
+  if (!currentUser) return;
+
+  try {
+    const requestRef = db.collection("friendRequests").doc(requestId);
+    const snap = await requestRef.get();
+
+    if (!snap.exists || snap.data().toUid !== currentUser.uid) {
+      throw new Error("Request not found.");
+    }
+
+    await requestRef.update({status:"accepted"});
+
+    const batch = db.batch();
+    const now = serverTime();
+
+    const myFriendRef = db.collection("friendships")
+      .doc(currentUser.uid).collection("friends").doc(senderUid);
+
+    const theirFriendRef = db.collection("friendships")
+      .doc(senderUid).collection("friends").doc(currentUser.uid);
+
+    batch.set(myFriendRef,{uid:senderUid,createdAt:now});
+    batch.set(theirFriendRef,{uid:currentUser.uid,createdAt:now});
+
+    await batch.commit();
+
+    alert("Friend added!");
+    loadSocial();
+  } catch(error) {
+    console.error(error);
+    alert("Could not accept request: " + error.message);
+  }
+}
+
+/* GITHUB GAME DISCOVERY */
+async function discoverGames() {
+  const url =
+    "https://api.github.com/repos/Ranit-rex/test-Gameonix/git/trees/main?recursive=1";
+
+  try {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error("GitHub API unavailable.");
+
+    const data = await response.json();
+    const paths = (data.tree || [])
+      .filter(item => /^games\/[^/]+\/index\.html$/.test(item.path));
+
+    allGames = paths.map(item => {
+      const slug = item.path.split("/")[1];
+      return {
+        slug,
+        title:slug.replace(/[-_]/g," ").replace(/\b\w/g,c=>c.toUpperCase()),
+        url:"./games/" + slug + "/",
+        image:""
+      };
+    });
+
+    renderGames(allGames);
+  } catch(error) {
+    console.error(error);
+    $("homeGames").innerHTML =
+      '<div class="empty">Could not load games. Please refresh.</div>';
+    $("allGames").innerHTML =
+      '<div class="empty">Could not load games. Please refresh.</div>';
+  }
+}
+
+function renderGames(games) {
+  const html = games.length ? games.map(game => `
+    <article class="game" data-url="${safe(game.url)}"
+      data-title="${safe(game.title)}">
+      <img src="${safe(game.image)}"
+        onerror="this.style.display='none'" alt="">
+      <div class="gameinfo">
+        <h3>${safe(game.title)}</h3>
+        <div class="muted">PlayHub Game</div>
+        <p><span class="tag">▶ PLAY NOW</span></p>
+      </div>
+    </article>
+  `).join("") : '<div class="empty">No games found 
