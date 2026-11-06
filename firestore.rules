@@ -23,15 +23,18 @@ service cloud.firestore {
 
     match /usernames/{username} {
       allow read: if signedIn();
-      allow create, update: if signedIn() &&
+      allow create: if signedIn() &&
+        request.resource.data.uid == request.auth.uid &&
+        request.resource.data.username == username;
+      allow update: if signedIn() && resource.data.uid == request.auth.uid &&
         request.resource.data.uid == request.auth.uid &&
         request.resource.data.username == username;
       allow delete: if signedIn() && resource.data.uid == request.auth.uid;
     }
 
     match /friendRequests/{requestId} {
-      allow read: if signedIn() &&
-        (resource.data.fromUid == request.auth.uid || resource.data.toUid == request.auth.uid);
+      allow read: if signedIn() && (resource == null ||
+        resource.data.fromUid == request.auth.uid || resource.data.toUid == request.auth.uid);
       allow create: if signedIn() &&
         request.resource.data.keys().hasOnly(['fromUid', 'toUid', 'status', 'createdAt']) &&
         request.resource.data.fromUid == request.auth.uid &&
@@ -53,10 +56,7 @@ service cloud.firestore {
       allow read: if owner(uid);
       allow create: if signedIn() &&
         (owner(uid) || owner(friendUid)) &&
-        acceptedRequestAfter(uid, friendUid) || (
-          signedIn() && (owner(uid) || owner(friendUid)) &&
-          acceptedRequestAfter(friendUid, uid)
-        );
+        (acceptedRequestAfter(uid, friendUid) || acceptedRequestAfter(friendUid, uid));
       allow delete: if signedIn() && (owner(uid) || owner(friendUid));
       allow update: if false;
     }
