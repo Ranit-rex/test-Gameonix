@@ -16,7 +16,7 @@
 <div id="welcome" class="muted">Connecting to your PlayHub account…</div>
 <div class="row" style="margin-top:14px"><button id="soloBtn" class="ghost">▶ Play Solo</button><button id="createBtn" disabled>＋ Create room</button><button id="refreshBtn" class="ghost">↻ Refresh</button></div>
 <div class="roomlist" id="rooms"><div class="muted">Loading public rooms…</div></div>
-<div class="hint">Choose Solo anytime, or sign in on PlayHub to create/join an online room (up to 8 players).</div>
+<div class="hint">PC: WASD / Arrow keys to move · Space to jump. Mobile: D-pad + JUMP. Jump just before each red wall. Sign in to create/join an online room (up to 8 players).</div>
 <div id="status" class="status">Connecting…</div>
 </div></div>
 <div id="hud" class="hud">
@@ -72,7 +72,7 @@ function loop(){
  if(position.y<=ground){position.y=ground;velocityY=0;onGround=true}else onGround=false;
  const nearest=Math.round(position.x/5),onPlatform=position.x>=-2.5&&position.x<=88&&Math.abs(position.x-nearest*5)<=2.56;
  let hitHazard=false;
- if(onPlatform&&position.y<2.12){
+ if(onPlatform&&position.y<1.93){
   for(const o of scene.children){if(!o.userData.hazard)continue;
    const overlapsX=Math.abs(position.x-o.position.x)<.72,overlapsZ=Math.abs(position.z-o.position.z)<2.88;
    if(overlapsX&&overlapsZ){hitHazard=true;break}
