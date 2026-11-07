@@ -8,7 +8,7 @@
       <aside class="ph-sidebar">
         <div class="ph-brand">
           <div class="ph-logo">P</div>
-          <span class="ph-brand-name">Playbrix</span>
+          <span class="ph-brand-name">Playovia</span>
         </div>
 
         <div class="ph-side-label">MENU</div>
@@ -26,7 +26,7 @@
         </button>
 
         <div class="ph-sidebar-bottom">
-          <div class="ph-side-label">PLAYBRIX</div>
+          <div class="ph-side-label">PLAYOVIA</div>
           <button class="ph-nav">
             <span class="ph-nav-icon">⚙</span>
             <span class="ph-nav-text">Settings</span>
@@ -45,7 +45,7 @@
             <input id="ph-search" placeholder="Search games...">
           </div>
           <div class="ph-top-right">
-            <span class="ph-online">● PLAYBRIX ONLINE</span>
+            <span class="ph-online">● PLAYOVIA ONLINE</span>
             <div class="ph-avatar">P</div>
           </div>
         </header>
@@ -59,7 +59,7 @@
 
           <section class="ph-hero">
             <div class="ph-hero-content">
-              <span class="ph-hero-tag">✦ WELCOME TO PLAYBRIX</span>
+              <span class="ph-hero-tag">✦ WELCOME TO PLAYOVIA</span>
               <h2>One platform.<br>Endless adventures.</h2>
               <p>Your next favourite game is waiting. Explore the collection and jump right in.</p>
               <button id="ph-explore">Explore games ↓</button>
@@ -85,14 +85,14 @@
           </section>
 
           <footer class="ph-footer">
-            © 2026 Playbrix · Play Beyond Limits
+            © 2026 Playovia · Play Beyond Limits
           </footer>
         </div>
       </main>
 
       <section class="ph-game-view" id="ph-game-view" hidden>
         <header class="ph-game-bar">
-          <button id="ph-back">← Back to Playbrix</button>
+          <button id="ph-back">← Back to Playovia</button>
           <strong id="ph-game-title">Loading game...</strong>
           <button id="ph-fullscreen">⛶ Fullscreen</button>
         </header>
@@ -274,7 +274,7 @@
     if (error) {
       status.textContent =
         "Game discovery failed. Please check your internet connection.";
-      console.error("Playbrix discovery:", error);
+      console.error("Playovia discovery:", error);
       return;
     }
 
