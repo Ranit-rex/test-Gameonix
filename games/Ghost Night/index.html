@@ -3086,7 +3086,7 @@ function renderMapList(){
   b.className='mode map r'+i+(sel?' sel':'')+(ok?' ok':' lock');
   const badge=sel?ic('check')+'Selected':!ok?ic('lock')+'Locked':'';
   b.innerHTML='<span class="mico">'+ic(ok?MAPICO[i]:'lock')+'</span><span class="mtxt"><b>'+m.n+'</b><span class="d">'+(ok?m.d:'Reach dawn '+(m.unlock>1?m.unlock+' times':'once')+' to open this realm.')+'</span><span class="m">'+MAPSIZE[i]+' · '+m.shrines+' shrines · +'+Math.round((m.rew-1)*100)+'% embers</span>'+(badge?'<span class="badge">'+badge+'</span>':'')+'</span>';
-  b.onclick=()=>{if(!ok)return;save.map=m.id;persist();setMap(m.id);sfx('treat');renderMapList();menuInfo()};
+  b.onclick=()=>{if(!ok)return;save.map=m.id;persist();setMap(m.id);sfx('treat');toMenu()};
   box.appendChild(b);
  });
 }
