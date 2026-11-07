@@ -502,7 +502,7 @@ function persist(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(save))}catch
 
 /* ---------- Ghost Night multiplayer (isolated from the solo save/gameplay path) ---------- */
 const GH_FIREBASE={apiKey:'AIzaSyB_pZ9WfVSx2XHuDeSZ7VrwEr-Pz_m_2QM',authDomain:'play-hub-688e8.firebaseapp.com',databaseURL:'https://play-hub-688e8-default-rtdb.asia-southeast1.firebasedatabase.app',projectId:'play-hub-688e8',storageBucket:'play-hub-688e8.firebasestorage.app',messagingSenderId:'195222206861',appId:'1:195222206861:web:828a8cf16991f982a925c4'};
-const MP={busy:false,active:false,uid:null,name:'',roomId:null,roomRef:null,memberRef:null,slotRef:null,playerRef:null,playersRef:null,listener:null,remotes:{},slot:0,sendT:0,beatT:0,isHost:false};
+const MP={busy:false,active:false,uid:null,name:'',roomId:null,roomRef:null,memberRef:null,slotRef:null,playerRef:null,playersRef:null,listener:null,remotes:{},slot:0,sendT:0,beatT:0,isHost:false,hostUid:null,world:null,worldT:0,enemySeq:0,hitSeq:0,hitQueue:[],hitSeen:{}};
 function mpStatus(t){const e=$('mpStatus');if(e)e.textContent=t}
 function mpLoadScript(src){return new Promise((resolve,reject)=>{const sc=document.createElement('script');sc.src=src;sc.async=true;sc.onload=resolve;sc.onerror=()=>reject(new Error('Could not load '+src));document.head.appendChild(sc)})}
 async function mpFirebase(){
@@ -537,7 +537,7 @@ async function mpConnect(){
   for(const [id,data] of Object.entries(rooms)){
    if(!data||data.game!=='ghostnight'||data.status!=='live'||data.map!==save.map||Number(data.diff)!==Number(save.diff)||!data.lastSeen||now-data.lastSeen>45000||data.hostUid===user.uid)continue;
    const ref=root.child(id),claimed=await mpClaimSlot(ref,user,name);if(!claimed)continue;
-   chosen={id,ref,slot:claimed.slot,slotRef:claimed.slotRef,isHost:false};break;
+   chosen={id,ref,slot:claimed.slot,slotRef:claimed.slotRef,isHost:false,hostUid:data.hostUid};break;
   }
   if(!chosen){
    const ref=root.push(),id=ref.key,member={name,joinedAt:now,lastSeen:now};
@@ -546,11 +546,11 @@ async function mpConnect(){
   }else{
    await chosen.ref.child('members/'+user.uid).set({name,joinedAt:now,lastSeen:now});
   }
-  MP.uid=user.uid;MP.name=name;MP.roomId=chosen.id;MP.roomRef=chosen.ref;MP.memberRef=chosen.ref.child('members/'+user.uid);MP.slotRef=chosen.slotRef;MP.playerRef=db.ref('ghostnight/players/'+chosen.id+'/'+user.uid);MP.playersRef=db.ref('ghostnight/players/'+chosen.id);MP.slot=chosen.slot;MP.isHost=chosen.isHost;MP.active=true;
+  MP.uid=user.uid;MP.name=name;MP.roomId=chosen.id;MP.roomRef=chosen.ref;MP.hostUid=chosen.hostUid||user.uid;MP.memberRef=chosen.ref.child('members/'+user.uid);MP.slotRef=chosen.slotRef;MP.playerRef=db.ref('ghostnight/players/'+chosen.id+'/'+user.uid);MP.playersRef=db.ref('ghostnight/players/'+chosen.id);MP.slot=chosen.slot;MP.isHost=chosen.isHost;MP.active=true;
   const cleanup=[()=>MP.memberRef.onDisconnect().remove(),()=>MP.slotRef.onDisconnect().remove(),()=>MP.playerRef.onDisconnect().remove()];
   if(MP.isHost)cleanup.push(()=>MP.roomRef.child('status').onDisconnect().set('closed'));
   for(const task of cleanup){try{await task()}catch(e){console.warn('Ghost Night disconnect cleanup unavailable:',e)}}
-  MP.playersRef.on('value',v=>{const all=v.val()||{},next={};for(const [uid,p] of Object.entries(all)){if(uid!==MP.uid&&p&&Date.now()-(p.updatedAt||0)<10000)next[uid]=p}MP.remotes=next},e=>console.warn('Ghost Night teammate listener:',e));
+  MP.playersRef.on('value',v=>{const all=v.val()||{},next={};for(const [uid,p] of Object.entries(all)){if(uid!==MP.uid&&p&&Date.now()-(p.updatedAt||0)<10000){next[uid]=p;if(!MP.isHost&&uid===MP.hostUid&&p.world)MP.world=p.world}}MP.remotes=next},e=>console.warn('Ghost Night teammate listener:',e));
   MP.listener=true;
   await MP.playerRef.set({name,x:0,y:130,face:1,hp:100,max:100,cos:save.costume,color:mpColor(user.uid),updatedAt:Date.now()});
   mpStatus('Match found · slot '+(MP.slot+1)+'/4 · starting…');
@@ -559,10 +559,35 @@ async function mpConnect(){
  }catch(e){console.error('Ghost Night multiplayer:',e);mpStatus('Multiplayer error: '+(e.message||'Could not connect'))}
  finally{MP.busy=false;if(b)b.disabled=false}
 }
+function mpWorldSnapshot(){
+ const g=G;if(!g)return null;
+ return {t:g.t,time:g.time,hour:g.hour,lastHour:g.lastHour,spawnT:g.spawnT,surgeAt:g.surgeAt,surgeW:g.surgeW,mod:g.mod,night:g.night,bgap:g.bgap,bs:g.bs,enemies:g.enemies.map(e=>({...e})),ebul:g.ebul.map(e=>({...e})),items:g.items.map(e=>({...e})),orbs:g.orbs.map(e=>({...e})),shrines:g.shrines.map(e=>({...e})),haz:g.haz.map(e=>({...e})),gold:g.gold?{...g.gold}:null,bossId:g.boss&&g.boss.mid||null};
+}
+function mpProcessHits(){
+ if(!MP.active||!MP.isHost||!G)return;
+ for(const [uid,rp] of Object.entries(MP.remotes)){
+  const hits=Array.isArray(rp.hits)?rp.hits:[];let seen=MP.hitSeen[uid]||0;
+  for(const h of hits){if(!h||!Number.isFinite(h.seq)||h.seq<=seen)continue;seen=h.seq;const e=G.enemies.find(q=>q.mid===h.mid&&!q.dead);if(!e)continue;e.hp-=Math.max(0,Number(h.dmg)||0);e.fl=.1;if(!e.boss){e.kx+=(Number(h.kx)||0);e.ky+=(Number(h.ky)||0)}if(e.hp<=0)killE(e)}
+  MP.hitSeen[uid]=seen;
+ }
+}
+function mpApplyWorld(){
+ if(!MP.active||MP.isHost||!G||!MP.world)return;
+ const w=MP.world,g=G;
+ if(!w||!Array.isArray(w.enemies))return;
+ g.t=Number(w.t)||0;g.time=Number(w.time)||g.t;g.hour=Number(w.hour)||0;g.lastHour=Number(w.lastHour)||0;g.spawnT=Number(w.spawnT)||0;g.surgeAt=Number(w.surgeAt)||-1;g.surgeW=!!w.surgeW;g.mod=w.mod||g.mod;g.night=Number(w.night)||g.night;g.bgap=Number(w.bgap)||0;g.bs=w.bs||g.bs;
+ g.enemies=w.enemies.map(e=>({...e}));g.boss=w.bossId?g.enemies.find(e=>e.mid===w.bossId)||null:null;
+ g.ebul=(w.ebul||[]).map(e=>({...e}));g.items=(w.items||[]).map(e=>({...e}));g.orbs=(w.orbs||[]).map(e=>({...e}));g.shrines=(w.shrines||[]).map(e=>({...e}));g.haz=(w.haz||[]).map(e=>({...e}));g.gold=w.gold?{...w.gold}:null;
+}
 function mpTick(dt){
  if(!MP.active||!G||!MP.playerRef)return;
- MP.sendT-=dt;MP.beatT-=dt;
- if(MP.sendT<=0){MP.sendT=.14;const p=G.p;MP.playerRef.update({name:MP.name,x:p.x,y:p.y,face:p.face||1,hp:Math.round(p.hp),max:Math.round(p.max),cos:p.cos||save.costume,color:mpColor(MP.uid),moving:!!p.moving,updatedAt:Date.now()}).catch(e=>console.warn('Ghost Night position sync:',e))}
+ MP.sendT-=dt;MP.beatT-=dt;MP.worldT-=dt;
+ if(MP.isHost)mpProcessHits();
+ if(MP.sendT<=0){MP.sendT=.14;const p=G.p,patch={name:MP.name,x:p.x,y:p.y,face:p.face||1,hp:Math.round(p.hp),max:Math.round(p.max),cos:p.cos||save.costume,color:mpColor(MP.uid),moving:!!p.moving,updatedAt:Date.now()};
+  if(MP.hitQueue.length){const sent=MP.hitQueue.slice();patch.hits=sent;MP.playerRef.update(patch).then(()=>{MP.hitQueue.splice(0,sent.length)}).catch(e=>console.warn('Ghost Night hit sync:',e))}
+  else MP.playerRef.update(patch).catch(e=>console.warn('Ghost Night position sync:',e));
+ }
+ if(MP.isHost&&MP.worldT<=0){MP.worldT=.28;MP.playerRef.update({world:mpWorldSnapshot()}).catch(e=>console.warn('Ghost Night world sync:',e))}
  if(MP.beatT<=0){MP.beatT=3;const now=Date.now();MP.memberRef.update({lastSeen:now}).catch(()=>{});if(MP.isHost)MP.roomRef.update({lastSeen:now}).catch(()=>{})}
 }
 async function mpLeave(closed){
@@ -1152,7 +1177,7 @@ function mkEnemy(type,x,y){
  if(g.mod==='swarm'&&!boss)k*=.7;
  if(g.mod==='still'&&boss)k*=1.3;
  const spd=g.mod==='blood'?1.2:1;
- const e={type,x,y,r:s.r,hp:s.hp*k,max:s.hp*k,sp:s.sp*spd*(boss?1:rnd(.9,1.12)),dmg:s.dmg,xp:s.xp,boss,age:0,fl:0,wc:0,kx:0,ky:0,ph:rnd(0,6),t1:rnd(1,3),t2:3,spiral:0,sa:0,cs:0,ct:rnd(0,1.5),dx:0,dy:1,dead:false};
+ const e={mid:MP.active&&MP.isHost?++MP.enemySeq:null,type,x,y,r:s.r,hp:s.hp*k,max:s.hp*k,sp:s.sp*spd*(boss?1:rnd(.9,1.12)),dmg:s.dmg,xp:s.xp,boss,age:0,fl:0,wc:0,kx:0,ky:0,ph:rnd(0,6),t1:rnd(1,3),t2:3,spiral:0,sa:0,cs:0,ct:rnd(0,1.5),dx:0,dy:1,dead:false};
  e.dmg*=g.df.dmg*1.35*(1+g.hour*.035);e.sp*=1+Math.min(.4,g.hour*.025)+g.night*.025;
  if(!boss&&type!=='mini'&&Math.random()<g.df.elite){e.elite=true;e.hp*=3;e.max=e.hp;e.r*=1.25;e.xp*=3;e.dmg*=1.2;if(g.hour>=3&&Math.random()<.6){e.aff=AFFIX[Math.floor(Math.random()*AFFIX.length)];if(e.aff==='swift')e.sp*=1.45;if(e.aff==='guard'){e.hp*=1.8;e.max=e.hp}}}
  if(INTROS[type]&&!g.seen[type]){g.seen[type]=1;caption(INTROS[type],5400)}
@@ -1208,7 +1233,7 @@ function dropItem(x,y,type){
  g.items.push({x,y,type,t:rnd(0,6),life:28});
 }
 function killE(e,noOrb){
- const g=G;if(e.dead)return;e.dead=true;g.kills++;onKill(e);
+ const g=G;if(MP.active&&!MP.isHost)return;if(e.dead)return;e.dead=true;g.kills++;onKill(e);
  if(!noOrb){
   dropOrbs(e);
   if(e.type==='blob'){for(let i=0;i<2;i++){const m=mkEnemy('mini',e.x+rnd(-14,14),e.y+rnd(-14,14));m.kx=rnd(-120,120);m.ky=rnd(-120,120);g.enemies.push(m)}}
@@ -1224,7 +1249,9 @@ function killE(e,noOrb){
  }
 }
 function hurtE(e,dmg,kx,ky,crit){
- dmg=dmgMod(e,dmg);dmgNum(e.x,e.y-e.r-4,dmg,crit);e.hp-=dmg;e.fl=.1;if(!e.boss){e.kx+=kx||0;e.ky+=ky||0}
+ dmg=dmgMod(e,dmg);
+ if(MP.active&&!MP.isHost&&e.mid){MP.hitQueue.push({seq:++MP.hitSeq,mid:e.mid,dmg,kx:kx||0,ky:ky||0});if(MP.hitQueue.length>80)MP.hitQueue.shift();dmgNum(e.x,e.y-e.r-4,dmg,crit);e.hp-=dmg;e.fl=.1;spark(e.x,e.y,'#ffd27a',2,80,.3);sfx('hit');return}
+ dmgNum(e.x,e.y-e.r-4,dmg,crit);e.hp-=dmg;e.fl=.1;if(!e.boss){e.kx+=kx||0;e.ky+=ky||0}
  spark(e.x,e.y,'#ffd27a',2,80,.3);sfx('hit');
  if(e.hp<=0)killE(e);
 }
@@ -1834,7 +1861,7 @@ function frame(now){
  let dt=(now-last)/1000;last=now;if(dt>.05)dt=.05;if(dt<0)dt=0;
  TT+=dt;FDT=dt||.016;if(MP.active)mpTick(dt);
  try{
-  if(state==='play'){let sd=dt;if(G&&G.cine){const ns=G.cine.noSlow;cineTick(dt);sd=ns?dt:dt*.15}else if(G&&G.slow>0){G.slow-=dt;sd=dt*.35}update(sd)}
+  if(state==='play'){let sd=dt;if(G&&G.cine){const ns=G.cine.noSlow;cineTick(dt);sd=ns?dt:dt*.15}else if(G&&G.slow>0){G.slow-=dt;sd=dt*.35}update(sd);if(MP.active&&!MP.isHost)mpApplyWorld()}
   if(G)renderGame();else renderMenu();
  }catch(err){console.error(err)}
 }
