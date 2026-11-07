@@ -1020,6 +1020,10 @@ const MAPS=[
  {id:'glacier',n:'Crystal Glacier',d:'A bright frozen basin of blue ice sheets, crystal spires, crevasses and snow ridges.',world:3600,shrines:9,rew:2.05,tint:'rgba(65,160,220,.22)',mix:[.04,.32,.38,.48,.96],unlock:0,fog:1}
 ];
 let CURMAP=MAPS[0];
+function mapAnchor(id=CURMAP.id){
+ const p={fields:[0,0],marsh:[-440,260],barrows:[520,-340],frostfall:[-620,-460],catacombs:[610,540],embercoast:[-260,680],glacier:[680,-650]}[id]||[0,0];
+ return{x:p[0],y:p[1]};
+}
 const props=[],fence=[];
 function genProps(){
  props.length=0;
@@ -1037,13 +1041,14 @@ function genProps(){
   if(id==='barrows'){const ring= Math.round(d/260)*260;x=Math.cos(a)*ring;y=Math.sin(a)*ring}
   if(id==='catacombs'){x=Math.round(x/150)*150+(R()-.5)*36;y=Math.round(y/150)*150+(R()-.5)*36}
   if(id==='glacier'){x=Math.round(x/210)*210+(R()-.5)*45;y=Math.round(y/210)*210+(R()-.5)*45}
+  const anchor=mapAnchor(id);x+=anchor.x;y+=anchor.y;
   props.push({x,y,type,s:.8+R()*.65,v:R(),f:R()<.5?1:-1});
  }
  props.sort((a,b)=>a.y-b.y);
 }
 function genFence(){
  fence.length=0;const n=Math.round(150*WORLD/1500);
- for(let i=0;i<n;i++){const a=i/n*TAU;fence.push({x:Math.cos(a)*WORLD,y:Math.sin(a)*WORLD})}
+ const anchor=mapAnchor();for(let i=0;i<n;i++){const a=i/n*TAU;fence.push({x:anchor.x+Math.cos(a)*WORLD,y:anchor.y+Math.sin(a)*WORLD})}
 }
 const CG=96,cgrid=new Map();
 function genColliders(){
@@ -1395,7 +1400,7 @@ function newGame(){
  const DF=DIFFS[save.diff]||DIFFS[1],up=save.up,night=DF.night,cos=save.costume,hpB=Math.round((100+up.hp*20)*DF.php);
  const g={
   df:DF,t:0,time:0,hour:0,lastHour:-1,night,dead:false,deadT:0,won:false,winT:0,mod:'',
-  p:{x:0,y:130,vx:0,vy:0,hp:hpB,max:hpB,speed:170*(1+up.speed*.06),r:11,face:1,inv:0,dashT:0,dashCd:0,dx:0,dy:1,moving:false,cos,stepT:0},br:BEACON_R*(1+up.beacon*.08),
+  p:{x:mapAnchor().x,y:mapAnchor().y+130,vx:0,vy:0,hp:hpB,max:hpB,speed:170*(1+up.speed*.06),r:11,face:1,inv:0,dashT:0,dashCd:0,dx:0,dy:1,moving:false,cos,stepT:0},br:BEACON_R*(1+up.beacon*.08),
   light:150+up.light*14,
   st:{dmg:1+up.dmg*.1,cd:.7,count:1,pierce:0,wisps:0,pulse:0,magnet:60+up.luck*8+up.magnet*10,regen:up.regen*.25,revive:0,sparks:0,trail:0,dashMul:Math.pow(.92,up.dash),armor:up.armor*.03,crit:up.crit*.03,bomb:0,beam:0,thorn:0,meteor:0,frost:0,vamp:0,exec:0,lk:0},
   lvl:1,xp:0,need:xpNeed(1),pend:up.match,kills:0,embers:0,picks:{},rerolls:1+up.reroll,
@@ -1433,6 +1438,7 @@ function newGame(){
   else if(CURMAP.id==='glacier'){x=Math.round(x/280)*280;y=Math.round(y/180)*180}
   else if(CURMAP.id==='catacombs'){x=Math.round(x/190)*190;y=Math.round(y/190)*190}
   else if(CURMAP.id==='embercoast'){y+=Math.sin(a*2)*WORLD*.16}
+  const anchor=mapAnchor();x+=anchor.x;y+=anchor.y;
   g.shrines.push({x,y,prog:0,cool:0,uses:0,guard:false,rev:false,revT:9,name:SHRN[k%SHRN.length]})
  }
  return g;
@@ -2015,14 +2021,14 @@ function drawWorldBase(t){
  drawDecals(ctx,t);
  drawPlaza(ctx);
  for(const p of props)if(visible(p.x,p.y,80))drawProp(ctx,p,t);
- ctx.fillStyle='rgba(3,2,8,.78)';ctx.beginPath();ctx.rect(cam.x-50,cam.y-50,VW+100,VH+100);ctx.arc(0,0,WORLD+8,0,TAU,true);ctx.fill('evenodd');
+ ctx.fillStyle='rgba(3,2,8,.78)';const anchor=mapAnchor();ctx.beginPath();ctx.rect(cam.x-50,cam.y-50,VW+100,VH+100);ctx.arc(anchor.x,anchor.y,WORLD+8,0,TAU,true);ctx.fill('evenodd');
  ctx.strokeStyle='#2b1f2a';ctx.lineWidth=4;ctx.lineCap='round';
  for(let i=0;i<fence.length;i++){
   const f=fence[i];if(!visible(f.x,f.y,60))continue;const n=fence[(i+1)%fence.length];
   ctx.beginPath();ctx.moveTo(f.x,f.y);ctx.lineTo(f.x,f.y-26);ctx.stroke();
   ctx.beginPath();ctx.moveTo(f.x,f.y-18);ctx.lineTo(n.x,n.y-18);ctx.stroke();
  }
- drawBeacon(ctx,t);
+ ctx.save();const beaconAt=mapAnchor();ctx.translate(beaconAt.x,beaconAt.y);drawBeacon(ctx,t);ctx.restore();
 }
 function fogPass(t,k){
  ctx.save();ctx.setTransform(SC,0,0,SC,0,0);
@@ -2052,14 +2058,14 @@ function edgeArrow(tx,ty,col){
  ctx.beginPath();ctx.moveTo(11,0);ctx.lineTo(-7,-8);ctx.lineTo(-3,0);ctx.lineTo(-7,8);ctx.closePath();ctx.fill();ctx.restore();
 }
 function renderMenu(){
- const t=TT;cam.x=-VW/2;cam.y=-VH*.58+Math.sin(t*.3)*5;
+ const t=TT,anchor=mapAnchor();cam.x=anchor.x-VW/2;cam.y=anchor.y-VH*.58+Math.sin(t*.3)*5;
  drawWorldBase(t);
- for(const m of menuGhosts){m.a+=m.sp*.016;const x=Math.cos(m.a)*m.r,y=Math.sin(m.a)*m.r*.6-20+Math.sin(t+m.ph)*8;m.x=x;m.y=y;drawGhost(ctx,x,y,13,t+m.ph,0,.8)}
+ for(const m of menuGhosts){m.a+=m.sp*.016;const x=anchor.x+Math.cos(m.a)*m.r,y=anchor.y+Math.sin(m.a)*m.r*.6-20+Math.sin(t+m.ph)*8;m.x=x;m.y=y;drawGhost(ctx,x,y,13,t+m.ph,0,.8)}
  ctx.restore();
  fogPass(t);
- darkPass(.9,()=>{const fl=1+Math.sin(t*13)*.03;cut(0,-100,330*fl,1);propLights();for(const m of menuGhosts)cut(m.x,m.y,40,.35)});
+ darkPass(.9,()=>{const fl=1+Math.sin(t*13)*.03;cut(anchor.x,anchor.y-100,330*fl,1);propLights();for(const m of menuGhosts)cut(m.x,m.y,40,.35)});
  ctx.save();ctx.translate(-cam.x,-cam.y);ctx.globalCompositeOperation='lighter';
- glow(ctx,0,-130,320,'rgba(255,160,60,.2)');
+ glow(ctx,anchor.x,anchor.y-130,320,'rgba(255,160,60,.2)');
  for(const m of menuGhosts)eyeGlow(ctx,{type:'ghost',x:m.x,y:m.y,r:13},t+m.ph);
  ctx.restore();
  ctx.setTransform(SC,0,0,SC,0,0);ctx.globalCompositeOperation='source-over';ctx.drawImage(vig,0,0,VW,VH);
@@ -3045,6 +3051,7 @@ function genDecals(){
   else if(id==='embercoast')t=k<.42?'lava':k<.72?'ash':'basalt';
   else t=k<.4?'flower':k<.75?'mush':'stone';
   if(id==='marsh'&&i%5===0){x=Math.round(x/180)*180;y=Math.round(y/180)*180}
+  const anchor=mapAnchor(id);x+=anchor.x;y+=anchor.y;
   DEC.push({x,y,t,s:.7+R()*.8,v:R(),a:R()*TAU});
  }
 }
@@ -3849,7 +3856,7 @@ function openMapPicker(where){
   if(party)b.innerHTML='<span class="mtxt"><b>'+m.n+'</b></span>';
   else b.innerHTML='<canvas class="map-preview" width="320" height="112" aria-hidden="true"></canvas><span class="mtxt"><b>'+m.n+'</b><span class="d">'+m.d+'</span><span class="m">'+MAPSIZE[i]+' · '+m.shrines+' shrines</span></span>';
   if(!party)drawMapPreview(b.querySelector('canvas'),m);
-  b.onclick=()=>{if(!ok)return;save.map=m.id;persist();setMap(m.id);sfx('treat');const target=mapPickerReturn;$('mapPicker').hidden=true;$('mapPicker').style.display='none';if(target==='solo'){hideAll();menuInfo();playClicked()}else{hideAll();$('ghPartyPanel').hidden=false;$('ghChosenMap').textContent=CURMAP.n;ghPartyStatus('Map selected for the next match: '+CURMAP.n)}};
+  b.onclick=()=>{if(!ok)return;save.map=m.id;persist();setMap(m.id);sfx('treat');const target=mapPickerReturn;$('mapPicker').hidden=true;$('mapPicker').style.display='none';if(target==='solo'){hideAll();menuInfo();playClicked()}else{hideAll();show('menu');$('ghPartyPanel').hidden=false;$('ghChosenMap').textContent=CURMAP.n;ghPartyStatus('Map selected for the next match: '+CURMAP.n)}};
   box.appendChild(b);
  });
  $('mapPicker').hidden=false;$('mapPicker').style.display='flex';
