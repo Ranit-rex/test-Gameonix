@@ -303,15 +303,22 @@ async function mpJoin(){
   MP.membersRef=MP.roomRef.child('members');
   MP.playersRef=MP.db.ref('ashgrave/players/'+MP.roomId);
   const myPlayer=MP.playersRef.child(MP.user.uid);
-  phase='setting member disconnect cleanup';
-  await memberRef.onDisconnect().remove();
-  phase='setting slot disconnect cleanup';
-  await MP.slotRef.onDisconnect().remove();
-  phase='setting player disconnect cleanup';
-  await myPlayer.onDisconnect().remove();
-  if(MP.isHost){
-   phase='setting host room disconnect cleanup';
-   await MP.roomRef.child('status').onDisconnect().set('closed');
+  // Disconnect cleanup is best-effort. Some RTDB rule configurations reject
+  // onDisconnect registration even when normal room writes are allowed. Do not
+  // block a valid multiplayer join because of cleanup registration.
+  const cleanupTasks=[
+   ['member',()=>memberRef.onDisconnect().remove()],
+   ['slot',()=>MP.slotRef.onDisconnect().remove()],
+   ['player',()=>myPlayer.onDisconnect().remove()]
+  ];
+  if(MP.isHost)cleanupTasks.push(['host room',()=>MP.roomRef.child('status').onDisconnect().set('closed')]);
+  const cleanupFailures=[];
+  for(const [label,register] of cleanupTasks){
+   try{await register();}
+   catch(cleanupError){
+    cleanupFailures.push(label);
+    console.warn('Ashgrave disconnect cleanup unavailable for '+label+':',cleanupError);
+   }
   }
   MP.active=true;MP.pending=true;MP.remote={};MP.visual={};
   MP.membersRef.on('value',ss=>{
@@ -333,7 +340,9 @@ async function mpJoin(){
    memberRef.update({lastSeen:stamp}).catch(e=>{console.warn('member heartbeat',e);mpStatus('Player connection issue: '+(e.code||e.message));});
    if(MP.isHost)MP.roomRef.child('lastSeen').set(stamp).catch(e=>{console.warn('room heartbeat',e);mpStatus('Match heartbeat issue: '+(e.code||e.message));});
   },10000);
-  mpStatus('Match found · '+(chosenSlot+1)+'/4 slot reserved · starting game…');
+  mpStatus(cleanupFailures.length
+   ? 'Connected · '+(chosenSlot+1)+'/4 players · cleanup fallback active'
+   : 'Match found · '+(chosenSlot+1)+'/4 slot reserved · starting game…');
   start();
  }catch(e){
   if(MP.slotRef){try{await MP.slotRef.remove()}catch(x){}MP.slotRef=null;}
