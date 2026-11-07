@@ -508,7 +508,7 @@ function persist(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(save))}catch
 
 /* ---------- Ghost Night multiplayer (isolated from the solo save/gameplay path) ---------- */
 const GH_FIREBASE={apiKey:'AIzaSyB_pZ9WfVSx2XHuDeSZ7VrwEr-Pz_m_2QM',authDomain:'play-hub-688e8.firebaseapp.com',databaseURL:'https://play-hub-688e8-default-rtdb.asia-southeast1.firebasedatabase.app',projectId:'play-hub-688e8',storageBucket:'play-hub-688e8.firebasestorage.app',messagingSenderId:'195222206861',appId:'1:195222206861:web:828a8cf16991f982a925c4'};
-const MP={busy:false,active:false,uid:null,name:'',roomId:null,roomRef:null,memberRef:null,slotRef:null,playerRef:null,playersRef:null,listener:null,remotes:{},slot:0,sendT:0,beatT:0,isHost:false,hostUid:null,world:null,worldT:0,enemySeq:0,hitSeq:0,hitQueue:[],hitSeen:{},worldReadyResolve:null};
+const MP={busy:false,active:false,uid:null,name:'',roomId:null,roomRef:null,memberRef:null,slotRef:null,playerRef:null,playersRef:null,listener:null,remotes:{},slot:0,sendT:0,beatT:0,isHost:false,hostUid:null,world:null,worldT:0,enemySeq:0,hitSeq:0,hitQueue:[],hitSeen:{},worldReadyResolve:null,teamReady:false};
 function mpStatus(t){const e=$('mpStatus');if(e)e.textContent=t}
 function mpLoadScript(src){return new Promise((resolve,reject)=>{const sc=document.createElement('script');sc.src=src;sc.async=true;sc.onload=resolve;sc.onerror=()=>reject(new Error('Could not load '+src));document.head.appendChild(sc)})}
 async function mpFirebase(){
@@ -661,19 +661,33 @@ async function mpConnect(){
   const roleTag=MP.isHost?'HOST':'GUEST';
   mpStatus(roleTag+' · ROOM '+roomTag+' · '+(chosenSlot+1)+'/4 slot reserved'+(cleanupFailures.length?' · cleanup fallback active':' · starting…'));
   if(MP.isHost){
-   // Host waits for at least one real teammate. Multiplayer never falls back to solo.
-   phase='waiting for teammate';
-   await new Promise(resolve=>{
+   // Count only distinct players whose slot and member heartbeat are both live.
+   phase='verifying real teammate';
+   await new Promise((resolve,reject)=>{
+    let settled=false;
     const membersRef=MP.roomRef.child('members');
-    const onMembers=snap=>{
-     const members=snap.val()||{},count=Object.keys(members).length;
-     mpStatus('HOST · ROOM '+roomTag+' · '+count+'/4 players · waiting for teammate');
-     if(count>=2){membersRef.off('value',onMembers);resolve();}
+    const slotsRef=MP.roomRef.child('slots');
+    const finish=(err)=>{if(settled)return;settled=true;membersRef.off('value',check);slotsRef.off('value',check);clearTimeout(timer);err?reject(err):resolve()};
+    const check=async()=>{
+     try{
+      const [ms,ss]=await Promise.all([membersRef.once('value'),slotsRef.once('value')]);
+      const members=ms.val()||{},slots=ss.val()||{},now=Date.now(),live=new Set();
+      for(const v of Object.values(slots)){
+       if(!v||!v.uid||v.uid===MP.uid)continue;
+       const m=members[v.uid];
+       if(m&&Number.isFinite(Number(m.lastSeen))&&now-Number(m.lastSeen)<20000)live.add(v.uid);
+      }
+      const count=1+live.size;
+      mpStatus('HOST · ROOM '+roomTag+' · '+count+'/4 verified players · waiting for teammate');
+      if(live.size>=1)finish();
+     }catch(e){finish(e)}
     };
-    membersRef.on('value',onMembers);
-    membersRef.once('value',onMembers);
+    const timer=setTimeout(()=>finish(new Error('No active teammate joined this room. Multiplayer was not started.')),60000);
+    membersRef.on('value',check);slotsRef.on('value',check);check();
    });
-   // Only now create the shared world for everyone in this room.
+   if(!MP.active||!MP.isHost)throw new Error('Multiplayer session ended before teammate joined.');
+   MP.teamReady=true;
+   // Start only after a second, distinct account is verified in this exact room.
    startRun();
   }else{
    // Guests wait for the host's first world snapshot instead of generating
@@ -692,6 +706,7 @@ async function mpConnect(){
      if(MP.world)MP.worldReadyResolve();
     });
    }
+   MP.teamReady=true;
    startRun();
    mpApplyWorld();
   }
@@ -746,7 +761,7 @@ function mpTick(dt){
 }
 async function mpLeave(closed){
  if(MP.beat)clearInterval(MP.beat);MP.beat=null;
- const old={...MP};MP.active=false;MP.remotes={};
+ const old={...MP};MP.active=false;MP.teamReady=false;MP.remotes={};
  try{
   if(old.playersRef&&old.listener)old.playersRef.off('value');
   if(old.memberRef)old.memberRef.off('value');
@@ -1285,6 +1300,7 @@ function newGame(){
  return g;
 }
 function startRun(){
+ if(MP.active&&!MP.teamReady){mpStatus('Multiplayer locked · waiting for a real teammate');return}
  if(MP.active)setMap(save.map);
  HOUR=(DIFFS[save.diff]||DIFFS[1]).hour;
  setMap(save.map);ensureAudio();hideAll();G=newGame();G.xl0=XLETTERS.filter(l=>l.cond()).map(l=>l.k);G.wp=curWeapon();G.tut=MP.active?-1:((FORCE_TUT||!save.tutDone)?0:-1);FORCE_TUT=false;$('tut').hidden=true;$('tip').className='';$('cine').className='';state='play';
