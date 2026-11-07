@@ -508,7 +508,7 @@ function persist(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(save))}catch
 
 /* ---------- Ghost Night multiplayer (isolated from the solo save/gameplay path) ---------- */
 const GH_FIREBASE={apiKey:'AIzaSyB_pZ9WfVSx2XHuDeSZ7VrwEr-Pz_m_2QM',authDomain:'play-hub-688e8.firebaseapp.com',databaseURL:'https://play-hub-688e8-default-rtdb.asia-southeast1.firebasedatabase.app',projectId:'play-hub-688e8',storageBucket:'play-hub-688e8.firebasestorage.app',messagingSenderId:'195222206861',appId:'1:195222206861:web:828a8cf16991f982a925c4'};
-const MP={busy:false,active:false,uid:null,name:'',roomId:null,roomRef:null,memberRef:null,slotRef:null,playerRef:null,playersRef:null,listener:null,remotes:{},slot:0,sendT:0,beatT:0,isHost:false,hostUid:null,world:null,worldT:0,enemySeq:0,hitSeq:0,hitQueue:[],hitSeen:{},worldReadyResolve:null,bots:{},botFillT:0,botFillDone:false,offlineBots:false};
+const MP={busy:false,active:false,uid:null,name:'',roomId:null,roomRef:null,memberRef:null,slotRef:null,playerRef:null,playersRef:null,listener:null,remotes:{},slot:0,sendT:0,beatT:0,isHost:false,hostUid:null,world:null,worldT:0,enemySeq:0,hitSeq:0,hitQueue:[],hitSeen:{},worldReadyResolve:null};
 function mpStatus(t){const e=$('mpStatus');if(e)e.textContent=t}
 function mpLoadScript(src){return new Promise((resolve,reject)=>{const sc=document.createElement('script');sc.src=src;sc.async=true;sc.onload=resolve;sc.onerror=()=>reject(new Error('Could not load '+src));document.head.appendChild(sc)})}
 async function mpFirebase(){
@@ -633,7 +633,7 @@ async function mpConnect(){
   const cleanupFailures=[];
   for(const [label,register] of cleanupTasks){try{await register()}catch(e){cleanupFailures.push(label);console.warn('Ghost Night disconnect cleanup unavailable for '+label,e)}}
   MP.world=null;MP.hitSeen={};MP.hitQueue=[];MP.hitSeq=0;MP.worldT=0;
-  MP.bots={};MP.botFillT=9;MP.botFillDone=false;MP.offlineBots=false;MP.active=true;
+  MP.active=true;
   MP.playersRef.on('value',snap=>{
    const all=snap.val()||{},next={};
    for(const [uid,p] of Object.entries(all)){
@@ -658,7 +658,29 @@ async function mpConnect(){
    }
   },10000);
   mpStatus(cleanupFailures.length?'Connected · '+(chosenSlot+1)+'/4 players · cleanup fallback active':'Match found · '+(chosenSlot+1)+'/4 slot reserved · starting game…');
-  startRun();
+  if(MP.isHost){
+   // The host is the only client that creates the authoritative game world.
+   startRun();
+  }else{
+   // Guests wait for the host's first world snapshot instead of generating
+   // an unrelated local world at the same time.
+   phase='waiting for host game world';
+   if(!MP.world){
+    await new Promise((resolve,reject)=>{
+     let settled=false;
+     const timer=setTimeout(()=>{
+      if(settled)return;settled=true;MP.worldReadyResolve=null;
+      reject(new Error('Host game world did not arrive. Please leave and retry matchmaking.'));
+     },12000);
+     MP.worldReadyResolve=()=>{
+      if(settled)return;settled=true;clearTimeout(timer);MP.worldReadyResolve=null;resolve();
+     };
+     if(MP.world)MP.worldReadyResolve();
+    });
+   }
+   startRun();
+   mpApplyWorld();
+  }
   caption('Match found. Find your teammates on the map.',4200);
  }catch(e){
   if(MP.active)await mpLeave(false);
