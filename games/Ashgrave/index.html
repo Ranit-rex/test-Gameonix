@@ -231,28 +231,31 @@ async function mpJoin(){
   await mpInit();
   const root=MP.db.ref('ashgrave/matches');
   const snap=await root.orderByChild('status').equalTo('live').once('value');
-  let chosen=null,chosenMembers=null;
+  let chosen=null,chosenMembers=null,chosenSlot=-1,chosenSlotRef=null;
   const rooms=[];snap.forEach(ch=>{const v=ch.val()||{};if(v.game==='ashgrave'&&Number(v.chapter)===ci&&Date.now()-Number(v.lastSeen||0)<45000)rooms.push({id:ch.key,data:v})});
   rooms.sort((a,b)=>(a.data.createdAt||0)-(b.data.createdAt||0));
   for(const room of rooms){
    const ms=await root.child(room.id+'/members').once('value'),members=ms.val()||{};
-   const count=Object.keys(members).length;
-   if(members[MP.user.uid]){chosen=room;chosenMembers=members;break}
-   if(count<4){chosen=room;chosenMembers=members;break}
+   const slotsSnap=await root.child(room.id+'/slots').once('value'),slots=slotsSnap.val()||{};
+   if(members[MP.user.uid]){const existing=Object.entries(slots).find(([,v])=>v&&v.uid===MP.user.uid);if(existing){chosen=room;chosenMembers=members;chosenSlot=Number(existing[0]);chosenSlotRef=root.child(room.id+'/slots/'+existing[0]);break}}
+   for(let i=0;i<4;i++){if(!slots[String(i)]){const sr=root.child(room.id+'/slots/'+i);try{await sr.set({uid:MP.user.uid,name:MP.playerName,joinedAt:Date.now()});chosen=room;chosenMembers=members;chosenSlot=i;chosenSlotRef=sr;break}catch(e){}}}
+   if(chosen)break;
   }
   if(!chosen){
    const ref=root.push();MP.roomId=ref.key;MP.roomRef=ref;
    await ref.set({game:'ashgrave',chapter:ci,hostUid:MP.user.uid,status:'live',createdAt:Date.now(),lastSeen:Date.now()});
-   chosen={id:ref.key,data:{hostUid:MP.user.uid}};chosenMembers={};
+   chosen={id:ref.key,data:{hostUid:MP.user.uid}};chosenMembers={};chosenSlot=0;chosenSlotRef=ref.child('slots/0');
+   await chosenSlotRef.set({uid:MP.user.uid,name:MP.playerName,joinedAt:Date.now()});
   }else{MP.roomId=chosen.id;MP.roomRef=root.child(MP.roomId)}
+  if(chosenSlot<0)throw new Error('This match is full. Please try again.');
   const memberRef=MP.roomRef.child('members').child(MP.user.uid);
   if(!chosenMembers[MP.user.uid])await memberRef.set({name:MP.playerName,joinedAt:Date.now(),lastSeen:Date.now()});
   else await memberRef.update({name:MP.playerName,lastSeen:Date.now()});
+  MP.seat=chosenSlot;MP.slotRef=chosenSlotRef;
   const membersNow=await MP.roomRef.child('members').once('value'),members=membersNow.val()||{};
-  MP.seat=Math.max(0,Object.keys(members).indexOf(MP.user.uid));
   MP.membersRef=MP.roomRef.child('members');
   MP.playersRef=MP.db.ref('ashgrave/players/'+MP.roomId);
-  await memberRef.onDisconnect().remove();
+  await memberRef.onDisconnect().remove();await MP.slotRef.onDisconnect().remove();
   const myPlayer=MP.playersRef.child(MP.user.uid);await myPlayer.onDisconnect().remove();
   if(chosen.data.hostUid===MP.user.uid)await MP.roomRef.child('status').onDisconnect().set('closed');
   MP.active=true;MP.pending=true;MP.remote={};
@@ -279,9 +282,9 @@ function mpTick(now){
 }
 async function mpLeave(){
  if(MP.beat)clearInterval(MP.beat);MP.beat=null;
- if(MP.active&&MP.user&&MP.roomId){try{await MP.playersRef.child(MP.user.uid).remove();await MP.membersRef.child(MP.user.uid).remove();}catch(e){}}
+ if(MP.active&&MP.user&&MP.roomId){try{await MP.playersRef.child(MP.user.uid).remove();await MP.membersRef.child(MP.user.uid).remove();if(MP.slotRef)await MP.slotRef.remove();}catch(e){}}
  if(MP.membersRef)MP.membersRef.off();if(MP.playersRef)MP.playersRef.off();
- MP.active=false;MP.pending=false;MP.remote={};MP.roomId=null;MP.roomRef=null;MP.playersRef=null;MP.membersRef=null;mpBadge();mpStatus('Up to 4 players · same chapter · microphone off');
+ MP.active=false;MP.pending=false;MP.remote={};MP.roomId=null;MP.roomRef=null;MP.slotRef=null;MP.playersRef=null;MP.membersRef=null;mpBadge();mpStatus('Up to 4 players · same chapter · microphone off');
 }
 $('mp').onclick=()=>{ac();mpJoin()};
 
@@ -435,7 +438,6 @@ function draw(t){const g=G;c.setTransform(Q,0,0,Q,0,0);c.fillStyle='#050405';c.f
  for(const e of g.en)body(e,t);
  for(const f of g.fx){c.strokeStyle='rgba(255,255,255,'+f.t*5+')';c.lineWidth=8;c.beginPath();c.arc(p.x,p.y,f.r*.8,f.a-1.1,f.a+1.1);c.stroke()}
  drawMara(c,p,t);
- if(MP.active){for(const [uid,rp] of Object.entries(MP.remote)){if(Math.hypot(rp.x-p.x,rp.y-p.y)>1800)continue;const other={x:Number(rp.x)||0,y:Number(rp.y)||0,ang:Number(rp.angle)||0,mvv:!!rp.mvv,dash:Number(rp.dash)||0,iv:Number(rp.iv)||0};drawMara(c,other,t);c.save();c.font='12px monospace';c.textAlign='center';c.fillStyle='#f4d99b';c.strokeStyle='rgba(0,0,0,.9)';c.lineWidth=3;c.strokeText(String(rp.name||'Player').slice(0,24),other.x,other.y-27);c.fillText(String(rp.name||'Player').slice(0,24),other.x,other.y-27);c.restore()}}
  c.restore();
  /* darkness */
  const lit=g.dead<=0&&g.bat>0,fl=lit&&Math.random()<(g.bat<25?.2:.03)?.5:1,s=g.s;
@@ -444,6 +446,7 @@ function draw(t){const g=G;c.setTransform(Q,0,0,Q,0,0);c.fillStyle='#050405';c.f
  if(lit){const R=s.rng*fl;gr=d.createRadialGradient(W/2+sx,H/2+sy,10,W/2+sx,H/2+sy,R);gr.addColorStop(0,'rgba(0,0,0,.98)');gr.addColorStop(1,'rgba(0,0,0,0)');d.fillStyle=gr;d.beginPath();d.moveTo(W/2+sx,H/2+sy);d.arc(W/2+sx,H/2+sy,R,p.ang-s.cone,p.ang+s.cone);d.closePath();d.fill()}
  for(const o of g.props)if(o.k=='lamp'||o.k=='candle'){const lx=o.x+cx,ly=o.y+cy-20;if(lx<-140||lx>W+140||ly<-140||ly>H+140)continue;const R2=(o.k=='lamp'?130:90)*(1+Math.sin(t*9+o.x)*.04),g2=d.createRadialGradient(lx,ly,2,lx,ly,R2);g2.addColorStop(0,'rgba(0,0,0,.85)');g2.addColorStop(1,'rgba(0,0,0,0)');d.fillStyle=g2;d.beginPath();d.arc(lx,ly,R2,0,TAU);d.fill()}
  c.drawImage(dk,0,0,W,H);
+ if(MP.active){c.save();c.translate(cx,cy);for(const [uid,rp] of Object.entries(MP.remote)){if(Math.hypot(rp.x-p.x,rp.y-p.y)>1800)continue;const other={x:Number(rp.x)||0,y:Number(rp.y)||0,ang:Number(rp.angle)||0,mvv:!!rp.mvv,dash:Number(rp.dash)||0,iv:Number(rp.iv)||0};drawMara(c,other,t);c.save();c.font='12px monospace';c.textAlign='center';c.fillStyle='#f4d99b';c.strokeStyle='rgba(0,0,0,.95)';c.lineWidth=3;c.strokeText(String(rp.name||'Player').slice(0,24),other.x,other.y-27);c.fillText(String(rp.name||'Player').slice(0,24),other.x,other.y-27);c.restore()}c.restore()}
  c.save();c.translate(cx,cy);for(const e of g.en)ey(e);for(const n of g.notes)if(!n.g){c.fillStyle='rgba(255,220,120,'+(.65+.35*Math.sin(t*4))+')';c.fillRect(n.x-8,n.y-10,16,20);c.strokeStyle='#ffe9a0';c.strokeRect(n.x-8,n.y-10,16,20)}c.restore();
  let nb=null,nq=1e9;for(const n of g.notes)if(!n.g){const q=Math.hypot(n.x-p.x,n.y-p.y);if(q<nq){nq=q;nb=n}}
  if(nb&&nq>160){const a=Math.atan2(nb.y-p.y,nb.x-p.x),R=Math.min(W,H)*.38;c.save();c.translate(W/2+Math.cos(a)*R,H/2+Math.sin(a)*R);c.rotate(a);c.fillStyle='#ffe28a';c.beginPath();c.moveTo(13,0);c.lineTo(-9,-9);c.lineTo(-9,9);c.fill();c.restore()}
