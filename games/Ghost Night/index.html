@@ -516,7 +516,7 @@ function persist(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(save))}catch
 
 /* ---------- Ghost Night multiplayer (isolated from the solo save/gameplay path) ---------- */
 const GH_FIREBASE={apiKey:'AIzaSyB_pZ9WfVSx2XHuDeSZ7VrwEr-Pz_m_2QM',authDomain:'play-hub-688e8.firebaseapp.com',databaseURL:'https://play-hub-688e8-default-rtdb.asia-southeast1.firebasedatabase.app',projectId:'play-hub-688e8',storageBucket:'play-hub-688e8.firebasestorage.app',messagingSenderId:'195222206861',appId:'1:195222206861:web:828a8cf16991f982a925c4'};
-const MP={busy:false,active:false,uid:null,name:'',roomId:null,roomRef:null,memberRef:null,slotRef:null,playerRef:null,playersRef:null,listener:null,remotes:{},slot:0,sendT:0,beatT:0,isHost:false,hostUid:null,world:null,worldT:0,enemySeq:0,hitSeq:0,hitQueue:[],hitSeen:{},worldReadyResolve:null,teamReady:false};
+const MP={busy:false,active:false,uid:null,name:'',roomId:null,roomRef:null,memberRef:null,slotRef:null,playerRef:null,playersRef:null,listener:null,remotes:{},slot:0,sendT:0,beatT:0,isHost:false,hostUid:null,world:null,worldT:0,partySize:1,enemySeq:0,hitSeq:0,hitQueue:[],hitSeen:{},worldReadyResolve:null,teamReady:false};
 function mpStatus(t){const e=$('mpStatus');if(e)e.textContent=t}
 function mpLoadScript(src){return new Promise((resolve,reject)=>{const sc=document.createElement('script');sc.src=src;sc.async=true;sc.onload=resolve;sc.onerror=()=>reject(new Error('Could not load '+src));document.head.appendChild(sc)})}
 async function ghPartyFirebase(){
@@ -592,7 +592,7 @@ async function ghPartyStartMatch(){
  const roomRef=db.ref('ghostnight/matches').push(),matchId=roomRef.key;
  if(!matchId)throw Error('Could not generate a match ID.');
  try{
-  await roomRef.set({game:'ghostnight',hostUid:u.uid,status:'live',map:(typeof save.map==='string'?save.map:'fields'),diff:(Number.isFinite(save.diff)?save.diff:1),createdAt:Date.now(),lastSeen:Date.now(),partyCode:d.roomId});
+  await roomRef.set({game:'ghostnight',hostUid:u.uid,status:'live',map:(typeof save.map==='string'?save.map:'fields'),diff:(Number.isFinite(save.diff)?save.diff:1),partySize:Math.min(4,members.length),createdAt:Date.now(),lastSeen:Date.now(),partyCode:d.roomId});
   await GH_PARTY.ref.child('matchId').set(matchId);
   await GH_PARTY.ref.child('status').set('started');
  }catch(err){
@@ -694,7 +694,7 @@ async function mpConnect(forcedRoomId=null){
   const claimed=await mpClaimSlot(roomRef,user,name);
   if(!claimed)throw new Error('This match is full (4/4 players).');
   localSlotRef=claimed.slotRef;
-  MP.uid=user.uid;MP.name=name;MP.roomId=forcedRoomId;MP.roomRef=roomRef;MP.slot=claimed.slot;MP.slotRef=claimed.slotRef;MP.isHost=roomData.hostUid===user.uid;MP.hostUid=roomData.hostUid||null;
+  MP.uid=user.uid;MP.name=name;MP.roomId=forcedRoomId;MP.roomRef=roomRef;MP.partySize=Math.max(1,Math.min(4,Number(roomData.partySize)||2));MP.slot=claimed.slot;MP.slotRef=claimed.slotRef;MP.isHost=roomData.hostUid===user.uid;MP.hostUid=roomData.hostUid||null;
   phase='registering player';
   localMemberRef=roomRef.child('members/'+user.uid);MP.memberRef=localMemberRef;
   await localMemberRef.set({name,joinedAt:Date.now(),lastSeen:Date.now()});
@@ -960,7 +960,7 @@ function makeGround(){
 const MAPS=[
  {id:'fields',n:'Hollow Fields',d:'The old pastures around the lantern. Compact and strewn with ruins.',world:1500,shrines:4,rew:1,tint:'',mix:[.35,.5,.68,.82,.92],unlock:0},
  {id:'marsh',n:'Sunken Marsh',d:'A wide drowned wood. Thick trees, green mist, long walks between shrines.',world:2100,shrines:5,rew:1.2,tint:'rgba(20,95,85,.22)',mix:[.12,.17,.52,.62,.88],unlock:1,fog:1},
- {id:'barrows',n:'Ashen Barrows',d:'A vast field of tombs and braziers under a red sky. Six shrines to find.',world:2700,shrines:6,rew:1.45,tint:'rgba(130,30,30,.2)',mix:[.34,.62,.66,.82,.86],unlock:2}
+ {id:'barrows',n:'Ashen Barrows',d:'A vast field of tombs and braziers under a red sky. Six shrines to find.',world:2700,shrines:6,rew:1.45,tint:'rgba(130,30,30,.2)',mix:[.34,.62,.66,.82,.86],unlock:2},\n {id:'frostfall',n:'Frostfall Keep',d:'A frozen frontier of broken watchtowers, blue fire and buried halls. Seven shrines to find.',world:3000,shrines:7,rew:1.6,tint:'rgba(70,130,190,.24)',mix:[.18,.38,.62,.76,.9],unlock:3}
 ];
 let CURMAP=MAPS[0];
 const props=[],fence=[];
@@ -1331,7 +1331,7 @@ function startRun(){
  if(MP.active&&!MP.teamReady){mpStatus('Multiplayer locked · waiting for a real teammate');return}
  if(MP.active)setMap(save.map);
  HOUR=(DIFFS[save.diff]||DIFFS[1]).hour;
- setMap(save.map);ensureAudio();hideAll();G=newGame();G.xl0=XLETTERS.filter(l=>l.cond()).map(l=>l.k);G.wp=curWeapon();G.tut=MP.active?-1:((FORCE_TUT||!save.tutDone)?0:-1);FORCE_TUT=false;$('tut').hidden=true;$('tip').className='';$('cine').className='';state='play';
+ setMap(save.map);ensureAudio();hideAll();G=newGame();G.partySize=MP.active?MP.partySize:1;G.xl0=XLETTERS.filter(l=>l.cond()).map(l=>l.k);G.wp=curWeapon();G.tut=MP.active?-1:((FORCE_TUT||!save.tutDone)?0:-1);FORCE_TUT=false;$('tut').hidden=true;$('tip').className='';$('cine').className='';state='play';
  cam.x=G.p.x-VW/2;cam.y=G.p.y-VH/2;
  $('hud').hidden=false;$('boss').hidden=true;$('dashBtn').hidden=false;
  const m=MODS.find(x=>x.id===G.mod);
@@ -1377,12 +1377,12 @@ const EN={
 };
 function mkEnemy(type,x,y){
  const s=EN[type],g=G,boss=!!BOSSES[type];
- let k=boss?(1.35+g.night*.7):(1.35+g.hour*.24+g.night*.5);
+ const partyN=MP.active?Math.max(1,Math.min(4,MP.partySize||2)):1;\n let k=boss?(1.35+g.night*.7):(1.35+g.hour*.24+g.night*.5);\n if(MP.active)k*=partyN===2?1.48:partyN===3?1.88:2.28;
  if(g.mod==='swarm'&&!boss)k*=.7;
  if(g.mod==='still'&&boss)k*=1.3;
  const spd=g.mod==='blood'?1.2:1;
  const e={mid:MP.active&&MP.isHost?++MP.enemySeq:null,type,x,y,r:s.r,hp:s.hp*k,max:s.hp*k,sp:s.sp*spd*(boss?1:rnd(.9,1.12)),dmg:s.dmg,xp:s.xp,boss,age:0,fl:0,wc:0,kx:0,ky:0,ph:rnd(0,6),t1:rnd(1,3),t2:3,spiral:0,sa:0,cs:0,ct:rnd(0,1.5),dx:0,dy:1,dead:false};
- e.dmg*=g.df.dmg*1.35*(1+g.hour*.035);e.sp*=1+Math.min(.4,g.hour*.025)+g.night*.025;
+ e.dmg*=g.df.dmg*1.35*(1+g.hour*.035)*(MP.active?(partyN===2?1.12:partyN===3?1.22:1.32):1);e.sp*=1+Math.min(.4,g.hour*.025)+g.night*.025;
  if(!boss&&type!=='mini'&&Math.random()<g.df.elite){e.elite=true;e.hp*=3;e.max=e.hp;e.r*=1.25;e.xp*=3;e.dmg*=1.2;if(g.hour>=3&&Math.random()<.6){e.aff=AFFIX[Math.floor(Math.random()*AFFIX.length)];if(e.aff==='swift')e.sp*=1.45;if(e.aff==='guard'){e.hp*=1.8;e.max=e.hp}}}
  if(INTROS[type]&&!g.seen[type]){g.seen[type]=1;caption(INTROS[type],5400)}
  return e;
@@ -1410,12 +1410,12 @@ function pickType(h){
  return'ghost';
 }
 function spawnWave(){
- const g=G,type=pickType(g.hour),pk=1+Math.floor(g.hour/4)+(g.df.id>=3?1:0),n=(type==='bat'||type==='crow')?(Math.random()<.5?3+pk:2):type==='spider'?(Math.random()<.45?2+pk:1):(type==='ghost'?(Math.random()<.3?1+pk:1):1);
+ const g=G,type=pickType(g.hour),pk=1+Math.floor(g.hour/4)+(g.df.id>=3?1:0),partyN=MP.active?Math.max(1,MP.partySize||2):1,baseN=(type==='bat'||type==='crow')?(Math.random()<.5?3+pk:2):type==='spider'?(Math.random()<.45?2+pk:1):(type==='ghost'?(Math.random()<.3?1+pk:1):1),n=baseN+(partyN>=4?2:partyN===3?1:0);
  const b=spawnAt(type);
  if(b)for(let i=1;i<n;i++)g.enemies.push(mkEnemy(type,b.x+rnd(-40,40),b.y+rnd(-40,40)));
 }
 function spawnSurge(){
- const g=G,p=g.p,n=22+g.hour*2;
+ const g=G,p=g.p,partyN=MP.active?Math.max(1,MP.partySize||2):1,n=Math.round((22+g.hour*2)*(partyN===1?1:partyN===2?1.18:partyN===3?1.34:1.5));
  for(let i=0;i<n;i++){
   const a=i/n*TAU,d=380;let x=p.x+Math.cos(a)*d,y=p.y+Math.sin(a)*d;const L=Math.hypot(x,y);
   if(L>WORLD-30){x*=(WORLD-30)/L;y*=(WORLD-30)/L}
@@ -2833,7 +2833,7 @@ function showBanner(name){
 
 /* ================= v6: deadlier bosses, menu juice ================= */
 for(const [k,m] of Object.entries({gourd:[1900,1.2],king:[2100,1.2],mother:[2500,1.2],witch:[3800,1.35],cantor:[1000,1.2],tide:[2700,1.25],starless:[6200,1.4]})){EN[k].hp=m[0];EN[k].dmg*=m[1]}
-const BOSS_SCHED2=[['cantor',1.8],['gourd',3.2],['tide',4.6],['king',6],['mother',7.2],['witch',8.4],['starless',9.6],['unnamed',11]];
+const BOSS_SCHED2=[['cantor',1.8],['gourd',3.2],['tide',4.6],['king',6],['mother',7.2],['witch',8.4],['starless',9.6],['unnamed',11]];\nconst MAP_BOSS_SCHEDULES={fields:[['cantor',1.8],['gourd',4.2],['king',7.2],['unnamed',11]],marsh:[['tide',2.2],['mother',5.8],['starless',9],['unnamed',11]],barrows:[['witch',2.2],['king',5.6],['starless',9],['unnamed',11]],frostfall:[['gourd',2.2],['mother',5.8],['witch',9],['unnamed',11]]};
 function beamCount(b){if(b.type==='unnamed')return [4,5,6,8][Math.min(3,b.thi||0)];return b.hp<b.max*.25?6:b.enr?4:2}
 function bossExtra(e,dt,d,dx,dy){
  const g=G,p=g.p;if(g.dead||g.won)return;
@@ -3042,7 +3042,7 @@ function mapUnlocked(i){const u=MAPS[i].unlock;return u===0||save.wins>=u}
 function setMap(id){const m=MAPS.find(x=>x.id===id)||MAPS[0];CURMAP=m;WORLD=m.world;genProps();genFence();genColliders();genDecals()}
 if(typeof save.map!=='string'||!MAPS.some(m=>m.id===save.map&&mapUnlocked(MAPS.indexOf(m))))save.map='fields';
 setMap(save.map);
-const MAPICO=['tree','drop','tomb'],MAPSIZE=['Compact','Wide','Vast'];
+const MAPICO=['tree','drop','tomb','snowflake'],MAPSIZE=['Compact','Wide','Vast','Colossal'];
 function renderMapList(){
  const box=$('mapList');box.innerHTML='';
  const ic=n=>'<svg class="ic"><use href="#i-'+n+'"/></svg>';
@@ -3269,7 +3269,7 @@ function bossQueue(dt){
  }
  if(g.boss)return;
  g.bgap-=dt;
- if(g.bgap<=0)for(const q of BOSS_SCHED2){if(q[0]==='unnamed')continue;if(!g.bs[q[0]]&&g.t>=q[1]*HOUR){g.bs[q[0]]=1;spawnBoss(q[0]);break}}
+ if(g.bgap<=0)for(const q of (MAP_BOSS_SCHEDULES[CURMAP.id]||BOSS_SCHED2)){if(q[0]==='unnamed')continue;if(!g.bs[q[0]]&&g.t>=q[1]*HOUR){g.bs[q[0]]=1;spawnBoss(q[0]);break}}
 }
 function unnamedAI(e,dt,nx,ny,d,sp,dx,dy){
  const g=G,p=g.p,ph=Math.min(3,e.thi||0);
