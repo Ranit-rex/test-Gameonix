@@ -961,7 +961,9 @@ const MAPS=[
  {id:'fields',n:'Hollow Fields',d:'The old pastures around the lantern. Compact and strewn with ruins.',world:1500,shrines:4,rew:1,tint:'',mix:[.35,.5,.68,.82,.92],unlock:0},
  {id:'marsh',n:'Sunken Marsh',d:'A wide drowned wood. Thick trees, green mist, long walks between shrines.',world:2100,shrines:5,rew:1.2,tint:'rgba(20,95,85,.22)',mix:[.12,.17,.52,.62,.88],unlock:1,fog:1},
  {id:'barrows',n:'Ashen Barrows',d:'A vast field of tombs and braziers under a red sky. Six shrines to find.',world:2700,shrines:6,rew:1.45,tint:'rgba(130,30,30,.2)',mix:[.34,.62,.66,.82,.86],unlock:2},
- {id:'frostfall',n:'Frostfall Keep',d:'A frozen frontier of broken watchtowers, blue fire and buried halls. Seven shrines to find.',world:3000,shrines:7,rew:1.6,tint:'rgba(70,130,190,.24)',mix:[.18,.38,.62,.76,.9],unlock:3}
+ {id:'frostfall',n:'Frostfall Keep',d:'A frozen frontier of broken watchtowers, blue fire and buried halls. Seven shrines to find.',world:3000,shrines:7,rew:1.6,tint:'rgba(70,130,190,.24)',mix:[.18,.38,.62,.76,.9],unlock:0},
+ {id:'catacombs',n:'Whispering Catacombs',d:'A buried maze of black stone, candle crypts and echoing halls. Eight shrines beneath the earth.',world:3200,shrines:8,rew:1.75,tint:'rgba(105,80,145,.28)',mix:[.48,.65,.72,.84,.93],unlock:0,fog:1},
+ {id:'embercoast',n:'Ember Coast',d:'A scorched shoreline of ash dunes, ruined piers and glowing volcanic vents. Eight shrines along the coast.',world:3400,shrines:8,rew:1.9,tint:'rgba(190,85,35,.27)',mix:[.2,.42,.58,.78,.9],unlock:0}
 ];
 let CURMAP=MAPS[0];
 const props=[],fence=[];
@@ -2837,7 +2839,7 @@ function showBanner(name){
 /* ================= v6: deadlier bosses, menu juice ================= */
 for(const [k,m] of Object.entries({gourd:[1900,1.2],king:[2100,1.2],mother:[2500,1.2],witch:[3800,1.35],cantor:[1000,1.2],tide:[2700,1.25],starless:[6200,1.4]})){EN[k].hp=m[0];EN[k].dmg*=m[1]}
 const BOSS_SCHED2=[['cantor',1.8],['gourd',3.2],['tide',4.6],['king',6],['mother',7.2],['witch',8.4],['starless',9.6],['unnamed',11]];
-const MAP_BOSS_SCHEDULES={fields:[['cantor',1.8],['gourd',4.2],['king',7.2],['unnamed',11]],marsh:[['tide',2.2],['mother',5.8],['starless',9],['unnamed',11]],barrows:[['witch',2.2],['king',5.6],['starless',9],['unnamed',11]],frostfall:[['gourd',2.2],['mother',5.8],['witch',9],['unnamed',11]]};
+const MAP_BOSS_SCHEDULES={fields:[['cantor',1.8],['gourd',4.2],['king',7.2],['unnamed',11]],marsh:[['tide',2.2],['mother',5.8],['starless',9],['unnamed',11]],barrows:[['witch',2.2],['king',5.6],['starless',9],['unnamed',11]],frostfall:[['gourd',2.2],['mother',5.8],['witch',9],['unnamed',11]],catacombs:[['starless',2.2],['cantor',5.8],['unnamed',9],['unnamed',11]],embercoast:[['king',2.2],['tide',5.8],['gourd',9],['unnamed',11]]};
 function beamCount(b){if(b.type==='unnamed')return [4,5,6,8][Math.min(3,b.thi||0)];return b.hp<b.max*.25?6:b.enr?4:2}
 function bossExtra(e,dt,d,dx,dy){
  const g=G,p=g.p;if(g.dead||g.won)return;
@@ -3046,7 +3048,7 @@ function mapUnlocked(i){const u=MAPS[i].unlock;return u===0||save.wins>=u}
 function setMap(id){const m=MAPS.find(x=>x.id===id)||MAPS[0];CURMAP=m;WORLD=m.world;genProps();genFence();genColliders();genDecals()}
 if(typeof save.map!=='string'||!MAPS.some(m=>m.id===save.map&&mapUnlocked(MAPS.indexOf(m))))save.map='fields';
 setMap(save.map);
-const MAPICO=['tree','drop','tomb','snowflake'],MAPSIZE=['Compact','Wide','Vast','Colossal'];
+const MAPICO=['tree','drop','tomb','snowflake','tomb','flame'],MAPSIZE=['Compact','Wide','Vast','Colossal','Colossal','Colossal'];
 function renderMapList(){
  const box=$('mapList');box.innerHTML='';
  const ic=n=>'<svg class="ic"><use href="#i-'+n+'"/></svg>';
