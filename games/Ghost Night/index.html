@@ -531,8 +531,8 @@ async function ghPartyRender(d){
  const box=$('ghPartyRoom');if(!box)return;
  if(!d){box.innerHTML='';return}
  const members=d.memberUids||[],host=d.leaderUid===GH_PARTY.user.uid;
- box.innerHTML='<div style="padding:10px;border:1px solid #35445b;border-radius:9px"><b>ROOM '+d.roomId+'</b> · '+members.length+'/4<br><div style="margin:8px 0;color:#b8c7dc;font-size:11px">Members: '+members.length+' · '+(host?'YOU ARE HOST':'Waiting for host')+'</div>'+(host?'<button id="ghPartyStart" class="primary" type="button" '+(members.length<2?'disabled':'')+'>▶ Start Match for Everyone</button>':'<span style="color:#b8c7dc;font-size:11px">Host will start when everyone is ready.</span>')+' <button id="ghPartyLeave" class="small modebtn" type="button">Leave</button></div>';
- $('ghPartyStart')?.addEventListener('click',ghPartyStartMatch);
+ box.innerHTML='<div style="padding:10px;border:1px solid #35445b;border-radius:9px"><b>ROOM '+d.roomId+'</b> · '+members.length+'/4<br><div style="margin:8px 0;color:#b8c7dc;font-size:11px">Members: '+members.length+' · '+(host?'YOU ARE HOST':'Waiting for host')+'</div>'+(host?'<button id="ghInviteFriends" class="small modebtn" type="button">＋ Invite Friends</button> <button id="ghPartyStart" class="primary" type="button" '+(members.length<2?'disabled':'')+'>▶ Start Match for Everyone</button>':'<span style="color:#b8c7dc;font-size:11px">Host will start when everyone is ready.</span>')+' <button id="ghPartyLeave" class="small modebtn" type="button">Leave</button></div>';
+ $('ghPartyStart')?.addEventListener('click',ghPartyStartMatch);\n $('ghInviteFriends')?.addEventListener('click',ghPartyInviteFriends);
  $('ghPartyLeave')?.addEventListener('click',ghPartyLeave);
 }
 async function ghPartyWatch(code){
@@ -571,6 +571,23 @@ async function ghPartyStartMatch(){
  await roomRef.set({game:'ghostnight',hostUid:u.uid,status:'live',map:save.map,diff:save.diff,createdAt:Date.now(),lastSeen:Date.now(),partyCode:d.roomId});
  await GH_PARTY.fs.collection('partyRooms').doc(d.roomId).update({status:'started',matchId,updatedAt:Date.now()});
  ghPartyStatus('Match created. Connecting party members…');mpConnect(matchId);
+}
+async function ghPartyInviteFriends(){
+ const box=$('ghPartyRoom');const {fs,user}=GH_PARTY;
+ let panel=$('ghPartyFriends');if(panel){panel.remove();return}
+ panel=document.createElement('div');panel.id='ghPartyFriends';panel.style.cssText='margin-top:9px;padding:9px;border:1px solid #40516b;border-radius:8px;font-size:11px';panel.textContent='Loading friends…';box.appendChild(panel);
+ try{
+  const friends=await fs.collection('friendships').doc(user.uid).collection('friends').get();
+  panel.innerHTML=friends.empty?'No friends yet. Add friends on PlayHub first.':'';
+  for(const f of friends.docs){
+   const u=await fs.collection('users').doc(f.id).get(),name=u.exists?'@'+(u.data().username||'player'):'Player';
+   const row=document.createElement('div');row.style.cssText='display:flex;justify-content:space-between;padding:5px 0';
+   const label=document.createElement('span');label.textContent=name;
+   const btn=document.createElement('button');btn.className='small modebtn';btn.textContent='Invite';
+   btn.onclick=async()=>{btn.disabled=true;try{await fs.collection('partyInvites').doc(GH_PARTY.id+'_'+f.id).set({roomId:GH_PARTY.id,fromUid:user.uid,toUid:f.id,status:'pending',createdAt:Date.now()});btn.textContent='Sent'}catch(e){btn.disabled=false;ghPartyStatus('Invite failed: '+e.message)}};
+   row.append(label,btn);panel.appendChild(row);
+  }
+ }catch(e){panel.textContent='Could not load friends: '+e.message}
 }
 async function ghPartyLeave(){
  if(!GH_PARTY.id||!GH_PARTY.fs||!GH_PARTY.user)return;
