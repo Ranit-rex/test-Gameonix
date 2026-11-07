@@ -643,17 +643,26 @@ async function ghPartyRefresh(){
 }
 function ghPartyOpen(){const p=$('ghPartyPanel');p.hidden=false;ghPartyRefresh()}
 async function mpFirebase(){
+ // Prefer the authenticated Firebase instances owned by the PlayHub parent page.
+ // This avoids iframe-specific Auth persistence/session mismatches.
+ try{
+  const bridge=window.parent!==window?window.parent.PlayHubFirebase:null;
+  if(bridge&&bridge.auth&&bridge.db){
+   const auth=bridge.auth;
+   let user=auth.currentUser;
+   if(!user)user=await new Promise(resolve=>{let off=auth.onAuthStateChanged(u=>{off();resolve(u)})});
+   if(!user)throw new Error('PlayHub login session is not ready. Close Ghost Night, wait for PlayHub to finish signing in, then reopen it.');
+   return{db:bridge.db,user};
+  }
+ }catch(e){if(e&&e.message&&e.message.includes('PlayHub login session'))throw e;console.warn('PlayHub Firebase bridge unavailable; using local Firebase app.',e)}
  if(!window.firebase)await mpLoadScript('https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js');
  if(!firebase.auth)await mpLoadScript('https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js');
  if(!firebase.database)await mpLoadScript('https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js');
- // Reuse PlayHub's default Firebase app so the existing signed-in account
- // is shared, while explicitly selecting the Ghost Night RTDB URL.
  if(!firebase.apps.length)firebase.initializeApp(GH_FIREBASE);
- const app=firebase.app();
- const auth=app.auth(),db=app.database(GH_FIREBASE.databaseURL);
+ const app=firebase.app(),auth=app.auth(),db=app.database(GH_FIREBASE.databaseURL);
  let user=auth.currentUser;
  if(!user)user=await new Promise(resolve=>{let off=auth.onAuthStateChanged(u=>{off();resolve(u)})});
- if(!user)throw new Error('PlayHub account not found. Login to PlayHub first, then open Ghost Night again.');
+ if(!user)throw new Error('PlayHub account not found. PlayHub login session was not available to Ghost Night.');
  return{db,user};
 }
 function mpSafeName(v){return String(v||'Player').replace(/[<>\u0000-\u001f]/g,'').trim().slice(0,20)||'Player'}
