@@ -120,8 +120,9 @@ service cloud.firestore {
       allow update: if signedIn() && (
         (resource.data.leaderUid == request.auth.uid &&
           request.resource.data.diff(resource.data).affectedKeys()
-            .hasOnly(['gameSlug', 'gameTitle', 'status', 'updatedAt']) &&
-          request.resource.data.memberUids == resource.data.memberUids) ||
+            .hasOnly(['gameSlug', 'gameTitle', 'status', 'updatedAt', 'matchId']) &&
+          request.resource.data.memberUids == resource.data.memberUids &&
+          (request.resource.data.status != 'started' || request.resource.data.matchId is string)) ||
         (resource.data.status == 'waiting' &&
           !(request.auth.uid in resource.data.memberUids) &&
           request.resource.data.memberUids.size() == resource.data.memberUids.size() + 1 &&
