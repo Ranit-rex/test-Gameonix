@@ -31,6 +31,7 @@ button:disabled{opacity:.45;cursor:default}
 .ghostbtn:hover:not(:disabled){box-shadow:none;color:var(--gold)}
 .ghostbtn:active:not(:disabled){transform:none;box-shadow:none}
 
+.ov[hidden]{display:none!important}
 .ov{position:absolute;inset:0;display:flex;overflow:auto;padding:20px;background:rgba(5,7,12,.84);touch-action:pan-y}
 .ov>.wrap{margin:auto;width:100%;max-width:560px;display:flex;flex-direction:column;gap:14px}
 .ov h2{font:700 1.9rem/1.1 var(--display);margin:0;color:var(--gold);letter-spacing:.08em;text-transform:uppercase;text-wrap:balance}
@@ -1313,8 +1314,8 @@ window.addEventListener('resize',resize);resize();
 
 /* ---------- ui helpers ---------- */
 const OVS=['menu','intro','hearth','journal','modes','mapPicker','level','pause','over','win','settings','credits'];
-function show(id){for(const o of OVS)$(o).hidden=(o!==id)}
-function hideAll(){for(const o of OVS)$(o).hidden=true}
+function show(id){for(const o of OVS){const el=$(o);if(el){el.hidden=(o!==id);el.style.display=o===id?'flex':'none'}}}
+function hideAll(){for(const o of OVS){const el=$(o);if(el){el.hidden=true;el.style.display='none'}}}
 let capTimer=0;
 function caption(t,ms){const c=$('cap');c.textContent=t;c.classList.remove('on');void c.offsetWidth;c.classList.add('on');try{sfx('cap')}catch(e){}clearTimeout(capTimer);capTimer=setTimeout(()=>c.classList.remove('on'),ms||5200)}
 
@@ -3723,7 +3724,7 @@ function menuInfo(){
  $('bestLine').textContent=save.bestHour>0?'Furthest: '+clockAtHour(Math.min(save.bestHour,HOURS))+(save.wins?' · '+save.wins+' dawn'+(save.wins>1?'s':''):''):'Never yet seen past dusk';
  setSnd();
 }
-function openMapPicker(where){mapPickerReturn=where||'solo';$('mapPickerHint').textContent=mapPickerReturn==='party'?'Host: choose the map for everyone in this party.':'Choose a map for your solo night.';const box=$('mapPickerList');box.innerHTML='';const ic=n=>'<svg class="ic"><use href="#i-'+n+'"/></svg>';MAPS.forEach((m,i)=>{const ok=mapUnlocked(i),sel=save.map===m.id,b=document.createElement('button');b.className='mode map r'+i+(sel?' sel':'')+(ok?' ok':' lock');b.innerHTML='<span class="mico">'+ic(ok?MAPICO[i]:'lock')+'</span><span class="mtxt"><b>'+m.n+'</b><span class="d">'+(ok?m.d:'Reach dawn '+(m.unlock>1?m.unlock+' times':'once')+' to open this realm.')+'</span><span class="m">'+MAPSIZE[i]+' · '+m.shrines+' shrines</span>'+(sel?'<span class="badge">Selected</span>':'')+'</span>';b.onclick=()=>{if(!ok)return;save.map=m.id;persist();setMap(m.id);sfx('treat');if(mapPickerReturn==='solo'){hideAll();menuInfo();playClicked()}else{hideAll();$('ghPartyPanel').hidden=false;$('ghChosenMap').textContent=CURMAP.n;ghPartyStatus('Map selected for the next match: '+CURMAP.n)} };box.appendChild(b)});$('mapPicker').hidden=false;}
+function openMapPicker(where){mapPickerReturn=where||'solo';$('mapPickerHint').textContent=mapPickerReturn==='party'?'Host: choose the map for everyone in this party.':'Choose a map for your solo night.';const box=$('mapPickerList');box.innerHTML='';const ic=n=>'<svg class="ic"><use href="#i-'+n+'"/></svg>';MAPS.forEach((m,i)=>{const ok=mapUnlocked(i),sel=save.map===m.id,b=document.createElement('button');b.className='mode map r'+i+(sel?' sel':'')+(ok?' ok':' lock');b.innerHTML='<span class="mico">'+ic(ok?MAPICO[i]:'lock')+'</span><span class="mtxt"><b>'+m.n+'</b><span class="d">'+(ok?m.d:'Reach dawn '+(m.unlock>1?m.unlock+' times':'once')+' to open this realm.')+'</span><span class="m">'+MAPSIZE[i]+' · '+m.shrines+' shrines</span>'+(sel?'<span class="badge">Selected</span>':'')+'</span>';b.onclick=()=>{if(!ok)return;save.map=m.id;persist();setMap(m.id);sfx('treat');const target=mapPickerReturn;$('mapPicker').hidden=true;$('mapPicker').style.display='none';if(target==='solo'){hideAll();menuInfo();playClicked()}else{hideAll();$('ghPartyPanel').hidden=false;$('ghChosenMap').textContent=CURMAP.n;ghPartyStatus('Map selected for the next match: '+CURMAP.n)} };box.appendChild(b)});$('mapPicker').hidden=false;$('mapPicker').style.display='flex';}
 function openHearth(){
  G=null;state='menu';$('hud').hidden=true;
  const list=$('hearthList');list.innerHTML='';
