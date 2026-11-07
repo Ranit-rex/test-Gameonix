@@ -135,8 +135,6 @@ service cloud.firestore {
           request.resource.data.diff(resource.data).affectedKeys().hasOnly(['memberUids', 'updatedAt']))
       );
       allow delete: if signedIn() && resource.data.leaderUid == request.auth.uid;
-    }
-
 
       match /voiceMembers/{uid} {
         allow read: if signedIn() && request.auth.uid in get(/databases/$(database)/documents/partyRooms/$(roomId)).data.memberUids;
@@ -150,6 +148,7 @@ service cloud.firestore {
         allow update: if partyMember() && resource.data.toUid == request.auth.uid && resource.data.kind == 'offer' && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['answerSdp', 'answeredAt']);
         allow delete: if partyMember() && (resource.data.fromUid == request.auth.uid || resource.data.toUid == request.auth.uid);
       }
+    }
 
     match /partyInvites/{inviteId} {
       allow read: if signedIn() &&
