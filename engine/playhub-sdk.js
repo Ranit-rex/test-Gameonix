@@ -1,5 +1,5 @@
 /* ==========================================
-   PLAYBRIX SDK v2.0
+   PLAYOVIA SDK v2.0
    Firebase Authentication + Firestore
    ========================================== */
 
@@ -7,7 +7,7 @@
   "use strict";
 
   if (window.PlayHub) {
-    console.warn("Playbrix SDK already loaded.");
+    console.warn("Playovia SDK already loaded.");
     return;
   }
 
@@ -37,7 +37,7 @@
       try {
         callback(data);
       } catch (error) {
-        console.error("Playbrix event error:", error);
+        console.error("Playovia event error:", error);
       }
     });
 
@@ -140,13 +140,13 @@
       initialized = true;
       emit("ready", { version: VERSION });
 
-      console.log("Playbrix Firebase connected:", VERSION);
+      console.log("Playovia Firebase connected:", VERSION);
 
       return true;
 
     } catch (error) {
       initializationError = error;
-      console.error("Playbrix Firebase error:", error);
+      console.error("Playovia Firebase error:", error);
       emit("error", error);
       throw error;
     }
@@ -190,7 +190,7 @@
   function requireFirebase() {
     if (!initialized || !auth || !db) {
       throw new Error(
-        "Playbrix Firebase is not ready. Wait for Playbrix.ready()."
+        "Playovia Firebase is not ready. Wait for Playovia.ready()."
       );
     }
   }
@@ -205,7 +205,7 @@
       // not from an embedded game iframe.
       if (window.top !== window.self) {
         throw new Error(
-          "Please sign in using the main Playbrix homepage."
+          "Please sign in using the main Playovia homepage."
         );
       }
 
