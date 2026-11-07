@@ -20,7 +20,8 @@
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r152/three.min.js"></script>
 <script>
-(()=>{'use strict';\nconst keys=new Set();let runtime=null,raf=0,logic={move:true,jump:true,coins:true,score:true,win:true,enemy:true};
+(()=>{'use strict';
+const keys=new Set();let runtime=null,raf=0,logic={move:true,jump:true,coins:true,score:true,win:true,enemy:true};
 const $=id=>document.getElementById(id);let mode='2d',objects=[],selected=null,blocks=[],undo=[],playing=false,renderer,scene,camera,threeObjects=[];
 const canvas=$('scene2d'),ctx=canvas.getContext('2d');
 const colors={player:'#a45cff',platform:'#328bff',coin:'#ffd45e',enemy:'#ff637d',tree:'#51d69a',wall:'#8996b6',light:'#fff1a8',goal:'#55e5ad'};
