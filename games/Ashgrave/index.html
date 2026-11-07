@@ -302,12 +302,17 @@ async function mpJoin(){
   await memberRef.set({name:MP.playerName,joinedAt:Date.now(),lastSeen:Date.now()});
   MP.membersRef=MP.roomRef.child('members');
   MP.playersRef=MP.db.ref('ashgrave/players/'+MP.roomId);
-  phase='setting disconnect cleanup';
-  await memberRef.onDisconnect().remove();
-  await MP.slotRef.onDisconnect().remove();
   const myPlayer=MP.playersRef.child(MP.user.uid);
+  phase='setting member disconnect cleanup';
+  await memberRef.onDisconnect().remove();
+  phase='setting slot disconnect cleanup';
+  await MP.slotRef.onDisconnect().remove();
+  phase='setting player disconnect cleanup';
   await myPlayer.onDisconnect().remove();
-  if(MP.isHost)await MP.roomRef.child('status').onDisconnect().set('closed');
+  if(MP.isHost){
+   phase='setting host room disconnect cleanup';
+   await MP.roomRef.child('status').onDisconnect().set('closed');
+  }
   MP.active=true;MP.pending=true;MP.remote={};MP.visual={};
   MP.membersRef.on('value',ss=>{
    const mm=ss.val()||{},count=Object.keys(mm).length;
