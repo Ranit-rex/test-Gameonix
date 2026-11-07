@@ -179,9 +179,10 @@
         "$matchId": {
           ".read": "auth != null && root.child('multiplayer/rooms').child(data.child('roomCode').val()).child('members').child(auth.uid).exists()",
           ".write": "auth != null && ((!data.exists() && newData.child('hostUid').val() === auth.uid && root.child('multiplayer/rooms').child(newData.child('roomCode').val()).child('hostUid').val() === auth.uid) || (data.exists() && data.child('hostUid').val() === auth.uid))",
-          ".validate": "newData.hasChildren(['gameId','hostUid','roomCode','createdAt']) && newData.child('gameId').isString() && newData.child('gameId').val().length <= 48 && newData.child('hostUid').isString() && newData.child('roomCode').isString() && newData.child('createdAt').isNumber()",
-          "$field": {
-            ".write": "auth != null && root.child('multiplayer/rooms').child(data.parent().child('roomCode').val()).child('members').child(auth.uid).exists()"
+          ".validate": "newData.hasChildren(['gameId','hostUid','roomCode','createdAt','state']) && newData.child('gameId').isString() && newData.child('gameId').val().length <= 48 && newData.child('hostUid').isString() && newData.child('roomCode').isString() && newData.child('createdAt').isNumber()",
+          "state": {
+            ".read": "auth != null && root.child('multiplayer/rooms').child(root.child('multiplayer/matches').child($matchId).child('roomCode').val()).child('members').child(auth.uid).exists()",
+            ".write": "auth != null && root.child('multiplayer/rooms').child(root.child('multiplayer/matches').child($matchId).child('roomCode').val()).child('members').child(auth.uid).exists()"
           }
         }
       }
