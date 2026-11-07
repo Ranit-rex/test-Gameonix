@@ -687,14 +687,19 @@ function mpTick(dt){
  if(MP.beatT<=0){MP.beatT=3;const now=Date.now();MP.memberRef.update({lastSeen:now}).catch(()=>{});if(MP.isHost)MP.roomRef.update({lastSeen:now}).catch(()=>{})}
 }
 async function mpLeave(closed){
- if(!MP.active)return;
+ if(MP.beat)clearInterval(MP.beat);MP.beat=null;
  const old={...MP};MP.active=false;MP.remotes={};
- try{if(old.playersRef&&old.listener)old.playersRef.off('value');if(old.playerRef)await old.playerRef.remove();if(old.memberRef)await old.memberRef.remove();if(old.slotRef)await old.slotRef.remove();if(old.isHost&&old.roomRef)await old.roomRef.child('status').set('closed')}catch(e){console.warn('Ghost Night leave cleanup:',e)}
- MP.uid=null;MP.roomId=null;MP.roomRef=null;MP.memberRef=null;MP.slotRef=null;MP.playerRef=null;MP.playersRef=null;MP.listener=null;MP.isHost=false;MP.bots={};MP.offlineBots=false;MP.botFillDone=false;
+ try{
+  if(old.playersRef&&old.listener)old.playersRef.off('value');
+  if(old.memberRef)old.memberRef.off('value');
+  if(old.playerRef)await old.playerRef.remove();
+  if(old.memberRef)await old.memberRef.remove();
+  if(old.slotRef)await old.slotRef.remove();
+  if(old.isHost&&old.roomRef)await old.roomRef.child('status').set('closed');
+ }catch(e){console.warn('Ghost Night leave cleanup:',e)}
+ MP.uid=null;MP.name='';MP.roomId=null;MP.roomRef=null;MP.memberRef=null;MP.slotRef=null;MP.playerRef=null;MP.playersRef=null;MP.listener=null;MP.isHost=false;MP.hostUid=null;MP.bots={};MP.offlineBots=false;MP.botFillDone=false;MP.botFillT=0;MP.world=null;
  if(closed)mpStatus('You left the multiplayer match.');
 }
-
-
 /* ---------- story ---------- */
 const INTRO=[
 "Hollowmere is the last lit town in a kingdom that fell asleep. Every night the Great Lantern burns until dawn, and every night something comes to the gates.",
