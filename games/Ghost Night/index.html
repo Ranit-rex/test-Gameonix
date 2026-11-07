@@ -532,7 +532,8 @@ async function ghPartyRender(d){
  if(!d){box.innerHTML='';return}
  const members=d.memberUids||[],host=d.leaderUid===GH_PARTY.user.uid;
  box.innerHTML='<div style="padding:10px;border:1px solid #35445b;border-radius:9px"><b>ROOM '+d.roomId+'</b> · '+members.length+'/4<br><div style="margin:8px 0;color:#b8c7dc;font-size:11px">Members: '+members.length+' · '+(host?'YOU ARE HOST':'Waiting for host')+'</div>'+(host?'<button id="ghInviteFriends" class="small modebtn" type="button">＋ Invite Friends</button> <button id="ghPartyStart" class="primary" type="button" '+(members.length<2?'disabled':'')+'>▶ Start Match for Everyone</button>':'<span style="color:#b8c7dc;font-size:11px">Host will start when everyone is ready.</span>')+' <button id="ghPartyLeave" class="small modebtn" type="button">Leave</button></div>';
- $('ghPartyStart')?.addEventListener('click',ghPartyStartMatch);\n $('ghInviteFriends')?.addEventListener('click',ghPartyInviteFriends);
+ $('ghPartyStart')?.addEventListener('click',ghPartyStartMatch);
+ $('ghInviteFriends')?.addEventListener('click',ghPartyInviteFriends);
  $('ghPartyLeave')?.addEventListener('click',ghPartyLeave);
 }
 async function ghPartyWatch(code){
@@ -628,201 +629,76 @@ async function mpClaimSlot(roomRef,user,name){
 }
 async function mpConnect(forcedRoomId=null){
  if(MP.busy||MP.active)return;
+ if(!forcedRoomId){mpStatus('Open Multiplayer and join or create a party first.');return}
  MP.busy=true;const btn=$('bMulti');if(btn)btn.disabled=true;
- let phase='initializing';
- mpStatus('Connecting to PlayHub multiplayer…');
+ let phase='initializing',localRoomRef=null,localSlotRef=null,localMemberRef=null,localPlayerRef=null;
  try{
+  phase='connecting to Firebase';
   const {db,user}=await mpFirebase();
   const name=mpSafeName(user.displayName||(user.email&&user.email.split('@')[0])||'Player');
-  const root=db.ref('ghostnight/matches');
-  const queueRef=db.ref('ghostnight/matchmaking/current');
-  let chosen=null,chosenSlot=-1,chosenSlotRef=null,roomId=null;
-  const now=Date.now();
-  if(forcedRoomId){
-   phase='joining host-created party match';
-   const roomRef=root.child(forcedRoomId);
-   let roomSnap=await roomRef.once('value');
-   if(!roomSnap.exists())throw new Error('Host match room is not available.');
-   const rd=roomSnap.val();
-   if(!rd||rd.status!=='live'||rd.game!=='ghostnight')throw new Error('Host match is not live.');
-   chosen={id:forcedRoomId,data:rd};
-  }else{
-  phase='joining shared matchmaking queue';
-  const queued=await queueRef.transaction(cur=>{
-   const fresh=cur&&cur.game==='ghostnight'&&cur.map===save.map&&cur.diff===save.diff&&now-Number(cur.updatedAt||0)<45000;
-   const players=fresh&&cur.players?cur.players:{};
-   const count=Object.keys(players).length;
-   if(fresh&&count<4){
-    const next={...cur,players:{...players},updatedAt:now};
-    if(!next.players[user.uid])next.players[user.uid]={name,joinedAt:now};
-    return next;
-   }
-   return {game:'ghostnight',map:save.map,diff:save.diff,hostUid:user.uid,createdAt:now,updatedAt:now,players:{[user.uid]:{name,joinedAt:now}}};
-  });
-  if(!queued.committed)throw new Error('Could not reserve the shared matchmaking queue. Please retry.');
-  let queue=queued.snapshot.val();
-  if(!queue||!queue.players||!queue.players[user.uid])throw new Error('Matchmaking queue reservation was lost.');
-  roomId=queue.roomId||null;
-  if(!roomId&&queue.hostUid===user.uid){
-   phase='waiting for real teammate';
-   mpStatus('Searching for teammate · 1/4 players');
-   queue=await new Promise((resolve,reject)=>{
-    let settled=false;
-    const finish=(err,value)=>{if(settled)return;settled=true;queueRef.off('value',watch);clearTimeout(timer);err?reject(err):resolve(value)};
-    const watch=snap=>{
-     const v=snap.val()||{};
-     if(v.hostUid!==user.uid||v.game!=='ghostnight'||v.map!==save.map||v.diff!==save.diff){finish(new Error('Matchmaking queue changed. Please retry.'));return;}
-     const count=Object.keys(v.players||{}).length;
-     mpStatus('Searching for teammate · '+count+'/4 players');
-     if(count>=2)finish(null,v);
-    };
-    const timer=setTimeout(()=>finish(new Error('No teammate found yet. Please try matchmaking again.')),60000);
-    queueRef.on('value',watch);
-    queueRef.once('value',watch);
-   });
-   phase='creating shared match';
-   const ref=root.push();
-   await ref.set({game:'ghostnight',hostUid:user.uid,status:'live',map:save.map,diff:save.diff,createdAt:Date.now(),lastSeen:Date.now()});
-   const linked=await queueRef.transaction(cur=>{
-    if(!cur||cur.hostUid!==user.uid||cur.roomId)return;
-    return {...cur,roomId:ref.key,updatedAt:Date.now()};
-   });
-   if(!linked.committed||!linked.snapshot.val()||linked.snapshot.val().roomId!==ref.key){
-    await ref.remove().catch(()=>{});
-    throw new Error('Shared matchmaking room could not be announced. Please retry.');
-   }
-   roomId=ref.key;
-  }else if(!roomId){
-   phase='waiting for host to create shared match';
-   mpStatus('Teammate found · waiting for host');
-   queue=await new Promise((resolve,reject)=>{
-    let settled=false;
-    const finish=(err,value)=>{if(settled)return;settled=true;queueRef.off('value',watch);clearTimeout(timer);err?reject(err):resolve(value)};
-    const watch=snap=>{
-     const v=snap.val()||{};
-     if(v.hostUid!==queue.hostUid||v.game!=='ghostnight'||v.map!==save.map||v.diff!==save.diff){finish(new Error('Host matchmaking session expired. Please retry.'));return;}
-     if(v.roomId)finish(null,v);
-    };
-    const timer=setTimeout(()=>finish(new Error('Host did not create the shared room in time. Please retry.')),30000);
-    queueRef.on('value',watch);
-    queueRef.once('value',watch);
-   });
-   roomId=queue.roomId;
-  }
-  if(!forcedRoomId){
-  if(!roomId)throw new Error('No shared room was assigned.');
-  const roomRef=root.child(roomId);
-  const roomSnap=await roomRef.once('value');
-  const roomData=roomSnap.val();
-  if(!roomData||roomData.status!=='live'||roomData.game!=='ghostnight')throw new Error('Shared match is no longer available. Please retry.');
-  chosen={id:roomId,data:roomData};
-  }
-  if(forcedRoomId){roomId=forcedRoomId;const snap=await root.child(roomId).once('value');chosen={id:roomId,data:snap.val()};}
+  const roomRef=db.ref('ghostnight/matches/'+forcedRoomId);localRoomRef=roomRef;
+  phase='checking party match';
+  const roomSnap=await roomRef.once('value'),roomData=roomSnap.val();
+  if(!roomData||roomData.status!=='live'||roomData.game!=='ghostnight')throw new Error('Host match is not live or no longer exists.');
   phase='claiming player slot';
-  const roomRef=root.child(chosen.id);
   const claimed=await mpClaimSlot(roomRef,user,name);
-  if(!claimed)throw new Error('All four player slots are full. Please retry matchmaking.');
-  chosenSlot=claimed.slot;
-  chosenSlotRef=claimed.slotRef;
-  MP.uid=user.uid;MP.name=name;MP.roomId=chosen.id;MP.roomRef=root.child(chosen.id);
-  MP.slot=chosenSlot;MP.slotRef=chosenSlotRef;MP.isHost=chosen.data.hostUid===user.uid;MP.hostUid=chosen.data.hostUid||null;
+  if(!claimed)throw new Error('This match is full (4/4 players).');
+  localSlotRef=claimed.slotRef;
+  MP.uid=user.uid;MP.name=name;MP.roomId=forcedRoomId;MP.roomRef=roomRef;MP.slot=claimed.slot;MP.slotRef=claimed.slotRef;MP.isHost=roomData.hostUid===user.uid;MP.hostUid=roomData.hostUid||null;
   phase='registering player';
-  MP.memberRef=MP.roomRef.child('members/'+user.uid);
-  await MP.memberRef.set({name,joinedAt:Date.now(),lastSeen:Date.now()});
-  MP.playersRef=db.ref('ghostnight/players/'+MP.roomId);
-  MP.playerRef=MP.playersRef.child(user.uid);
-  const cleanupTasks=[
-   ['member',()=>MP.memberRef.onDisconnect().remove()],
-   ['slot',()=>MP.slotRef.onDisconnect().remove()],
-   ['player',()=>MP.playerRef.onDisconnect().remove()]
-  ];
-  if(MP.isHost)cleanupTasks.push(['host room',()=>MP.roomRef.child('status').onDisconnect().set('closed')]);
-  const cleanupFailures=[];
-  for(const [label,register] of cleanupTasks){try{await register()}catch(e){cleanupFailures.push(label);console.warn('Ghost Night disconnect cleanup unavailable for '+label,e)}}
-  MP.world=null;MP.hitSeen={};MP.hitQueue=[];MP.hitSeq=0;MP.worldT=0;
-  MP.active=true;
+  localMemberRef=roomRef.child('members/'+user.uid);MP.memberRef=localMemberRef;
+  await localMemberRef.set({name,joinedAt:Date.now(),lastSeen:Date.now()});
+  MP.playersRef=db.ref('ghostnight/players/'+forcedRoomId);localPlayerRef=MP.playersRef.child(user.uid);MP.playerRef=localPlayerRef;
+  await Promise.all([localMemberRef.onDisconnect().remove(),localSlotRef.onDisconnect().remove(),localPlayerRef.onDisconnect().remove()]);
+  if(MP.isHost)await roomRef.child('status').onDisconnect().set('closed');
+  MP.world=null;MP.hitSeen={};MP.hitQueue=[];MP.hitSeq=0;MP.worldT=0;MP.teamReady=false;MP.remotes={};MP.active=true;MP.listener=true;
   MP.playersRef.on('value',snap=>{
    const all=snap.val()||{},next={};
-   for(const [uid,p] of Object.entries(all)){
-    if(uid!==MP.uid&&p&&Date.now()-Number(p.updatedAt||0)<15000){
-     next[uid]=p;
-     if(!MP.isHost&&uid===MP.hostUid&&p.world){MP.world=p.world;if(G)mpApplyWorld();if(MP.worldReadyResolve){MP.worldReadyResolve();MP.worldReadyResolve=null}}
-    }
+   for(const [uid,p] of Object.entries(all))if(uid!==MP.uid&&p&&Date.now()-Number(p.updatedAt||0)<15000){
+    next[uid]=p;
+    if(!MP.isHost&&uid===MP.hostUid&&p.world){MP.world=p.world;if(G)mpApplyWorld();if(MP.worldReadyResolve){MP.worldReadyResolve();MP.worldReadyResolve=null}}
    }
    MP.remotes=next;
-  },e=>{console.error('Ghost Night players listener:',e);mpStatus('Connection lost: '+(e.code||e.message||'permission denied'))});
-  MP.listener=true;
-  await MP.playerRef.set({name,x:0,y:130,face:1,hp:100,max:100,cos:save.costume,color:mpColor(user.uid),updatedAt:Date.now()});
-  MP.roomRef.child('members').on('value',snap=>{const members=snap.val()||{},count=Object.keys(members).length;mpStatus((MP.isHost?'HOST':'GUEST')+' · ROOM '+String(MP.roomId||'').slice(-6).toUpperCase()+' · '+count+'/4 players · '+(members[MP.uid]?'Connected':'Reconnecting'))},e=>{console.error('Ghost Night members listener:',e);mpStatus('Member sync permission error: '+(e.code||e.message||'permission denied'))});
+  },e=>{console.error('Ghost Night players listener:',e);mpStatus('Player sync failed: '+(e.code||e.message))});
+  await localPlayerRef.set({name,x:0,y:130,face:1,hp:100,max:100,cos:save.costume,color:mpColor(user.uid),updatedAt:Date.now()});
+  roomRef.child('members').on('value',snap=>{const members=snap.val()||{};mpStatus((MP.isHost?'HOST':'GUEST')+' · ROOM '+forcedRoomId.slice(-6).toUpperCase()+' · '+Object.keys(members).length+'/4 players')},e=>mpStatus('Member sync failed: '+(e.code||e.message)));
   if(MP.beat)clearInterval(MP.beat);
   MP.beat=setInterval(()=>{
-   if(!MP.active||!MP.roomId)return;
-   const stamp=Date.now();
-   MP.memberRef.update({lastSeen:stamp}).catch(e=>{console.warn('member heartbeat',e);mpStatus('Player connection issue: '+(e.code||e.message))});
-   if(MP.isHost){
-    MP.roomRef.child('lastSeen').set(stamp).catch(e=>{console.warn('room heartbeat',e);mpStatus('Match heartbeat issue: '+(e.code||e.message))});
-   }
-  },10000);
-  const roomTag=String(MP.roomId||'').slice(-6).toUpperCase();
-  const roleTag=MP.isHost?'HOST':'GUEST';
-  mpStatus(roleTag+' · ROOM '+roomTag+' · '+(chosenSlot+1)+'/4 slot reserved'+(cleanupFailures.length?' · cleanup fallback active':' · starting…'));
+   if(!MP.active)return;const stamp=Date.now();
+   MP.memberRef.update({lastSeen:stamp}).catch(e=>console.warn('member heartbeat',e));
+   if(MP.isHost)MP.roomRef.child('lastSeen').set(stamp).catch(e=>console.warn('host heartbeat',e));
+  },3000);
   if(MP.isHost){
-   // Count only distinct players whose slot and member heartbeat are both live.
-   phase='verifying real teammate';
+   phase='waiting for party members';mpStatus('HOST · Waiting for another player to connect…');
    await new Promise((resolve,reject)=>{
-    let settled=false;
-    const membersRef=MP.roomRef.child('members');
-    const slotsRef=MP.roomRef.child('slots');
-    const finish=(err)=>{if(settled)return;settled=true;membersRef.off('value',check);slotsRef.off('value',check);clearTimeout(timer);err?reject(err):resolve()};
-    const check=async()=>{
-     try{
-      const [ms,ss]=await Promise.all([membersRef.once('value'),slotsRef.once('value')]);
-      const members=ms.val()||{},slots=ss.val()||{},now=Date.now(),live=new Set();
-      for(const v of Object.values(slots)){
-       if(!v||!v.uid||v.uid===MP.uid)continue;
-       const m=members[v.uid];
-       if(m&&Number.isFinite(Number(m.lastSeen))&&now-Number(m.lastSeen)<20000)live.add(v.uid);
-      }
-      const count=1+live.size;
-      mpStatus('HOST · ROOM '+roomTag+' · '+count+'/4 verified players · waiting for teammate');
-      if(live.size>=1)finish();
-     }catch(e){finish(e)}
-    };
-    const timer=setTimeout(()=>finish(new Error('No active teammate joined this room. Multiplayer was not started.')),60000);
-    membersRef.on('value',check);slotsRef.on('value',check);check();
+    let settled=false;const membersRef=roomRef.child('members');
+    const finish=err=>{if(settled)return;settled=true;membersRef.off('value',check);clearTimeout(timer);err?reject(err):resolve()};
+    const check=snap=>{const members=snap.val()||{};if(Object.entries(members).some(([uid,m])=>uid!==user.uid&&m&&Date.now()-Number(m.lastSeen||0)<12000))finish()};
+    const timer=setTimeout(()=>finish(new Error('No other party member connected. Ask them to join and retry.')),90000);
+    membersRef.on('value',check);membersRef.once('value').then(check).catch(finish);
    });
-   if(!MP.active||!MP.isHost)throw new Error('Multiplayer session ended before teammate joined.');
-   MP.teamReady=true;
-   // Start only after a second, distinct account is verified in this exact room.
-   startRun();
+   if(!MP.active)throw new Error('Party connection was closed.');
+   MP.teamReady=true;startRun();
   }else{
-   // Guests wait for the host's first world snapshot instead of generating
-   // an unrelated local world at the same time.
    phase='waiting for host game world';
-   if(!MP.world){
-    await new Promise((resolve,reject)=>{
-     let settled=false;
-     const timer=setTimeout(()=>{
-      if(settled)return;settled=true;MP.worldReadyResolve=null;
-      reject(new Error('Host game world did not arrive. Please leave and retry matchmaking.'));
-     },12000);
-     MP.worldReadyResolve=()=>{
-      if(settled)return;settled=true;clearTimeout(timer);MP.worldReadyResolve=null;resolve();
-     };
-     if(MP.world)MP.worldReadyResolve();
-    });
-   }
-   MP.teamReady=true;
-   startRun();
-   mpApplyWorld();
+   await new Promise((resolve,reject)=>{
+    let settled=false;const finish=err=>{if(settled)return;settled=true;clearTimeout(timer);MP.worldReadyResolve=null;err?reject(err):resolve()};
+    const timer=setTimeout(()=>finish(new Error('Host game world did not arrive. Leave and rejoin the party.')),20000);
+    MP.worldReadyResolve=()=>finish();if(MP.world)finish();
+   });
+   MP.teamReady=true;startRun();mpApplyWorld();
   }
-  caption('Match found. Find your teammates on the map.',4200);
+  caption('Party connected. Find your teammates on the map.',4200);
  }catch(e){
+  console.error('Ghost Night party connection failed during '+phase+':',e);
   if(MP.active)await mpLeave(false);
-  else{try{if(MP.slotRef)await MP.slotRef.remove()}catch(x){}try{if(MP.memberRef)await MP.memberRef.remove()}catch(x){}}
-  console.error('Ghost Night multiplayer failed during '+phase+':',e);
-  const code=e&&e.code?' ['+e.code+']':'';
-  mpStatus('Failed while '+phase+code+': '+(e&&e.message||'Unknown error'));
+  else{
+   try{if(localPlayerRef)await localPlayerRef.remove()}catch(x){}
+   try{if(localMemberRef)await localMemberRef.remove()}catch(x){}
+   try{if(localSlotRef)await localSlotRef.remove()}catch(x){}
+   MP.active=false;MP.teamReady=false;MP.uid=null;MP.roomId=null;MP.roomRef=null;MP.memberRef=null;MP.slotRef=null;MP.playerRef=null;MP.playersRef=null;
+  }
+  mpStatus('Party connection failed during '+phase+': '+(e&&e.message||'Unknown error'));
  }finally{MP.busy=false;if(btn)btn.disabled=false}
 }
 function mpCleanFirebase(value){
