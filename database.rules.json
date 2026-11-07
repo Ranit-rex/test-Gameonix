@@ -42,6 +42,47 @@
           }
         }
       }
+    },
+    "ghostnight": {
+      "matches": {
+        ".read": "auth != null",
+        "$roomId": {
+          ".write": "auth != null && !data.exists() && newData.child('hostUid').val() === auth.uid",
+          ".validate": "newData.hasChildren(['game','hostUid','status','map','diff','createdAt','lastSeen']) && newData.child('game').val() === 'ghostnight' && newData.child('hostUid').isString() && newData.child('status').val() === 'live' && newData.child('map').isString() && newData.child('diff').exists() && newData.child('createdAt').isNumber() && newData.child('lastSeen').isNumber()",
+          "members": {
+            ".read": "auth != null",
+            "$uid": {
+              ".read": "auth != null",
+              ".write": "auth != null && auth.uid === $uid && root.child('ghostnight/matches').child($roomId).exists() && root.child('ghostnight/matches').child($roomId).child('status').val() === 'live'",
+              ".validate": "newData.hasChildren(['name','joinedAt','lastSeen']) && newData.child('name').isString() && newData.child('name').val().length <= 20 && newData.child('joinedAt').isNumber() && newData.child('lastSeen').isNumber()"
+            }
+          },
+          "lastSeen": {
+            ".write": "auth != null && auth.uid === root.child('ghostnight/matches').child($roomId).child('hostUid').val()",
+            ".validate": "newData.isNumber()"
+          },
+          "status": {
+            ".write": "auth != null && auth.uid === root.child('ghostnight/matches').child($roomId).child('hostUid').val()",
+            ".validate": "newData.val() === 'live' || newData.val() === 'closed'"
+          },
+          "slots": {
+            ".read": "auth != null",
+            "$slot": {
+              ".write": "auth != null && ($slot === '0' || $slot === '1' || $slot === '2' || $slot === '3') && ((!data.exists() && newData.child('uid').val() === auth.uid) || (data.exists() && data.child('uid').val() === auth.uid && !newData.exists()))",
+              ".validate": "newData.hasChildren(['uid','name','joinedAt']) && newData.child('uid').val() === auth.uid && newData.child('name').isString() && newData.child('name').val().length <= 20 && newData.child('joinedAt').isNumber()"
+            }
+          }
+        }
+      },
+      "players": {
+        "$roomId": {
+          ".read": "auth != null && root.child('ghostnight/matches').child($roomId).child('members').child(auth.uid).exists()",
+          "$uid": {
+            ".write": "auth != null && auth.uid === $uid && root.child('ghostnight/matches').child($roomId).child('members').child(auth.uid).exists()",
+            ".validate": "newData.hasChildren(['x','y','face','hp','max','cos','color','updatedAt']) && newData.child('x').isNumber() && newData.child('y').isNumber() && newData.child('face').isNumber() && newData.child('hp').isNumber() && newData.child('max').isNumber() && newData.child('cos').isString() && newData.child('color').isString() && newData.child('updatedAt').isNumber()"
+          }
+        }
+      }
     }
   }
 }
