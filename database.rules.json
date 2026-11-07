@@ -41,6 +41,42 @@
             ".validate": "newData.hasChildren(['x','y','angle','hp','name','updatedAt']) && newData.child('x').isNumber() && newData.child('y').isNumber() && newData.child('angle').isNumber() && newData.child('hp').isNumber() && newData.child('name').isString() && newData.child('name').val().length <= 32 && newData.child('updatedAt').isNumber()"
           }
         }
+      },
+      "parties": {
+        ".read": "auth != null",
+        "$code": {
+          ".read": "auth != null",
+          ".write": "auth != null && ((!data.exists() && newData.child('hostUid').val() === auth.uid && newData.child('roomCode').val() === $code && newData.child('gameSlug').val() === 'ashgrave' && newData.child('status').val() === 'waiting' && newData.child('members').child(auth.uid).exists()) || (data.exists() && data.child('hostUid').val() === auth.uid))",
+          ".validate": "newData.hasChildren(['roomCode','gameSlug','hostUid','hostName','chapter','status','visibility','members','createdAt','updatedAt']) && newData.child('roomCode').val() === $code && newData.child('gameSlug').val() === 'ashgrave' && newData.child('hostUid').isString() && newData.child('hostName').isString() && newData.child('chapter').isNumber() && (newData.child('status').val() === 'waiting' || newData.child('status').val() === 'started') && newData.child('visibility').val() === 'public' && newData.child('createdAt').isNumber() && newData.child('updatedAt').isNumber() && newData.child('members').child(newData.child('hostUid').val()).exists()",
+          "members": {
+            ".read": "auth != null",
+            "$uid": {
+              ".write": "auth != null && auth.uid === $uid && root.child('ashgrave/parties').child($code).exists() && ((newData.exists() && newData.child('uid').val() === auth.uid) || (data.exists() && !newData.exists() && root.child('ashgrave/parties').child($code).child('status').val() === 'waiting'))",
+              ".validate": "newData.hasChildren(['uid','name','joinedAt','lastSeen']) && newData.child('uid').val() === auth.uid && newData.child('name').isString() && newData.child('name').val().length <= 22 && newData.child('joinedAt').isNumber() && newData.child('lastSeen').isNumber()"
+            }
+          },
+          "matchId": {
+            ".write": "auth != null && auth.uid === root.child('ashgrave/parties').child($code).child('hostUid').val() && root.child('ashgrave/parties').child($code).child('status').val() === 'waiting' && newData.isString()",
+            ".validate": "newData.isString()"
+          },
+          "status": {
+            ".write": "auth != null && auth.uid === root.child('ashgrave/parties').child($code).child('hostUid').val() && data.val() === 'waiting' && newData.val() === 'started' && root.child('ashgrave/parties').child($code).child('matchId').isString()",
+            ".validate": "newData.val() === 'waiting' || newData.val() === 'started'"
+          },
+          "updatedAt": {
+            ".write": "auth != null && auth.uid === root.child('ashgrave/parties').child($code).child('hostUid').val()",
+            ".validate": "newData.isNumber()"
+          }
+        }
+      },
+      "partyInvites": {
+        "$toUid": {
+          ".read": "auth != null && auth.uid === $toUid",
+          "$code": {
+            ".write": "auth != null && ((auth.uid !== $toUid && root.child('ashgrave/parties').child($code).child('members').child(auth.uid).exists() && newData.child('roomCode').val() === $code && newData.child('fromUid').val() === auth.uid) || (auth.uid === $toUid && data.exists() && !newData.exists()))",
+            ".validate": "newData.hasChildren(['roomCode','fromUid','fromName','createdAt']) && newData.child('roomCode').val() === $code && newData.child('fromUid').isString() && newData.child('fromName').isString() && newData.child('fromName').val().length <= 22 && newData.child('createdAt').isNumber()"
+          }
+        }
       }
     },
     "ghostnight": {
