@@ -3664,7 +3664,7 @@ function arsenalList(list){
 /* ----- boot / loading screen (20 seconds) ----- */
 (function(){
  const B=$('boot');if(!B)return;
- const T=20;let skipOK=false,done=false,t0=null;
+ const T=5;let skipOK=true,done=false,t0=null;
  const bypass=typeof location==='undefined'||/noboot/.test(location.search||'');
  const first=!save.bootSeen;
  const finish=()=>{if(done)return;done=true;B.classList.add('out');save.bootSeen=true;persist();setTimeout(()=>{B.hidden=true},900)};
