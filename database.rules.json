@@ -185,7 +185,7 @@
         "matches": {
           ".read": "auth != null",
           "$matchId": {
-            ".read": "auth != null",
+            ".read": "auth != null && root.child('riftbound/parties').child(data.child('roomCode').val()).child('members').child(auth.uid).exists()",
             ".write": "auth != null && !data.exists() && newData.child('gameSlug').val() === 'riftbound' && newData.child('hostUid').val() === auth.uid && root.child('riftbound/parties').child(newData.child('roomCode').val()).child('hostUid').val() === auth.uid && root.child('riftbound/parties').child(newData.child('roomCode').val()).child('status').val() === 'waiting'",
             ".validate": "newData.hasChildren(['gameSlug','hostUid','roomCode','level','board','moves','solved','seed','startedAt','createdAt']) && newData.child('gameSlug').val() === 'riftbound' && newData.child('hostUid').isString() && newData.child('roomCode').isString() && newData.child('level').isNumber() && newData.child('moves').isNumber() && newData.child('solved').isBoolean() && newData.child('seed').isNumber() && newData.child('startedAt').isNumber() && newData.child('createdAt').isNumber()",
             "board": {
@@ -207,14 +207,14 @@
             },
             "level": {
               ".write": "auth != null && auth.uid === root.child('riftbound/matches').child($matchId).child('hostUid').val() && root.child('riftbound/parties').child(root.child('riftbound/matches').child($matchId).child('roomCode').val()).child('members').child(auth.uid).exists()",
-              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 2"
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 24"
             },
             "seed": {
-              ".write": "auth != null && auth.uid === root.child('riftbound/matches').child($matchId).child('hostUid').val()",
+              ".write": "auth != null && auth.uid === root.child('riftbound/parties/matches').child($matchId).child('hostUid').val() && root.child('riftbound/parties').child(root.child('riftbound/parties/matches').child($matchId).child('roomCode').val()).child('members').child(auth.uid).exists()",
               ".validate": "newData.isNumber()"
             },
             "startedAt": {
-              ".write": "auth != null && auth.uid === root.child('riftbound/matches').child($matchId).child('hostUid').val()",
+              ".write": "auth != null && auth.uid === root.child('riftbound/parties/matches').child($matchId).child('hostUid').val() && root.child('riftbound/parties').child(root.child('riftbound/parties/matches').child($matchId).child('roomCode').val()).child('members').child(auth.uid).exists()",
               ".validate": "newData.isNumber()"
             }
           }
