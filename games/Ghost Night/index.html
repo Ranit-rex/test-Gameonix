@@ -643,18 +643,19 @@ async function ghPartyRefresh(){
 }
 function ghPartyOpen(){const p=$('ghPartyPanel');p.hidden=false;ghPartyRefresh()}
 async function mpFirebase(){
- // Prefer the authenticated Firebase instances owned by the PlayHub parent page.
- // This avoids iframe-specific Auth persistence/session mismatches.
- try{
-  const bridge=window.parent!==window?window.parent.PlayHubFirebase:null;
-  if(bridge&&bridge.auth&&bridge.db){
-   const auth=bridge.auth;
-   let user=auth.currentUser;
-   if(!user)user=await new Promise(resolve=>{let off=auth.onAuthStateChanged(u=>{off();resolve(u)})});
-   if(!user)throw new Error('PlayHub login session is not ready. Close Ghost Night, wait for PlayHub to finish signing in, then reopen it.');
-   return{db:bridge.db,user};
+ // When embedded in PlayHub, wait for the parent page's first Firebase Auth
+ // state event. currentUser can be null briefly while LOCAL persistence restores.
+ if(window.parent!==window){
+  let bridge=null;
+  try{bridge=window.parent.PlayHubFirebase||null}catch(e){throw new Error('Cannot access PlayHub login bridge: '+e.message)}
+  if(!bridge||!bridge.auth||!bridge.db||!bridge.ready){
+   throw new Error('PlayHub login bridge is unavailable. Open Ghost Night from the PlayHub game page, not its direct URL.');
   }
- }catch(e){if(e&&e.message&&e.message.includes('PlayHub login session'))throw e;console.warn('PlayHub Firebase bridge unavailable; using local Firebase app.',e)}
+  const user=await bridge.ready;
+  if(!user)throw new Error('You are signed out of PlayHub. Return to PlayHub, sign in with Google, then reopen Ghost Night.');
+  return{db:bridge.db,user};
+ }
+ // Standalone game URL: use the same Firebase project and its local Auth session.
  if(!window.firebase)await mpLoadScript('https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js');
  if(!firebase.auth)await mpLoadScript('https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js');
  if(!firebase.database)await mpLoadScript('https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js');
@@ -662,7 +663,7 @@ async function mpFirebase(){
  const app=firebase.app(),auth=app.auth(),db=app.database(GH_FIREBASE.databaseURL);
  let user=auth.currentUser;
  if(!user)user=await new Promise(resolve=>{let off=auth.onAuthStateChanged(u=>{off();resolve(u)})});
- if(!user)throw new Error('PlayHub account not found. PlayHub login session was not available to Ghost Night.');
+ if(!user)throw new Error('No signed-in PlayHub account found in this standalone game tab. Open the game from PlayHub after signing in.');
  return{db,user};
 }
 function mpSafeName(v){return String(v||'Player').replace(/[<>\u0000-\u001f]/g,'').trim().slice(0,20)||'Player'}
