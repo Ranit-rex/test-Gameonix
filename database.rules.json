@@ -155,7 +155,6 @@
       }
     },
     "riftbound": {
-      ".read": "auth != null",
       "parties": {
         ".read": "auth != null",
         "$code": {
@@ -184,7 +183,6 @@
         }
       },
       "matches": {
-        ".read": "auth != null",
         "$matchId": {
           ".read": "auth != null && root.child('riftbound/parties').child(data.child('roomCode').val()).child('members').child(auth.uid).exists()",
           ".write": "auth != null && !data.exists() && newData.child('gameSlug').val() === 'riftbound' && newData.child('hostUid').val() === auth.uid && root.child('riftbound/parties').child(newData.child('roomCode').val()).child('hostUid').val() === auth.uid && root.child('riftbound/parties').child(newData.child('roomCode').val()).child('members').child(auth.uid).exists() && root.child('riftbound/parties').child(newData.child('roomCode').val()).child('status').val() === 'waiting'",
