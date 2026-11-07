@@ -1,4 +1,15 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
+/* Distinct realm preview cards; party picker deliberately stays text-only. */
+#mapPicker .map-preview{display:block;width:100%;height:82px;object-fit:cover;border:1px solid rgba(180,210,235,.35);border-radius:4px;background:#101722}
+#mapPicker .mode:not(.party-map){display:flex;flex-direction:column;align-items:stretch;gap:6px;min-height:0;padding:7px}
+#mapPicker .mode:not(.party-map) .mtxt{gap:3px}
+#mapPicker .mode:not(.party-map) .d{display:block;font-size:.58rem;line-height:1.25;max-height:2.5em;overflow:hidden}
+#mapPicker .mode:not(.party-map) .m{font-size:.5rem}
+#mapPicker .party-map{min-height:44px;justify-content:center;padding:8px 12px}
+#mapPicker .party-map .mtxt{gap:0}
+#mapPicker .party-map .mico,#mapPicker .party-map .d,#mapPicker .party-map .m,#mapPicker .party-map .badge{display:none}
+@media(max-width:360px){#mapPicker .map-preview{height:74px}}
+</style></head><body>
 <title>Last Lantern</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Newsreader:ital,wght@0,400;0,600;1,400&family=DM+Mono:wght@400;500&display=swap">
@@ -965,44 +976,68 @@ const MODS=[
  {id:'still',n:'Still Night',d:'Fewer Hollows, but the great ones are tougher.'}
 ];
 /* ---------- ground & props ---------- */
-function makeGround(){
+function makeGround(id){
  const S=256,c=document.createElement('canvas');c.width=c.height=S;const g=c.getContext('2d');
- g.fillStyle='#16221e';g.fillRect(0,0,S,S);
- const R=mulberry(7);
- const wrap=(x,y,fn)=>{for(const dx of[-S,0,S])for(const dy of[-S,0,S])fn(x+dx,y+dy)};
- for(let i=0;i<40;i++){
-  const x=R()*S,y=R()*S,r=20+R()*40,col=R()<.5?'rgba(40,60,45,0.2)':'rgba(8,14,18,0.28)';
-  wrap(x,y,(X,Y)=>{const gr=g.createRadialGradient(X,Y,0,X,Y,r);gr.addColorStop(0,col);gr.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=gr;g.fillRect(X-r,Y-r,r*2,r*2)});
+ const themes={
+  fields:{base:'#17271d',a:'rgba(56,91,52,.24)',b:'rgba(8,16,13,.3)',mark:'#66704a',line:'rgba(116,142,83,.28)'},
+  marsh:{base:'#102629',a:'rgba(23,88,79,.35)',b:'rgba(3,16,22,.4)',mark:'#285c58',line:'rgba(105,183,157,.24)'},
+  barrows:{base:'#2b1719',a:'rgba(105,38,30,.3)',b:'rgba(12,8,12,.42)',mark:'#75443a',line:'rgba(199,94,55,.26)'},
+  frostfall:{base:'#263b4b',a:'rgba(157,207,226,.34)',b:'rgba(8,22,37,.3)',mark:'#8db7c9',line:'rgba(218,244,255,.5)'},
+  catacombs:{base:'#171622',a:'rgba(69,61,91,.3)',b:'rgba(2,2,9,.48)',mark:'#48445c',line:'rgba(147,130,180,.25)'},
+  embercoast:{base:'#39231b',a:'rgba(157,76,37,.3)',b:'rgba(18,9,7,.42)',mark:'#8b5334',line:'rgba(255,154,67,.25)'},
+  glacier:{base:'#182d42',a:'rgba(77,151,191,.35)',b:'rgba(5,18,36,.42)',mark:'#9bd9ee',line:'rgba(198,239,255,.58)'}
+ };
+ const th=themes[id]||themes.fields;g.fillStyle=th.base;g.fillRect(0,0,S,S);
+ const R=mulberry(700+(id||'fields').split('').reduce((a,ch)=>a+ch.charCodeAt(0),0));
+ for(let i=0;i<58;i++){
+  const x=R()*S,y=R()*S,r=12+R()*44,col=R()<.5?th.a:th.b;
+  const gr=g.createRadialGradient(x,y,0,x,y,r);gr.addColorStop(0,col);gr.addColorStop(1,'rgba(0,0,0,0)');
+  g.fillStyle=gr;g.fillRect(x-r,y-r,r*2,r*2);
  }
- g.lineWidth=1.2;
- for(let i=0;i<520;i++){
-  const x=R()*S,y=R()*S,h=3+R()*5,lean=(R()-.5)*3,st=R()<.7?'rgba(70,110,80,.35)':'rgba(40,70,55,.4)';
-  wrap(x,y,(X,Y)=>{g.strokeStyle=st;g.beginPath();g.moveTo(X,Y);g.lineTo(X+lean,Y-h);g.stroke()});
+ if(id==='marsh'){
+  for(let i=0;i<18;i++){const x=R()*S,y=R()*S;g.strokeStyle='rgba(117,191,175,.22)';g.lineWidth=2;g.beginPath();g.ellipse(x,y,12+R()*24,4+R()*8,R()*3,0,TAU);g.stroke()}
+ }else if(id==='barrows'||id==='embercoast'){
+  for(let i=0;i<34;i++){const x=R()*S,y=R()*S;g.strokeStyle=th.line;g.lineWidth=1.5;g.beginPath();g.moveTo(x,y);g.lineTo(x+R()*22-11,y+R()*20-10);g.lineTo(x+R()*35-17,y+R()*34-17);g.stroke()}
+ }else if(id==='frostfall'||id==='glacier'){
+  for(let i=0;i<46;i++){const x=R()*S,y=R()*S;g.strokeStyle=th.line;g.lineWidth=1+R()*2;g.beginPath();g.moveTo(x-7,y+8);g.lineTo(x,y);g.lineTo(x+10,y-12);g.stroke()}
+ }else if(id==='catacombs'){
+  g.strokeStyle=th.line;g.lineWidth=1;
+  for(let x=0;x<S;x+=32){g.beginPath();g.moveTo(x,0);g.lineTo(x,S);g.stroke()}
+  for(let y=0;y<S;y+=32){g.beginPath();g.moveTo(0,y);g.lineTo(S,y);g.stroke()}
+ }else{
+  for(let i=0;i<520;i++){const x=R()*S,y=R()*S,h=3+R()*7,lean=(R()-.5)*4;g.strokeStyle=th.line;g.beginPath();g.moveTo(x,y);g.lineTo(x+lean,y-h);g.stroke()}
  }
- const cols=['#3b4050','#4a5062','#2c3040','#555b6e'];
- for(let i=0;i<46;i++){
-  const x=R()*S,y=R()*S,a=R()*TAU,cl=cols[i%4];
-  wrap(x,y,(X,Y)=>{g.save();g.translate(X,Y);g.rotate(a);g.fillStyle=cl;g.globalAlpha=.55;g.beginPath();g.ellipse(0,0,4,2,0,0,TAU);g.fill();g.restore()});
- }
+ for(let i=0;i<70;i++){const x=R()*S,y=R()*S,a=R()*TAU;g.save();g.translate(x,y);g.rotate(a);g.fillStyle=th.mark;g.globalAlpha=.42;g.beginPath();g.ellipse(0,0,2+R()*5,1+R()*2,0,0,TAU);g.fill();g.restore()}
  return c;
 }
 const MAPS=[
- {id:'fields',n:'Hollow Fields',d:'The old pastures around the lantern. Compact and strewn with ruins.',world:1500,shrines:4,rew:1,tint:'',mix:[.35,.5,.68,.82,.92],unlock:0},
- {id:'marsh',n:'Sunken Marsh',d:'A wide drowned wood. Thick trees, green mist, long walks between shrines.',world:2100,shrines:5,rew:1.2,tint:'rgba(20,95,85,.22)',mix:[.12,.17,.52,.62,.88],unlock:1,fog:1},
- {id:'barrows',n:'Ashen Barrows',d:'A vast field of tombs and braziers under a red sky. Six shrines to find.',world:2700,shrines:6,rew:1.45,tint:'rgba(130,30,30,.2)',mix:[.34,.62,.66,.82,.86],unlock:2},
- {id:'frostfall',n:'Frostfall Keep',d:'A frozen frontier of broken watchtowers, blue fire and buried halls. Seven shrines to find.',world:3000,shrines:7,rew:1.6,tint:'rgba(70,130,190,.24)',mix:[.18,.38,.62,.76,.9],unlock:0},
- {id:'catacombs',n:'Whispering Catacombs',d:'A buried maze of black stone, candle crypts and echoing halls. Eight shrines beneath the earth.',world:3200,shrines:8,rew:1.75,tint:'rgba(105,80,145,.28)',mix:[.48,.65,.72,.84,.93],unlock:0,fog:1},
- {id:'embercoast',n:'Ember Coast',d:'A scorched shoreline of ash dunes, ruined piers and glowing volcanic vents. Eight shrines along the coast.',world:3400,shrines:8,rew:1.9,tint:'rgba(190,85,35,.27)',mix:[.2,.42,.58,.78,.9],unlock:0}
+ {id:'fields',n:'Hollow Fields',d:'Open haunted grassland, scattered standing stones, old fence lanes and wildflowers.',world:1500,shrines:4,rew:1,tint:'',mix:[.16,.28,.56,.68,.9],unlock:0},
+ {id:'marsh',n:'Sunken Marsh',d:'Flooded woodland with reed beds, pools, twisted trees and sinking paths.',world:2100,shrines:5,rew:1.2,tint:'rgba(20,95,85,.22)',mix:[.05,.12,.56,.66,.94],unlock:0,fog:1},
+ {id:'barrows',n:'Ashen Barrows',d:'A scorched burial plain packed with grave mounds, cracked earth and ember pits.',world:2700,shrines:6,rew:1.45,tint:'rgba(130,30,30,.2)',mix:[.48,.66,.69,.86,.94],unlock:0},
+ {id:'frostfall',n:'Frostfall Keep',d:'A frozen fortress approach with ice walls, watchtowers, snowdrifts and blue braziers.',world:3000,shrines:7,rew:1.6,tint:'rgba(70,130,190,.18)',mix:[.08,.38,.5,.64,.94],unlock:0},
+ {id:'catacombs',n:'Whispering Catacombs',d:'Underground crypt halls, dense pillars, crystal clusters and broken stone corridors.',world:3200,shrines:8,rew:1.75,tint:'rgba(105,80,145,.28)',mix:[.28,.62,.68,.72,.96],unlock:0,fog:1},
+ {id:'embercoast',n:'Ember Coast',d:'A volcanic shoreline with black rock, lava vents, ash dunes and scorched driftwood.',world:3400,shrines:8,rew:1.9,tint:'rgba(190,85,35,.18)',mix:[.04,.2,.26,.78,.94],unlock:0},
+ {id:'glacier',n:'Crystal Glacier',d:'A bright frozen basin of blue ice sheets, crystal spires, crevasses and snow ridges.',world:3600,shrines:9,rew:2.05,tint:'rgba(65,160,220,.22)',mix:[.04,.32,.38,.48,.96],unlock:0,fog:1}
 ];
 let CURMAP=MAPS[0];
 const props=[],fence=[];
 function genProps(){
  props.length=0;
- const R=mulberry(99+CURMAP.world),M=CURMAP.mix,n=Math.round(190*Math.pow(WORLD/1500,2)*(WORLD>1500?.85:1));
+ const id=CURMAP.id,seed=99+CURMAP.world+(id.split('').reduce((a,ch)=>a+ch.charCodeAt(0),0)*13),R=mulberry(seed),M=CURMAP.mix,n=Math.round(190*Math.pow(WORLD/1500,2)*(WORLD>1500?.85:1));
  for(let i=0;i<n;i++){
-  const a=R()*TAU,d=300+Math.sqrt(R())*(WORLD-360),k=R();
-  const type=k<M[0]?'tomb':k<M[1]?'pillar':k<M[2]?'tree':k<M[3]?'brazier':k<M[4]?'bush':'bones';
-  props.push({x:Math.cos(a)*d,y:Math.sin(a)*d,type,s:.8+R()*.5,v:R(),f:R()<.5?1:-1});
+  const a=R()*TAU,d=300+Math.sqrt(R())*(WORLD-360),k=R();let type;
+  if(id==='marsh')type=k<.58?'tree':k<.72?'bush':k<.84?'reed':k<.93?'mush':'bones';
+  else if(id==='barrows')type=k<.52?'tomb':k<.68?'bonepile':k<.82?'brazier':k<.92?'rock':'bones';
+  else if(id==='frostfall')type=k<.3?'ice':k<.48?'pillar':k<.66?'tree':k<.8?'brazier':k<.93?'rock':'bones';
+  else if(id==='catacombs')type=k<.48?'pillar':k<.7?'tomb':k<.84?'crystal':k<.94?'rock':'bones';
+  else if(id==='embercoast')type=k<.36?'vent':k<.55?'rock':k<.7?'brazier':k<.82?'deadtree':k<.94?'bonepile':'bones';
+  else if(id==='glacier')type=k<.42?'crystal':k<.62?'ice':k<.76?'rock':k<.88?'deadtree':'bones';
+  else type=k<M[0]?'tomb':k<M[1]?'pillar':k<M[2]?'tree':k<M[3]?'brazier':k<M[4]?'bush':'bones';
+  let x=Math.cos(a)*d,y=Math.sin(a)*d;
+  if(id==='barrows'){const ring= Math.round(d/260)*260;x=Math.cos(a)*ring;y=Math.sin(a)*ring}
+  if(id==='catacombs'){x=Math.round(x/150)*150+(R()-.5)*36;y=Math.round(y/150)*150+(R()-.5)*36}
+  if(id==='glacier'){x=Math.round(x/210)*210+(R()-.5)*45;y=Math.round(y/210)*210+(R()-.5)*45}
+  props.push({x,y,type,s:.8+R()*.65,v:R(),f:R()<.5?1:-1});
  }
  props.sort((a,b)=>a.y-b.y);
 }
@@ -1015,7 +1050,7 @@ function genColliders(){
  cgrid.clear();
  for(const p of props){
   let r=0,oy=0;
-  if(p.type==='tomb'){r=13;oy=-5}else if(p.type==='pillar'){r=9;oy=-2}else if(p.type==='tree'){r=9;oy=-2}else if(p.type==='brazier'){r=11;oy=-6}
+  if(p.type==='tomb'||p.type==='bonepile'){r=13;oy=-5}else if(p.type==='pillar'||p.type==='ice'||p.type==='crystal'){r=10;oy=-5}else if(p.type==='tree'||p.type==='deadtree'){r=10;oy=-2}else if(p.type==='brazier'||p.type==='vent'||p.type==='rock'){r=11;oy=-6}
   if(!r)continue;
   const c={x:p.x,y:p.y+oy,r:r*p.s};
   const k=Math.floor(c.x/CG)+','+Math.floor(c.y/CG);
@@ -1121,6 +1156,17 @@ function drawProp(c,p,t){
    c.fillStyle='#ff7a1a';c.beginPath();c.ellipse(0,-30,7,11*fl,0,0,TAU);c.fill();
    c.fillStyle='#ffd27a';c.beginPath();c.ellipse(0,-28,3.4,6.5*fl,0,0,TAU);c.fill();
   }else{c.fillStyle='#14161e';c.beginPath();c.ellipse(0,-24,7,2.2,0,0,TAU);c.fill()}
+ }else if(p.type==='ice'||p.type==='crystal'){
+  shadow(c,0,4,19,6);const col=p.type==='ice'?'#a9d8e9':'#65c9e8';
+  c.fillStyle='rgba(10,34,52,.8)';c.beginPath();c.ellipse(0,0,17,6,0,0,TAU);c.fill();
+  for(let j=0;j<3;j++){const x=(j-1)*9,h=(p.type==='ice'?25:34)*(0.65+p.v*.55);c.fillStyle=j===1?'#e1f7ff':col;c.beginPath();c.moveTo(x-6,0);c.lineTo(x-3,-h*.65);c.lineTo(x,-h);c.lineTo(x+5,-h*.58);c.lineTo(x+7,0);c.closePath();c.fill();c.strokeStyle='rgba(255,255,255,.65)';c.lineWidth=1;c.beginPath();c.moveTo(x,-h+3);c.lineTo(x+2,-5);c.stroke()}
+ }else if(p.type==='vent'){
+  shadow(c,0,5,20,7);c.fillStyle='#17100f';c.beginPath();c.ellipse(0,0,18,9,0,0,TAU);c.fill();c.strokeStyle='#a94825';c.lineWidth=4;c.stroke();
+  c.fillStyle='#ff6728';c.beginPath();c.ellipse(0,-3,8,4,0,0,TAU);c.fill();if(p.v>.35){c.fillStyle='rgba(255,125,45,.65)';c.beginPath();c.arc(0,-18-Math.sin(t*3+p.x)*4,3,0,TAU);c.fill()}
+ }else if(p.type==='rock'||p.type==='bonepile'){
+  shadow(c,0,4,19,6);c.fillStyle=p.type==='rock'?'#333b49':'#8c8071';c.beginPath();c.moveTo(-16,0);c.lineTo(-11,-13);c.lineTo(-2,-19);c.lineTo(12,-12);c.lineTo(17,0);c.closePath();c.fill();c.strokeStyle='rgba(220,225,235,.25)';c.lineWidth=2;c.stroke();
+ }else if(p.type==='deadtree'){
+  shadow(c,0,4,22,7);c.strokeStyle='#201a1c';c.lineCap='round';c.lineWidth=8;c.beginPath();c.moveTo(0,0);c.lineTo(2,-48);c.lineTo(-13,-63);c.moveTo(2,-48);c.lineTo(17,-68);c.moveTo(0,-28);c.lineTo(-20,-39);c.stroke();
  }else if(p.type==='bush'){
   shadow(c,0,4,20,6);c.fillStyle='#101c1c';for(const o of[[-9,-6,10],[5,-8,12],[14,-4,8]]){c.beginPath();c.arc(o[0],o[1],o[2],0,TAU);c.fill()}
  }else{
@@ -1288,8 +1334,8 @@ function eyeGlow(c,e,t){
 const cv=$('cv'),ctx=cv.getContext('2d'),stage=$('stage');
 const dark=document.createElement('canvas'),dc=dark.getContext('2d');
 const vig=document.createElement('canvas');
-const groundTile=makeGround();
-const groundPat=ctx.createPattern(groundTile,'repeat');
+let groundTile=makeGround('fields');
+let groundPat=ctx.createPattern(groundTile,'repeat');
 let W=400,H=600,DPR=1,Z=1,SC=1,VW=400,VH=600,TT=0,state='menu',G=null,pickFree=false,choices=[];
 const cam={x:-200,y:-300};
 const keys={l:0,r:0,u:0,d:0};
@@ -3074,10 +3120,10 @@ let FORCE_TUT=false,tipTimer=0;
 
 /* ----- realms ----- */
 function mapUnlocked(i){return Number.isInteger(i)&&i>=0&&i<MAPS.length}
-function setMap(id){const m=MAPS.find(x=>x.id===id)||MAPS[0];CURMAP=m;WORLD=m.world;genProps();genFence();genColliders();genDecals()}
+function setMap(id){const m=MAPS.find(x=>x.id===id)||MAPS[0];CURMAP=m;WORLD=m.world;groundTile=makeGround(m.id);groundPat=ctx.createPattern(groundTile,'repeat');genProps();genFence();genColliders();genDecals()}
 if(typeof save.map!=='string'||!MAPS.some(m=>m.id===save.map&&mapUnlocked(MAPS.indexOf(m))))save.map='fields';
 setMap(save.map);
-const MAPICO=['tree','drop','tomb','snowflake','tomb','flame'],MAPSIZE=['Compact','Wide','Vast','Colossal','Colossal','Colossal'];
+const MAPICO=['tree','drop','tomb','snowflake','tomb','flame','snowflake'],MAPSIZE=['Compact','Wide','Vast','Colossal','Colossal','Colossal','Colossal'];
 function renderMapList(){
  const box=$('mapList');box.innerHTML='';
  const ic=n=>'<svg class="ic"><use href="#i-'+n+'"/></svg>';
@@ -3724,7 +3770,37 @@ function menuInfo(){
  $('bestLine').textContent=save.bestHour>0?'Furthest: '+clockAtHour(Math.min(save.bestHour,HOURS))+(save.wins?' · '+save.wins+' dawn'+(save.wins>1?'s':''):''):'Never yet seen past dusk';
  setSnd();
 }
-function openMapPicker(where){mapPickerReturn=where||'solo';$('mapPickerHint').textContent=mapPickerReturn==='party'?'Host: choose the map for everyone in this party.':'Choose a map for your solo night.';const box=$('mapPickerList');box.innerHTML='';const ic=n=>'<svg class="ic"><use href="#i-'+n+'"/></svg>';MAPS.forEach((m,i)=>{const ok=mapUnlocked(i),sel=save.map===m.id,b=document.createElement('button');b.className='mode map r'+i+(sel?' sel':'')+(ok?' ok':' lock');b.innerHTML='<span class="mico">'+ic(ok?MAPICO[i]:'lock')+'</span><span class="mtxt"><b>'+m.n+'</b><span class="d">'+(ok?m.d:'Reach dawn '+(m.unlock>1?m.unlock+' times':'once')+' to open this realm.')+'</span><span class="m">'+MAPSIZE[i]+' · '+m.shrines+' shrines</span>'+(sel?'<span class="badge">Selected</span>':'')+'</span>';b.onclick=()=>{if(!ok)return;save.map=m.id;persist();setMap(m.id);sfx('treat');const target=mapPickerReturn;$('mapPicker').hidden=true;$('mapPicker').style.display='none';if(target==='solo'){hideAll();menuInfo();playClicked()}else{hideAll();$('ghPartyPanel').hidden=false;$('ghChosenMap').textContent=CURMAP.n;ghPartyStatus('Map selected for the next match: '+CURMAP.n)} };box.appendChild(b)});$('mapPicker').hidden=false;$('mapPicker').style.display='flex';}
+function drawMapPreview(cv,m){
+ if(!cv)return;const c=cv.getContext('2d'),w=cv.width,h=cv.height,seed=mulberry(71+m.world+m.id.length*97);
+ const palettes={
+  fields:['#172b20','#385a35','#87915a','#c2b78a'],marsh:['#102b2d','#174f4a','#4c9b83','#a0b9a0'],barrows:['#281719','#66332b','#b14d32','#e28a48'],frostfall:['#1b3447','#477b98','#a9d9e9','#edfaff'],catacombs:['#171624','#39334f','#746b91','#c1addf'],embercoast:['#2d1b16','#75402b','#c16a35','#f4a04b'],glacier:['#122b45','#286b98','#70c7e9','#e3fbff']
+ };
+ const p=palettes[m.id]||palettes.fields;c.fillStyle=p[0];c.fillRect(0,0,w,h);
+ const g=c.createLinearGradient(0,0,w,h);g.addColorStop(0,p[1]);g.addColorStop(1,p[0]);c.fillStyle=g;c.fillRect(0,0,w,h);
+ for(let i=0;i<38;i++){const x=seed()*w,y=seed()*h,r=4+seed()*22;c.globalAlpha=.2+seed()*.25;c.fillStyle=p[i%3+1];c.beginPath();c.ellipse(x,y,r,r*.45,seed()*3,0,TAU);c.fill()}
+ c.globalAlpha=1;
+ if(m.id==='marsh'){for(let i=0;i<8;i++){const x=seed()*w,y=seed()*h;c.strokeStyle=p[3];c.globalAlpha=.65;c.lineWidth=2;c.beginPath();c.ellipse(x,y,8+seed()*18,4+seed()*8,0,0,TAU);c.stroke()}}
+ if(m.id==='frostfall'||m.id==='glacier'){for(let i=0;i<10;i++){const x=seed()*w,y=seed()*h;c.fillStyle=p[3];c.beginPath();c.moveTo(x-7,y+13);c.lineTo(x,y-18-seed()*16);c.lineTo(x+8,y+13);c.closePath();c.fill()}}
+ if(m.id==='barrows'||m.id==='catacombs'){for(let i=0;i<9;i++){const x=seed()*w,y=seed()*h;c.fillStyle=p[2];c.fillRect(x,y,5+seed()*8,12+seed()*16)}}
+ if(m.id==='embercoast'){c.fillStyle='#171719';c.beginPath();c.moveTo(0,h*.72);c.quadraticCurveTo(w*.35,h*.55,w*.55,h*.78);c.quadraticCurveTo(w*.8,h*.95,w,h*.62);c.lineTo(w,h);c.lineTo(0,h);c.fill();c.strokeStyle=p[3];c.lineWidth=3;c.stroke()}
+ if(m.id==='fields'){for(let i=0;i<12;i++){const x=seed()*w,y=seed()*h;c.strokeStyle=p[3];c.lineWidth=2;c.beginPath();c.moveTo(x,y);c.lineTo(x+seed()*12,y-9);c.stroke()}}
+ c.globalAlpha=1;c.fillStyle='rgba(3,7,13,.35)';c.fillRect(0,h-5,w,5);
+}
+function openMapPicker(where){
+ mapPickerReturn=where||'solo';const party=mapPickerReturn==='party';
+ $('mapPickerHint').textContent=party?'Select a map for this party.':'Choose where your night begins.';
+ const box=$('mapPickerList');box.innerHTML='';
+ MAPS.forEach((m,i)=>{
+  const ok=mapUnlocked(i),sel=save.map===m.id,b=document.createElement('button');
+  b.className='mode map r'+i+(sel?' sel':'')+(ok?' ok':' lock')+(party?' party-map':'');
+  if(party)b.innerHTML='<span class="mtxt"><b>'+m.n+'</b></span>';
+  else b.innerHTML='<canvas class="map-preview" width="320" height="112" aria-hidden="true"></canvas><span class="mtxt"><b>'+m.n+'</b><span class="d">'+m.d+'</span><span class="m">'+MAPSIZE[i]+' · '+m.shrines+' shrines</span></span>';
+  if(!party)drawMapPreview(b.querySelector('canvas'),m);
+  b.onclick=()=>{if(!ok)return;save.map=m.id;persist();setMap(m.id);sfx('treat');const target=mapPickerReturn;$('mapPicker').hidden=true;$('mapPicker').style.display='none';if(target==='solo'){hideAll();menuInfo();playClicked()}else{hideAll();$('ghPartyPanel').hidden=false;$('ghChosenMap').textContent=CURMAP.n;ghPartyStatus('Map selected for the next match: '+CURMAP.n)}};
+  box.appendChild(b);
+ });
+ $('mapPicker').hidden=false;$('mapPicker').style.display='flex';
+}
 function openHearth(){
  G=null;state='menu';$('hud').hidden=true;
  const list=$('hearthList');list.innerHTML='';
