@@ -31,6 +31,39 @@
 .gh-room-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:15px}.gh-room-actions #ghPartyStart{flex:1;min-width:180px}.gh-wait-host{flex:1;color:#b9c9dd;font:11px monospace}
 .gh-room-actions button{min-height:40px}
 @media(max-width:520px){#ghPartyPanel{padding:15px!important;width:calc(100vw - 18px)!important;max-height:88vh!important;border-radius:15px!important}.gh-room-meta{grid-template-columns:1fr}.gh-room-top h3{font-size:16px}.gh-public-card{padding:10px}.gh-join-btn{padding:9px 10px}}
+</style><style>
+/* Compact public party tiles: three columns and six visible room cards. */
+#ghPartyPanel{width:min(900px,calc(100vw - 20px))!important;max-height:88vh!important;padding:16px!important;border-radius:17px!important}
+#ghPartyPanel>div:first-child{padding-bottom:8px}
+#ghPartyPanel>.how{font-size:11px!important;line-height:1.35!important;margin:6px 0!important}
+#ghPublicParties{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:7px!important;margin-top:10px!important}
+#ghPublicParties>.gh-section-title{grid-column:1/-1;margin:5px 0 0;font-size:10px}
+#ghPublicParties>.gh-public-card{min-width:0;min-height:104px;box-sizing:border-box;flex-direction:column;align-items:stretch;justify-content:space-between;gap:7px;padding:9px;border-radius:11px;background:linear-gradient(155deg,#1b3049,#101a2b);border-color:#3a5878}
+.gh-public-info{gap:4px;width:100%;min-width:0}
+.gh-public-info b{font-size:10px;line-height:1.25;overflow-wrap:anywhere}
+.gh-public-info small{font-size:9px;line-height:1.3;overflow-wrap:anywhere}
+.gh-public-info .gh-player-count{font-size:9px}
+.gh-join-btn{width:100%;box-sizing:border-box;min-height:29px;padding:6px 4px;border-radius:7px;font-size:9px;letter-spacing:.04em;background:linear-gradient(135deg,#315d86,#203e60);border-color:#729ec8}
+#ghPublicParties>.gh-no-rooms{grid-column:1/-1;padding:14px;font-size:11px}
+#ghPartyPanel #ghChooseMap,#ghPartyPanel #ghCreateParty,#ghPartyPanel #ghJoinParty{min-height:36px;padding:7px 10px;font-size:11px}
+#ghPartyCode{min-height:36px!important;padding:7px!important;font-size:11px}
+.gh-room-card{padding:13px!important;border-radius:13px!important}
+.gh-room-top h3{font-size:16px!important}
+.gh-room-meta{margin:10px 0!important;padding:9px!important}
+.gh-member{padding:6px 8px!important;gap:7px!important}
+.gh-member-avatar{width:25px!important;height:25px!important;font-size:11px}
+.gh-member-name{font-size:10px!important}
+.gh-room-actions{margin-top:10px!important}
+.gh-room-actions button{min-height:34px!important;font-size:10px}
+@media(max-width:520px){
+ #ghPartyPanel{width:calc(100vw - 14px)!important;padding:11px!important;max-height:88vh!important}
+ #ghPublicParties{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:5px!important}
+ #ghPublicParties>.gh-public-card{min-height:98px;padding:7px 6px;border-radius:9px}
+ .gh-public-info b{font-size:9px}
+ .gh-public-info small{font-size:8px}
+ .gh-join-btn{font-size:8px;min-height:27px}
+ #ghPartyPanel>div:first-child b{font-size:13px!important}
+}
 </style></head><body>
 <title>Last Lantern</title>
 <meta name="claude:viewport-fit-sides" content="cover">
