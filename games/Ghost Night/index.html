@@ -571,12 +571,12 @@ async function mpConnect(){
   }
   if(!chosen.isHost){
    await chosen.ref.child('members/'+user.uid).set({name,joinedAt:Date.now(),lastSeen:Date.now()});
-   if(chosen.map)save.map=chosen.map;if(chosen.diff!=null)save.diff=Number(chosen.diff);
+   if(chosen.map)save.map=chosen.map;if(chosen.diff!=null)save.diff=Number(chosen.diff);setMap(save.map);persist();
   }
   MP.uid=user.uid;MP.name=name;MP.roomId=chosen.id;MP.roomRef=chosen.ref;MP.hostUid=chosen.hostUid||user.uid;
   MP.memberRef=chosen.ref.child('members/'+user.uid);MP.slotRef=chosen.slotRef;
   MP.playerRef=db.ref('ghostnight/players/'+chosen.id+'/'+user.uid);MP.playersRef=db.ref('ghostnight/players/'+chosen.id);
-  MP.slot=chosen.slot;MP.isHost=chosen.isHost;MP.active=true;
+  MP.slot=chosen.slot;MP.isHost=chosen.isHost;MP.world=null;MP.hitSeen={};MP.hitQueue=[];MP.hitSeq=0;MP.worldT=0;MP.active=true;
   const cleanup=[()=>MP.memberRef.onDisconnect().remove(),()=>MP.slotRef.onDisconnect().remove(),()=>MP.playerRef.onDisconnect().remove()];
   if(MP.isHost)cleanup.push(()=>MP.roomRef.child('status').onDisconnect().set('closed'));
   for(const task of cleanup){try{await task()}catch(e){console.warn('Ghost Night disconnect cleanup unavailable:',e)}}
@@ -1170,6 +1170,7 @@ function newGame(){
  return g;
 }
 function startRun(){
+ if(MP.active)setMap(save.map);
  HOUR=(DIFFS[save.diff]||DIFFS[1]).hour;
  setMap(save.map);ensureAudio();hideAll();G=newGame();G.xl0=XLETTERS.filter(l=>l.cond()).map(l=>l.k);G.wp=curWeapon();G.tut=MP.active?-1:((FORCE_TUT||!save.tutDone)?0:-1);FORCE_TUT=false;$('tut').hidden=true;$('tip').className='';$('cine').className='';state='play';
  cam.x=G.p.x-VW/2;cam.y=G.p.y-VH/2;
