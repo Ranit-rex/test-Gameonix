@@ -491,7 +491,7 @@ button.danger{color:#ff8a7a;border-color:#7a3028}
  <div style="display:flex;gap:7px;flex-wrap:wrap"><button id="ghChooseMap" class="small modebtn" type="button">🗺 Map: <span id="ghChosenMap">Hollow Fields</span></button><button id="ghCreateParty" class="primary" type="button">＋ Create Party</button><input id="ghPartyCode" maxlength="8" placeholder="PARTY CODE" style="min-width:0;flex:1;padding:10px;border-radius:8px;background:#101827;color:#fff;border:1px solid #526a86;text-transform:uppercase"><button id="ghJoinParty" class="small modebtn" type="button">Join</button></div>
  <div id="ghPublicParties" style="margin-top:10px;font:12px monospace;color:#b9c8dc">Loading public parties…</div>
  <div id="ghPartyRoom" style="margin-top:10px"></div>
- <p id="ghPartyStatus" class="how" aria-live="polite">Login to PlayHub to use parties.</p>
+ <p id="ghPartyStatus" class="how" aria-live="polite">Login to Playbrix to use parties.</p>
 </div>
 <p id="mpStatus" class="how" aria-live="polite">Solo mode is unchanged · Multiplayer is optional</p>
 <div id="mpLobby" hidden style="width:min(100%,420px);margin:10px auto 14px;padding:12px 14px;border:1px solid #526a86;border-radius:12px;background:rgba(13,20,34,.94);text-align:left">
@@ -717,7 +717,7 @@ async function ghPartyInviteFriends(){
  try{
   if(!firebase.firestore)await mpLoadScript('https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js');
   const fs=firebase.firestore(),friends=await fs.collection('friendships').doc(user.uid).collection('friends').get();
-  panel.innerHTML=friends.empty?'No friends yet. Add friends on PlayHub first.':'';
+  panel.innerHTML=friends.empty?'No friends yet. Add friends on Playbrix first.':'';
   for(const f of friends.docs){
    const profile=await fs.collection('users').doc(f.id).get(),name=profile.exists?'@'+(profile.data().username||'player'):'Player';
    const row=document.createElement('div');row.style.cssText='display:flex;justify-content:space-between;padding:5px 0';
@@ -755,16 +755,16 @@ async function ghPartyRefresh(){
 }
 function ghPartyOpen(){const p=$('ghPartyPanel');p.hidden=false;ghPartyRefresh()}
 async function mpFirebase(){
- // When embedded in PlayHub, wait for the parent page's first Firebase Auth
+ // When embedded in Playbrix, wait for the parent page's first Firebase Auth
  // state event. currentUser can be null briefly while LOCAL persistence restores.
  if(window.parent!==window){
   let bridge=null;
-  try{bridge=window.parent.PlayHubFirebase||null}catch(e){throw new Error('Cannot access PlayHub login bridge: '+e.message)}
+  try{bridge=window.parent.PlayHubFirebase||null}catch(e){throw new Error('Cannot access Playbrix login bridge: '+e.message)}
   if(!bridge||!bridge.auth||!bridge.db||!bridge.ready){
-   throw new Error('PlayHub login bridge is unavailable. Open Ghost Night from the PlayHub game page, not its direct URL.');
+   throw new Error('Playbrix login bridge is unavailable. Open Ghost Night from the Playbrix game page, not its direct URL.');
   }
   const user=await bridge.ready;
-  if(!user)throw new Error('You are signed out of PlayHub. Return to PlayHub, sign in with Google, then reopen Ghost Night.');
+  if(!user)throw new Error('You are signed out of Playbrix. Return to Playbrix, sign in with Google, then reopen Ghost Night.');
   return{db:bridge.db,user};
  }
  // Standalone game URL: use the same Firebase project and its local Auth session.
@@ -775,7 +775,7 @@ async function mpFirebase(){
  const app=firebase.app(),auth=app.auth(),db=app.database();
  let user=auth.currentUser;
  if(!user)user=await new Promise(resolve=>{let off=auth.onAuthStateChanged(u=>{off();resolve(u)})});
- if(!user)throw new Error('No signed-in PlayHub account found in this standalone game tab. Open the game from PlayHub after signing in.');
+ if(!user)throw new Error('No signed-in Playbrix account found in this standalone game tab. Open the game from Playbrix after signing in.');
  return{db,user};
 }
 function mpSafeName(v){return String(v||'Player').replace(/[<>\u0000-\u001f]/g,'').trim().slice(0,20)||'Player'}
