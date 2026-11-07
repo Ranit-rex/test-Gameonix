@@ -79,6 +79,26 @@ button:disabled{opacity:.45;cursor:default}
 .item.costume b{color:var(--ghost)}
 .stick{position:sticky;top:-20px;z-index:3;margin:-20px -20px 0;padding:20px 20px 10px;background:rgba(5,7,12,.96);display:flex;flex-direction:column;gap:8px}
 .wide{max-width:940px!important}
+/* Compact realm picker: every map fits in a small, scroll-light grid. */
+#mapPicker{padding:8px}
+#mapPicker>.wrap{max-width:520px!important;gap:8px;padding:10px}
+#mapPicker .stick{position:static;margin:-10px -10px 0;padding:8px 10px 5px;gap:4px}
+#mapPicker h2{font-size:1.25rem}
+#mapPicker h2::after{margin-top:5px}
+#mapPicker .how{font-size:.62rem}
+#mapPickerList{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+#mapPicker .mode{padding:7px;gap:7px;min-height:58px;align-items:center}
+#mapPicker .mode .mico{width:27px;height:27px;border-width:1px}
+#mapPicker .mode .mico .ic{width:15px;height:15px}
+#mapPicker .mode .mtxt{gap:2px}
+#mapPicker .mode b{font-size:.68rem;line-height:1.15;letter-spacing:.035em}
+#mapPicker .mode .d{display:none}
+#mapPicker .mode .m{font-size:.52rem;letter-spacing:.04em}
+#mapPicker .mode .badge{font-size:.48rem;padding:2px 4px}
+#mapPicker .row{justify-content:center}
+#mapPickerBack{padding:7px 18px;font-size:.68rem}
+@media(max-width:360px){#mapPickerList{grid-template-columns:1fr}#mapPicker .mode{min-height:48px}}
+
 .mode{display:flex;flex-direction:column;gap:7px;text-align:left;padding:14px;min-width:0;text-transform:none;letter-spacing:normal;font:400 1rem var(--body);
  background:linear-gradient(#232a3c,#131825);box-shadow:inset 0 0 0 1px #3d4764,inset 0 0 0 3px #0b0e16,inset 0 0 0 4px #4a5470,0 4px 0 #05070c,0 6px 12px rgba(0,0,0,.5)}
 .mode b{font:700 1.15rem var(--display);letter-spacing:.08em;color:var(--gold);text-transform:uppercase}
@@ -1292,7 +1312,7 @@ if(window.ResizeObserver)new ResizeObserver(resize).observe(stage);
 window.addEventListener('resize',resize);resize();
 
 /* ---------- ui helpers ---------- */
-const OVS=['menu','intro','hearth','journal','modes','level','pause','over','win','settings','credits'];
+const OVS=['menu','intro','hearth','journal','modes','mapPicker','level','pause','over','win','settings','credits'];
 function show(id){for(const o of OVS)$(o).hidden=(o!==id)}
 function hideAll(){for(const o of OVS)$(o).hidden=true}
 let capTimer=0;
@@ -3052,7 +3072,7 @@ const SHRN=['Shrine of Embers','Shrine of Thorns','Shrine of Tides','Shrine of S
 let FORCE_TUT=false,tipTimer=0;
 
 /* ----- realms ----- */
-function mapUnlocked(i){const u=MAPS[i].unlock;return u===0||save.wins>=u}
+function mapUnlocked(i){return Number.isInteger(i)&&i>=0&&i<MAPS.length}
 function setMap(id){const m=MAPS.find(x=>x.id===id)||MAPS[0];CURMAP=m;WORLD=m.world;genProps();genFence();genColliders();genDecals()}
 if(typeof save.map!=='string'||!MAPS.some(m=>m.id===save.map&&mapUnlocked(MAPS.indexOf(m))))save.map='fields';
 setMap(save.map);
