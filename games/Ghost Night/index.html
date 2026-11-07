@@ -384,6 +384,8 @@ button.danger{color:#ff8a7a;border-color:#7a3028}
 <div class="top"><p class="eyebrow">Hollowmere &middot; The Long Dark</p><h1>Last Lantern</h1><p class="tag">One flame. One night. Everyone the kingdom forgot is coming to the gate.</p></div>
 <div class="bottom">
 <button id="bPlay" class="primary big"><svg class="ic"><use href="#i-flame"/></svg>Begin the night</button>
+<button id="bMulti" class="small modebtn" style="width:100%;max-width:420px;border-color:#6b9bc0;color:#b9dcff">Find Multiplayer Match · Up to 4 players</button>
+<p id="mpStatus" class="how" aria-live="polite">Solo mode is unchanged · Multiplayer is optional</p>
 <div class="trio">
 <button id="bMode" class="small modebtn" aria-label="Mode select"><svg class="ic lg"><use id="modeUse" href="#i-moon"/></svg><b id="modeName">Nightfall</b><span class="k" id="mapName"></span></button>
 <button id="bHearth" class="small modebtn" aria-label="Hearth"><svg class="ic lg"><use href="#i-anvil"/></svg><b>Hearth</b><span class="k"><span id="embBal">0</span> embers</span></button>
@@ -497,6 +499,80 @@ if(!Array.isArray(save.cleared))save.cleared=[0,0,0,0,0];
 if(typeof save.diff!=='number'||save.diff<0||save.diff>4)save.diff=1;
 if(save.diff>1&&!save.cleared[save.diff-1])save.diff=1;
 function persist(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(save))}catch(e){}}
+
+/* ---------- Ghost Night multiplayer (isolated from the solo save/gameplay path) ---------- */
+const GH_FIREBASE={apiKey:'AIzaSyB_pZ9WfVSx2XHuDeSZ7VrwEr-Pz_m_2QM',authDomain:'play-hub-688e8.firebaseapp.com',databaseURL:'https://play-hub-688e8-default-rtdb.asia-southeast1.firebasedatabase.app',projectId:'play-hub-688e8',storageBucket:'play-hub-688e8.firebasestorage.app',messagingSenderId:'195222206861',appId:'1:195222206861:web:828a8cf16991f982a925c4'};
+const MP={busy:false,active:false,uid:null,name:'',roomId:null,roomRef:null,memberRef:null,slotRef:null,playerRef:null,playersRef:null,listener:null,remotes:{},slot:0,sendT:0,beatT:0,isHost:false};
+function mpStatus(t){const e=$('mpStatus');if(e)e.textContent=t}
+function mpLoadScript(src){return new Promise((resolve,reject)=>{const sc=document.createElement('script');sc.src=src;sc.async=true;sc.onload=resolve;sc.onerror=()=>reject(new Error('Could not load '+src));document.head.appendChild(sc)})}
+async function mpFirebase(){
+ if(!window.firebase)await mpLoadScript('https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js');
+ if(!firebase.auth)await mpLoadScript('https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js');
+ if(!firebase.database)await mpLoadScript('https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js');
+ if(!firebase.apps.length)firebase.initializeApp(GH_FIREBASE);
+ const auth=firebase.auth(),db=firebase.database();
+ let user=auth.currentUser;
+ if(!user)user=await new Promise(resolve=>{let off=auth.onAuthStateChanged(u=>{off();resolve(u)})});
+ if(!user)throw new Error('PlayHub account not found. Login to PlayHub first, then open Ghost Night again.');
+ return{db,user};
+}
+function mpSafeName(v){return String(v||'Player').replace(/[<>\u0000-\u001f]/g,'').trim().slice(0,20)||'Player'}
+function mpColor(uid){let h=0;for(let i=0;i<uid.length;i++)h=(h*31+uid.charCodeAt(i))>>>0;return ['#69d8ff','#ffca70','#c9a2ff','#8df0b1'][h%4]}
+async function mpClaimSlot(roomRef,user,name){
+ const slots=(await roomRef.child('slots').once('value')).val()||{};
+ for(let n=0;n<4;n++){
+  const slotRef=roomRef.child('slots/'+n);
+  const result=await slotRef.transaction(cur=>cur==null?{uid:user.uid,name,joinedAt:Date.now()}:undefined);
+  if(result.committed)return{slot:n,slotRef};
+ }
+ return null;
+}
+async function mpConnect(){
+ if(MP.busy||MP.active)return;MP.busy=true;const b=$('bMulti');if(b)b.disabled=true;mpStatus('Connecting to PlayHub multiplayer…');
+ try{
+  const {db,user}=await mpFirebase(),name=mpSafeName(user.displayName||user.email?.split('@')[0]||'Player');
+  const root=db.ref('ghostnight/matches'),now=Date.now();let chosen=null;
+  const snap=await root.orderByChild('status').equalTo('live').once('value');
+  const rooms=snap.val()||{};
+  for(const [id,data] of Object.entries(rooms)){
+   if(!data||data.game!=='ghostnight'||data.status!=='live'||data.map!==save.map||Number(data.diff)!==Number(save.diff)||!data.lastSeen||now-data.lastSeen>45000||data.hostUid===user.uid)continue;
+   const ref=root.child(id),claimed=await mpClaimSlot(ref,user,name);if(!claimed)continue;
+   chosen={id,ref,slot:claimed.slot,slotRef:claimed.slotRef,isHost:false};break;
+  }
+  if(!chosen){
+   const ref=root.push(),id=ref.key,member={name,joinedAt:now,lastSeen:now};
+   await ref.set({game:'ghostnight',hostUid:user.uid,status:'live',map:save.map,diff:save.diff,createdAt:now,lastSeen:now,members:{[user.uid]:member},slots:{0:{uid:user.uid,name,joinedAt:now}}});
+   chosen={id,ref,slot:0,slotRef:ref.child('slots/0'),isHost:true};
+  }else{
+   await chosen.ref.child('members/'+user.uid).set({name,joinedAt:now,lastSeen:now});
+  }
+  MP.uid=user.uid;MP.name=name;MP.roomId=chosen.id;MP.roomRef=chosen.ref;MP.memberRef=chosen.ref.child('members/'+user.uid);MP.slotRef=chosen.slotRef;MP.playerRef=db.ref('ghostnight/players/'+chosen.id+'/'+user.uid);MP.playersRef=db.ref('ghostnight/players/'+chosen.id);MP.slot=chosen.slot;MP.isHost=chosen.isHost;MP.active=true;
+  const cleanup=[()=>MP.memberRef.onDisconnect().remove(),()=>MP.slotRef.onDisconnect().remove(),()=>MP.playerRef.onDisconnect().remove()];
+  if(MP.isHost)cleanup.push(()=>MP.roomRef.child('status').onDisconnect().set('closed'));
+  for(const task of cleanup){try{await task()}catch(e){console.warn('Ghost Night disconnect cleanup unavailable:',e)}}
+  MP.playersRef.on('value',v=>{const all=v.val()||{},next={};for(const [uid,p] of Object.entries(all)){if(uid!==MP.uid&&p&&Date.now()-(p.updatedAt||0)<10000)next[uid]=p}MP.remotes=next},e=>console.warn('Ghost Night teammate listener:',e));
+  MP.listener=true;
+  await MP.playerRef.set({name,x:0,y:130,face:1,hp:100,max:100,cos:save.costume,color:mpColor(user.uid),updatedAt:Date.now()});
+  mpStatus('Match found · '+(MP.slot+1)+'/4 players · starting…');
+  startRun();
+  caption('You are not alone. Find your teammates on the map.',5200);
+ }catch(e){console.error('Ghost Night multiplayer:',e);mpStatus('Multiplayer error: '+(e.message||'Could not connect'))}
+ finally{MP.busy=false;if(b)b.disabled=false}
+}
+function mpTick(dt){
+ if(!MP.active||!G||!MP.playerRef)return;
+ MP.sendT-=dt;MP.beatT-=dt;
+ if(MP.sendT<=0){MP.sendT=.14;const p=G.p;MP.playerRef.update({name:MP.name,x:p.x,y:p.y,face:p.face||1,hp:Math.round(p.hp),max:Math.round(p.max),cos:p.cos||save.costume,color:mpColor(MP.uid),moving:!!p.moving,updatedAt:Date.now()}).catch(e=>console.warn('Ghost Night position sync:',e))}
+ if(MP.beatT<=0){MP.beatT=3;const now=Date.now();MP.memberRef.update({lastSeen:now}).catch(()=>{});if(MP.isHost)MP.roomRef.update({lastSeen:now}).catch(()=>{})}
+}
+async function mpLeave(closed){
+ if(!MP.active)return;
+ const old={...MP};MP.active=false;MP.remotes={};
+ try{if(old.playersRef&&old.listener)old.playersRef.off('value');if(old.playerRef)await old.playerRef.remove();if(old.memberRef)await old.memberRef.remove();if(old.slotRef)await old.slotRef.remove();if(old.isHost&&old.roomRef)await old.roomRef.child('status').set('closed')}catch(e){console.warn('Ghost Night leave cleanup:',e)}
+ MP.uid=null;MP.roomId=null;MP.roomRef=null;MP.memberRef=null;MP.slotRef=null;MP.playerRef=null;MP.playersRef=null;MP.listener=null;MP.isHost=false;
+ if(closed)mpStatus('You left the multiplayer match.');
+}
+
 
 /* ---------- story ---------- */
 const INTRO=[
@@ -1033,7 +1109,7 @@ function startRun(){
  $('nightTag').textContent=G.df.n+' \u00b7 '+(m?m.n:'Calm night');
  if(m)caption(m.n+'. '+m.d,6500);
  try{if(screen.orientation&&screen.orientation.lock)screen.orientation.lock('landscape').catch(()=>{})}catch(e){}
- save.runs++;persist();hudUpdate(true);
+ save.runs++;persist();hudUpdate(true);if(MP.active){MP.sendT=0;MP.beatT=0;mpTick(0)}
 }
 function startIntro(){
  show('intro');let pg=0,full='',idx=0,tm=0;
@@ -1537,7 +1613,7 @@ function startWin(){
  caption('Dawn. The Hollows stop at the edge of the light.',8000);sfx('dawn');g.shake=8;cineStart({tgt:{x:0,y:-80},oy:0,zoom:.55,T:4,txt:'Dawn',sub:'The Hollows stop at the edge of the light',snd:'dawn',noSlow:1});
 }
 function endRun(win){
- const g=G,up=save.up;state=win?'win':'over';
+ const g=G,up=save.up;state=win?'win':'over';if(MP.active)mpLeave(true);
  const earned=Math.floor((Math.floor(g.embers*(1+up.luck*.15))+g.hour*40+(win?1500:0)+g.shrines.reduce((a,s)=>a+s.uses*(15+save.up.pilgrim*15),0))*g.df.rew*CURMAP.rew);
  const firstClear=win&&!save.cleared[save.diff];if(win)save.cleared[save.diff]=1;
  save.embers+=earned;
@@ -1670,6 +1746,7 @@ function renderGame0(){
   if(!visible(e.x,e.y,120))continue;
   if(e===p){if(!g.dead||g.deadT<.3)drawPlayer(ctx,p,t,p.moving)}else{drawEnemy(ctx,e,t);if(e.elite)drawElite(ctx,e,t)}
  }
+ for(const rp of Object.values(MP.remotes)){if(!visible(rp.x,rp.y,160))continue;const ghost={x:rp.x,y:rp.y,vx:0,vy:0,face:rp.face||1,dashT:0,inv:0,cos:rp.cos||'witch'};ctx.save();ctx.globalAlpha=.9;ctx.strokeStyle=rp.color||'#69d8ff';ctx.lineWidth=2;ctx.beginPath();ctx.arc(rp.x,rp.y-5,15,0,TAU);ctx.stroke();drawPlayer(ctx,ghost,t,!!rp.moving);ctx.fillStyle=rp.color||'#69d8ff';ctx.font='700 11px "DM Mono",monospace';ctx.textAlign='center';ctx.fillText(rp.name||'Teammate',rp.x,rp.y-27);ctx.restore()}
  drawFXOver(ctx,g,t);
  for(const w of g.wisps){ctx.fillStyle='rgba(159,216,255,.3)';ctx.beginPath();ctx.arc(w.x,w.y,12,0,TAU);ctx.fill();ctx.fillStyle='#e8f7ff';ctx.beginPath();ctx.arc(w.x,w.y,5,0,TAU);ctx.fill()}
  drawBeams(ctx,g,t);for(const b of g.bombs)drawBomb(ctx,b,t);
@@ -1755,7 +1832,7 @@ let last=performance.now(),FDT=.016;
 function frame(now){
  requestAnimationFrame(frame);
  let dt=(now-last)/1000;last=now;if(dt>.05)dt=.05;if(dt<0)dt=0;
- TT+=dt;FDT=dt||.016;
+ TT+=dt;FDT=dt||.016;if(MP.active)mpTick(dt);
  try{
   if(state==='play'){let sd=dt;if(G&&G.cine){const ns=G.cine.noSlow;cineTick(dt);sd=ns?dt:dt*.15}else if(G&&G.slow>0){G.slow-=dt;sd=dt*.35}update(sd)}
   if(G)renderGame();else renderMenu();
@@ -2910,6 +2987,7 @@ function drawMinimap(g){
  if(g.gold){ctx.fillStyle='#ffe27a';ctx.beginPath();ctx.arc(cx+g.gold.x*k,cy+g.gold.y*k,2.6,0,TAU);ctx.fill()}
  if(g.boss){ctx.fillStyle='#ff7a2a';ctx.beginPath();ctx.arc(cx+g.boss.x*k,cy+g.boss.y*k,4,0,TAU);ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=1;ctx.stroke()}
  ctx.strokeStyle='rgba(255,255,255,.5)';ctx.lineWidth=1;ctx.strokeRect(cx+cam.x*k,cy+cam.y*k,VW*k,VH*k);
+ for(const rp of Object.values(MP.remotes)){const age=Date.now()-(rp.updatedAt||0);if(age>10000)continue;const rx=cx+rp.x*k,ry=cy+rp.y*k;ctx.fillStyle=rp.color||'#69d8ff';ctx.beginPath();ctx.arc(rx,ry,4,0,TAU);ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=1;ctx.stroke();ctx.fillStyle='#fff';ctx.font='700 7px "DM Mono",monospace';ctx.textAlign='left';ctx.fillText((rp.name||'Mate').slice(0,9),rx+5,ry-4)}
  const px=cx+p.x*k,py=cy+p.y*k,a=Math.atan2(p.dy||1,p.dx||0);
  ctx.fillStyle='#fff';ctx.save();ctx.translate(px,py);ctx.rotate(a);ctx.beginPath();ctx.moveTo(5,0);ctx.lineTo(-3.5,3.2);ctx.lineTo(-2,0);ctx.lineTo(-3.5,-3.2);ctx.closePath();ctx.fill();ctx.restore();
  ctx.restore();
@@ -3349,7 +3427,7 @@ $('rotateOk').onclick=()=>$('rotate').classList.add('off');
 function doPause(){if(state!=='play')return;state='pause';try{$('pauseTip').textContent=TIPS[Math.floor(Math.random()*TIPS.length)]}catch(e){}show('pause');joy.active=false}
 function doResume(){if(state!=='pause')return;hideAll();state='play'}
 function doReroll(){if(G&&state==='level'&&G.rerolls>0){G.rerolls--;levelOffer(pickFree)}}
-function toMenu(){G=null;state='menu';$('hud').hidden=true;$('dashBtn').hidden=true;menuInfo();show('menu')}
+function toMenu(){if(MP.active)mpLeave(true);G=null;state='menu';$('hud').hidden=true;$('dashBtn').hidden=true;menuInfo();show('menu')}
 function costumeName(){const c=COSTUMES.find(x=>x.id===save.costume);return c?c.n:'Little Witch'}
 function diffUnlocked(i){return i<=1||!!save.cleared[i-1]}
 function diffInfo(){
@@ -3431,6 +3509,7 @@ function playClicked(){
  if(!save.seenIntro)startIntro();else startRun();
 }
 $('bPlay').onclick=playClicked;
+$('bMulti').onclick=()=>{ensureAudio();mpConnect()};
 $('bMode').onclick=()=>{ensureAudio();openModes()};
 $('modesBack').onclick=toMenu;
 $('bHearth').onclick=()=>{ensureAudio();openHearth()};
