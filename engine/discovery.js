@@ -91,7 +91,7 @@ const PlayHubDiscovery = (() => {
         return {
           id: slug,
           title: metadata.title || titleFromSlug(slug),
-          description: metadata.description || "Discover and play this game on PlayHub.",
+          description: metadata.description || "Discover and play this game on Playbrix.",
           category: metadata.category || "Games",
           thumbnail,
           url: `${PAGES}${encodeURIComponent(slug)}/`,
