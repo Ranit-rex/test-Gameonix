@@ -64,7 +64,19 @@
  .gh-join-btn{font-size:8px;min-height:27px}
  #ghPartyPanel>div:first-child b{font-size:13px!important}
 }
-</style></head><body>
+</style>
+<style id="gh-party-final-layout-fix">
+/* Final override: three compact columns even on phones. */
+#ghPartyPanel #ghPublicParties{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;column-gap:7px!important;row-gap:7px!important;align-items:stretch!important}
+#ghPartyPanel #ghPublicParties>.gh-section-title,#ghPartyPanel #ghPublicParties>.gh-no-rooms{grid-column:1/-1!important}
+#ghPartyPanel #ghPublicParties>.gh-public-card{display:flex!important;flex-direction:column!important;align-items:stretch!important;justify-content:space-between!important;min-width:0!important;min-height:94px!important;padding:7px 6px!important;gap:6px!important;box-sizing:border-box!important}
+#ghPartyPanel #ghPublicParties .gh-public-info{display:grid!important;width:100%!important;min-width:0!important;gap:3px!important}
+#ghPartyPanel #ghPublicParties .gh-public-info b{font-size:clamp(8px,2.5vw,10px)!important;line-height:1.2!important;overflow-wrap:anywhere!important}
+#ghPartyPanel #ghPublicParties .gh-public-info small{font-size:clamp(7px,2.1vw,9px)!important;line-height:1.2!important;overflow-wrap:anywhere!important}
+#ghPartyPanel #ghPublicParties .gh-join-btn{width:100%!important;min-height:26px!important;padding:5px 2px!important;font-size:8px!important}
+#ghPartyPanel #ghPublicParties[hidden]{display:none!important}
+</style>
+</head><body>
 <title>Last Lantern</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Newsreader:ital,wght@0,400;0,600;1,400&family=DM+Mono:wght@400;500&display=swap">
@@ -640,8 +652,8 @@ async function ghPartyWatch(code){
  GH_PARTY.ref=GH_PARTY.db.ref('ghostnight/parties/'+code);
  GH_PARTY.beat=setInterval(()=>{if(!GH_PARTY.id||!GH_PARTY.user||!GH_PARTY.ref)return;const now=Date.now();GH_PARTY.ref.update({updatedAt:now}).catch(()=>{});GH_PARTY.ref.child('members/'+GH_PARTY.user.uid+'/lastSeen').set(now).catch(()=>{})},30000);
  GH_PARTY.unsub=GH_PARTY.ref.on('value',async snap=>{
-  if(!snap.exists()){GH_PARTY.id=null;GH_PARTY.data=null;ghPartyRender(null);ghPartyStatus('Party closed.');return}
-  const d=snap.val();GH_PARTY.data=d;await ghPartyRender(d);
+  if(!snap.exists()){GH_PARTY.id=null;GH_PARTY.data=null;const publicList=$('ghPublicParties');if(publicList)publicList.hidden=false;ghPartyRender(null);ghPartyStatus('Party closed.');ghPartyRefresh().catch(()=>{});return}
+  const d=snap.val();GH_PARTY.data=d;const publicList=$('ghPublicParties');if(publicList)publicList.hidden=true;await ghPartyRender(d);
   if(d.status==='started'&&d.matchId&&!GH_PARTY.launching){
    GH_PARTY.launching=true;ghPartyStatus('Host started the shared match. Connecting…');
    mpConnect(d.matchId);
@@ -723,7 +735,7 @@ async function ghPartyLeave(){
  else await ref.child('members/'+uid).remove();
  if(GH_PARTY.unsub)ref.off('value',GH_PARTY.unsub);
  GH_PARTY.id=null;GH_PARTY.data=null;GH_PARTY.ref=null;GH_PARTY.unsub=null;GH_PARTY.launching=false;
- ghPartyRender(null);ghPartyStatus('You left the party.');
+ ghPartyRender(null);const publicList=$('ghPublicParties');if(publicList)publicList.hidden=false;ghPartyStatus('You left the party.');ghPartyRefresh().catch(()=>{});
 }
 async function ghPartyRefresh(){
  try{
@@ -734,6 +746,7 @@ async function ghPartyRefresh(){
   const matchSnap=await db.ref('ghostnight/matches').once('value');for(const [id,m] of Object.entries(matchSnap.val()||{})){if(m&&now-Number(m.lastSeen||m.createdAt||0)>=1800000)db.ref('ghostnight/matches/'+id).remove().catch(()=>{})}
   const invites=Object.values(inviteSnap.val()||{}).filter(Boolean);
   const list=$('ghPublicParties');
+  list.hidden=!!(GH_PARTY.id&&GH_PARTY.data);
   list.innerHTML=(invites.length?'<div class="gh-section-title">PARTY INVITES</div>':'')+invites.map(i=>'<div class="gh-public-card"><div class="gh-public-info"><b>'+ghPartyEsc(mpSafeName(i.fromName))+' invited you</b><small>Room '+ghPartyEsc(i.roomId)+'</small></div><button class="small modebtn" data-gh-invite="'+ghPartyEsc(i.roomId)+'">Accept</button></div>').join('')+(rooms.length?'<div class="gh-section-title">PUBLIC GHOST NIGHT ROOMS</div>':'')+rooms.map(d=>{const members=ghPartyMembers(d),host=members.find(m=>m.uid===(d.leaderUid||d.hostUid));return '<div class="gh-public-card"><div class="gh-public-info"><b>'+ghPartyEsc(d.roomId||'PARTY')+' <span class="gh-player-count">'+members.length+'/4</span></b><small>🗺 '+ghPartyEsc(ghPartyMapName(d.map||d.selectedMap||'fields'))+' · ♛ '+ghPartyEsc(mpSafeName(host&&host.name||d.hostName||'Host'))+'</small></div><button class="gh-join-btn" data-gh-join="'+ghPartyEsc(d.roomId)+'">JOIN ROOM</button></div>'}).join('')+(!invites.length&&!rooms.length?'<div class="gh-no-rooms">No public Ghost Night parties found.</div>':'');
   list.querySelectorAll('[data-gh-join]').forEach(b=>b.onclick=()=>ghPartyJoin(b.dataset.ghJoin).catch(e=>ghPartyStatus(e.message)));
   list.querySelectorAll('[data-gh-invite]').forEach(b=>b.onclick=async()=>{try{await ghPartyJoin(b.dataset.ghInvite);await db.ref('ghostnight/partyInvites/'+user.uid+'/'+b.dataset.ghInvite).remove()}catch(e){ghPartyStatus(e.message)}});
