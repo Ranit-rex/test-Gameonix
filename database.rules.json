@@ -87,6 +87,35 @@
           ".read": "auth != null",
           ".write": "auth != null"
         }
+      },
+      "parties": {
+        ".read": "auth != null",
+        "$code": {
+          ".read": "auth != null",
+          ".write": "auth != null && ((!data.exists() && newData.child('leaderUid').val() === auth.uid && newData.child('roomId').val() === $code && newData.child('members').child(auth.uid).exists() && newData.child('status').val() === 'waiting') || (data.exists() && data.child('leaderUid').val() === auth.uid && !newData.exists()))",
+          "members": {
+            ".read": "auth != null",
+            "$uid": {
+              ".write": "auth != null && auth.uid === $uid && ((!data.exists() && root.child('ghostnight/parties').child($code).child('status').val() === 'waiting' && root.child('ghostnight/parties').child($code).child('members').numChildren() < 4 && newData.child('uid').val() === auth.uid) || (data.exists() && !newData.exists() && root.child('ghostnight/parties').child($code).child('status').val() === 'waiting'))",
+              ".validate": "newData.hasChildren(['uid','name','joinedAt','lastSeen']) && newData.child('uid').val() === auth.uid && newData.child('name').isString() && newData.child('name').val().length <= 32 && newData.child('joinedAt').isNumber() && newData.child('lastSeen').isNumber()"
+            }
+          },
+          "matchId": {
+            ".write": "auth != null && auth.uid === root.child('ghostnight/parties').child($code).child('leaderUid').val() && root.child('ghostnight/parties').child($code).child('status').val() === 'waiting' && newData.isString()"
+          },
+          "status": {
+            ".write": "auth != null && auth.uid === root.child('ghostnight/parties').child($code).child('leaderUid').val() && data.val() === 'waiting' && newData.val() === 'started' && root.child('ghostnight/parties').child($code).child('matchId').isString()"
+          }
+        }
+      },
+      "partyInvites": {
+        "$toUid": {
+          ".read": "auth != null && auth.uid === $toUid",
+          "$code": {
+            ".write": "auth != null && ((auth.uid !== $toUid && root.child('ghostnight/parties').child($code).child('members').child(auth.uid).exists() && newData.child('roomId').val() === $code && newData.child('fromUid').val() === auth.uid && (!data.exists() || data.child('fromUid').val() === auth.uid)) || (auth.uid === $toUid && data.exists() && !newData.exists()))",
+            ".validate": "newData.hasChildren(['roomId','fromUid','fromName','createdAt']) && newData.child('roomId').val() === $code && newData.child('fromUid').isString() && newData.child('fromName').isString() && newData.child('fromName').val().length <= 32 && newData.child('createdAt').isNumber()"
+          }
+        }
       }
     }
   }
