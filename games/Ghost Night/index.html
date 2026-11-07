@@ -510,21 +510,6 @@ function persist(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(save))}catch
 const GH_FIREBASE={apiKey:'AIzaSyB_pZ9WfVSx2XHuDeSZ7VrwEr-Pz_m_2QM',authDomain:'play-hub-688e8.firebaseapp.com',databaseURL:'https://play-hub-688e8-default-rtdb.asia-southeast1.firebasedatabase.app',projectId:'play-hub-688e8',storageBucket:'play-hub-688e8.firebasestorage.app',messagingSenderId:'195222206861',appId:'1:195222206861:web:828a8cf16991f982a925c4'};
 const MP={busy:false,active:false,uid:null,name:'',roomId:null,roomRef:null,memberRef:null,slotRef:null,playerRef:null,playersRef:null,listener:null,remotes:{},slot:0,sendT:0,beatT:0,isHost:false,hostUid:null,world:null,worldT:0,enemySeq:0,hitSeq:0,hitQueue:[],hitSeen:{},worldReadyResolve:null,bots:{},botFillT:0,botFillDone:false,offlineBots:false};
 function mpStatus(t){const e=$('mpStatus');if(e)e.textContent=t}
-function mpFillBots(){
- if(!MP.active||!G)return;
- const humans=Object.values(MP.remotes||{}).filter(function(p){return !p.isBot}).length+1;
- const need=humans===1?3:0;
- const names=['Aarav_27','MiraPlays','ShadowFox_8'],colors=['#ffca70','#c9a2ff','#8df0b1'];
- for(let i=0;i<3;i++){const id='npc_'+i;if(i<need&&!MP.bots[id]){const a=i*TAU/3,p=G.p;MP.bots[id]={name:names[i],x:p.x+Math.cos(a)*95,y:p.y+Math.sin(a)*95,face:1,hp:100,max:100,cos:'witch',color:colors[i],moving:true,isBot:true,attackT:.5,phase:a}}else if(i>=need)delete MP.bots[id]}
- MP.remotes=Object.assign({},Object.fromEntries(Object.entries(MP.remotes||{}).filter(function(pair){return !pair[1].isBot})),MP.bots);
- mpStatus('Squad ready · '+(humans+need)+'/4 players · '+(MP.offlineBots?'Bot squad':'Online squad'));
-}
-function mpBotTick(dt){
- if(!MP.active||!G||!Object.keys(MP.bots||{}).length)return;const p=G.p;
- Object.values(MP.bots).forEach(function(bot){bot.phase+=dt*.65;const tx=p.x+Math.cos(bot.phase)*88,ty=p.y+Math.sin(bot.phase)*62,dx=tx-bot.x,dy=ty-bot.y,d=Math.hypot(dx,dy)||1,step=Math.min(d,dt*90);bot.x+=dx/d*step;bot.y+=dy/d*step;bot.face=dx<0?-1:1;bot.moving=d>8;bot.attackT-=dt;if(bot.attackT<=0){bot.attackT=1;const e=G.enemies.find(function(q){return !q.dead&&Math.hypot(q.x-bot.x,q.y-bot.y)<220});if(e&&MP.isHost){e.hp-=7;e.fl=.12;if(e.hp<=0)killE(e)}}});
- MP.remotes=Object.assign({},Object.fromEntries(Object.entries(MP.remotes||{}).filter(function(pair){return !pair[1].isBot})),MP.bots);
-}
-
 function mpLoadScript(src){return new Promise((resolve,reject)=>{const sc=document.createElement('script');sc.src=src;sc.async=true;sc.onload=resolve;sc.onerror=()=>reject(new Error('Could not load '+src));document.head.appendChild(sc)})}
 async function mpFirebase(){
  if(!window.firebase)await mpLoadScript('https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js');
@@ -657,8 +642,7 @@ async function mpConnect(){
      if(!MP.isHost&&uid===MP.hostUid&&p.world){MP.world=p.world;if(G)mpApplyWorld();if(MP.worldReadyResolve){MP.worldReadyResolve();MP.worldReadyResolve=null}}
     }
    }
-   MP.remotes=Object.assign({},next,MP.bots);
-   if(MP.botFillDone)mpFillBots();
+   MP.remotes=next;
   },e=>{console.error('Ghost Night players listener:',e);mpStatus('Connection lost: '+(e.code||e.message||'permission denied'))});
   MP.listener=true;
   await MP.playerRef.set({name,x:0,y:130,face:1,hp:100,max:100,cos:save.costume,color:mpColor(user.uid),updatedAt:Date.now()});
@@ -705,10 +689,7 @@ function mpApplyWorld(){
  g.ebul=(w.ebul||[]).map(e=>({...e}));g.items=(w.items||[]).map(e=>({...e}));g.orbs=(w.orbs||[]).map(e=>({...e}));g.shrines=(w.shrines||[]).map(e=>({...e}));g.haz=(w.haz||[]).map(e=>({...e}));g.gold=w.gold?{...w.gold}:null;
 }
 function mpTick(dt){
- if(!MP.active||!G)return;
- mpBotTick(dt);
- if(MP.botFillT>0){MP.botFillT-=dt;if(MP.botFillT<=0){MP.botFillDone=true;mpFillBots()}}
- if(!MP.playerRef)return;
+ if(!MP.active||!G||!MP.playerRef)return;
  MP.sendT-=dt;MP.beatT-=dt;MP.worldT-=dt;
  if(MP.isHost)mpProcessHits();
  if(MP.sendT<=0){MP.sendT=.14;const p=G.p,patch={name:MP.name,x:p.x,y:p.y,face:p.face||1,hp:Math.round(p.hp),max:Math.round(p.max),cos:p.cos||save.costume,color:mpColor(MP.uid),moving:!!p.moving,updatedAt:Date.now()};
@@ -729,7 +710,7 @@ async function mpLeave(closed){
   if(old.slotRef)await old.slotRef.remove();
   if(old.isHost&&old.roomRef)await old.roomRef.child('status').set('closed');
  }catch(e){console.warn('Ghost Night leave cleanup:',e)}
- MP.uid=null;MP.name='';MP.roomId=null;MP.roomRef=null;MP.memberRef=null;MP.slotRef=null;MP.playerRef=null;MP.playersRef=null;MP.listener=null;MP.isHost=false;MP.hostUid=null;MP.bots={};MP.offlineBots=false;MP.botFillDone=false;MP.botFillT=0;MP.world=null;
+ MP.uid=null;MP.name='';MP.roomId=null;MP.roomRef=null;MP.memberRef=null;MP.slotRef=null;MP.playerRef=null;MP.playersRef=null;MP.listener=null;MP.isHost=false;MP.hostUid=null;MP.world=null;
  if(closed)mpStatus('You left the multiplayer match.');
 }
 /* ---------- story ---------- */
