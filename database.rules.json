@@ -48,7 +48,7 @@
         ".read": "auth != null",
         "$roomId": {
           ".write": "auth != null && !data.exists() && newData.child('hostUid').val() === auth.uid",
-          ".validate": "newData.hasChildren(['game','hostUid','status','map','diff','createdAt','lastSeen']) && newData.child('game').val() === 'ghostnight' && newData.child('hostUid').isString() && newData.child('status').val() === 'live' && newData.child('map').isString() && newData.child('diff').exists() && newData.child('createdAt').isNumber() && newData.child('lastSeen').isNumber()",
+          ".validate": "newData.hasChildren(['game','hostUid','status','map','diff','createdAt','lastSeen']) && newData.child('game').val() === 'ghostnight' && newData.child('hostUid').isString() && (newData.child('status').val() === 'live' || newData.child('status').val() === 'closed') && newData.child('map').isString() && newData.child('diff').exists() && newData.child('createdAt').isNumber() && newData.child('lastSeen').isNumber()",
           "members": {
             ".read": "auth != null",
             "$uid": {
