@@ -619,7 +619,7 @@ async function mpConnect(forcedRoomId=null){
   const name=mpSafeName(user.displayName||(user.email&&user.email.split('@')[0])||'Player');
   const root=db.ref('ghostnight/matches');
   const queueRef=db.ref('ghostnight/matchmaking/current');
-  let chosen=null,chosenSlot=-1,chosenSlotRef=null;
+  let chosen=null,chosenSlot=-1,chosenSlotRef=null,roomId=null;
   const now=Date.now();
   if(forcedRoomId){
    phase='joining host-created party match';
@@ -645,7 +645,7 @@ async function mpConnect(forcedRoomId=null){
   if(!queued.committed)throw new Error('Could not reserve the shared matchmaking queue. Please retry.');
   let queue=queued.snapshot.val();
   if(!queue||!queue.players||!queue.players[user.uid])throw new Error('Matchmaking queue reservation was lost.');
-  let roomId=queue.roomId||null;
+  roomId=queue.roomId||null;
   if(!roomId&&queue.hostUid===user.uid){
    phase='waiting for real teammate';
    mpStatus('Searching for teammate · 1/4 players');
@@ -702,6 +702,7 @@ async function mpConnect(forcedRoomId=null){
   }
   if(forcedRoomId){roomId=forcedRoomId;const snap=await root.child(roomId).once('value');chosen={id:roomId,data:snap.val()};}
   phase='claiming player slot';
+  const roomRef=root.child(chosen.id);
   const claimed=await mpClaimSlot(roomRef,user,name);
   if(!claimed)throw new Error('All four player slots are full. Please retry matchmaking.');
   chosenSlot=claimed.slot;
