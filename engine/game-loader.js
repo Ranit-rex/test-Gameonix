@@ -8,7 +8,7 @@ window.PlayHubLoader = {
     const frame = document.createElement("iframe");
 
     frame.src = game.url;
-    frame.title = game.title || "Playbrix Game";
+    frame.title = game.title || "Playovia Game";
 
     frame.allow = [
       "fullscreen",
@@ -30,7 +30,7 @@ window.PlayHubLoader = {
     `;
 
     frame.onload = () => {
-      console.log("Playbrix game loaded:", game.title);
+      console.log("Playovia game loaded:", game.title);
     };
 
     frame.onerror = () => {
