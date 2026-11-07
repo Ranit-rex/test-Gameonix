@@ -384,7 +384,15 @@ button.danger{color:#ff8a7a;border-color:#7a3028}
 <div class="top"><p class="eyebrow">Hollowmere &middot; The Long Dark</p><h1>Last Lantern</h1><p class="tag">One flame. One night. Everyone the kingdom forgot is coming to the gate.</p></div>
 <div class="bottom">
 <button id="bPlay" class="primary big"><svg class="ic"><use href="#i-flame"/></svg>Begin the night</button>
-<button id="bMulti" class="small modebtn" style="width:100%;max-width:420px;border-color:#6b9bc0;color:#b9dcff">Find Multiplayer Match · Up to 4 players</button>
+<button id="bMulti" class="small modebtn" style="width:100%;max-width:420px;border-color:#6b9bc0;color:#b9dcff">Multiplayer Party · Up to 4 players</button>
+<div id="ghPartyPanel" hidden style="width:min(100%,420px);margin:10px auto;padding:14px;border:1px solid #526a86;border-radius:12px;background:rgba(13,20,34,.97);text-align:left">
+ <div style="display:flex;justify-content:space-between;align-items:center"><b style="color:#d8eaff;font:700 13px monospace">GHOST NIGHT PARTY</b><button id="ghPartyClose" class="small modebtn" type="button">✕</button></div>
+ <p class="how" style="margin:7px 0">Create a room, join with an 8-character code, or browse public Ghost Night parties.</p>
+ <div style="display:flex;gap:7px;flex-wrap:wrap"><button id="ghCreateParty" class="primary" type="button">＋ Create Party</button><input id="ghPartyCode" maxlength="8" placeholder="PARTY CODE" style="min-width:0;flex:1;padding:10px;border-radius:8px;background:#101827;color:#fff;border:1px solid #526a86;text-transform:uppercase"><button id="ghJoinParty" class="small modebtn" type="button">Join</button></div>
+ <div id="ghPublicParties" style="margin-top:10px;font:12px monospace;color:#b9c8dc">Loading public parties…</div>
+ <div id="ghPartyRoom" style="margin-top:10px"></div>
+ <p id="ghPartyStatus" class="how" aria-live="polite">Login to PlayHub to use parties.</p>
+</div>
 <p id="mpStatus" class="how" aria-live="polite">Solo mode is unchanged · Multiplayer is optional</p>
 <div id="mpLobby" hidden style="width:min(100%,420px);margin:10px auto 14px;padding:12px 14px;border:1px solid #526a86;border-radius:12px;background:rgba(13,20,34,.94);text-align:left">
  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b id="mpLobbyCount" style="font:700 13px monospace;color:#d8eaff">1/4 PLAYERS</b><b id="mpLobbyTimer" style="font:700 15px monospace;color:#ffd18a">12s</b></div>
@@ -511,6 +519,74 @@ const GH_FIREBASE={apiKey:'AIzaSyB_pZ9WfVSx2XHuDeSZ7VrwEr-Pz_m_2QM',authDomain:'
 const MP={busy:false,active:false,uid:null,name:'',roomId:null,roomRef:null,memberRef:null,slotRef:null,playerRef:null,playersRef:null,listener:null,remotes:{},slot:0,sendT:0,beatT:0,isHost:false,hostUid:null,world:null,worldT:0,enemySeq:0,hitSeq:0,hitQueue:[],hitSeen:{},worldReadyResolve:null,teamReady:false};
 function mpStatus(t){const e=$('mpStatus');if(e)e.textContent=t}
 function mpLoadScript(src){return new Promise((resolve,reject)=>{const sc=document.createElement('script');sc.src=src;sc.async=true;sc.onload=resolve;sc.onerror=()=>reject(new Error('Could not load '+src));document.head.appendChild(sc)})}
+async function ghPartyFirebase(){
+ const {db,user}=await mpFirebase();
+ if(!firebase.firestore)await mpLoadScript('https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js');
+ return {fs:firebase.firestore(),user,db};
+}
+let GH_PARTY={id:null,data:null,unsub:null,fs:null,user:null,launching:false};
+function ghPartyStatus(t){const e=$('ghPartyStatus');if(e)e.textContent=t}
+function ghPartyCode(){const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';return Array.from({length:8},()=>c[Math.floor(Math.random()*c.length)]).join('')}
+async function ghPartyRender(d){
+ const box=$('ghPartyRoom');if(!box)return;
+ if(!d){box.innerHTML='';return}
+ const members=d.memberUids||[],host=d.leaderUid===GH_PARTY.user.uid;
+ box.innerHTML='<div style="padding:10px;border:1px solid #35445b;border-radius:9px"><b>ROOM '+d.roomId+'</b> · '+members.length+'/4<br><div style="margin:8px 0;color:#b8c7dc;font-size:11px">Members: '+members.length+' · '+(host?'YOU ARE HOST':'Waiting for host')+'</div>'+(host?'<button id="ghPartyStart" class="primary" type="button" '+(members.length<2?'disabled':'')+'>▶ Start Match for Everyone</button>':'<span style="color:#b8c7dc;font-size:11px">Host will start when everyone is ready.</span>')+' <button id="ghPartyLeave" class="small modebtn" type="button">Leave</button></div>';
+ $('ghPartyStart')?.addEventListener('click',ghPartyStartMatch);
+ $('ghPartyLeave')?.addEventListener('click',ghPartyLeave);
+}
+async function ghPartyWatch(code){
+ if(GH_PARTY.unsub)GH_PARTY.unsub();
+ GH_PARTY.id=code;
+ GH_PARTY.unsub=GH_PARTY.fs.collection('partyRooms').doc(code).onSnapshot(async snap=>{
+  if(!snap.exists){GH_PARTY.id=null;GH_PARTY.data=null;ghPartyRender(null);ghPartyStatus('Party closed.');return}
+  const d=snap.data();GH_PARTY.data=d;await ghPartyRender(d);
+  if(d.status==='started'&&d.matchId&&!GH_PARTY.launching){
+   GH_PARTY.launching=true;ghPartyStatus('Host started the shared match. Connecting…');
+   mpConnect(d.matchId);
+  }
+ },e=>ghPartyStatus('Party sync failed: '+e.message));
+}
+async function ghPartyCreate(){
+ const {fs,user}=await ghPartyFirebase();GH_PARTY.fs=fs;GH_PARTY.user=user;
+ let code=ghPartyCode(),ref=fs.collection('partyRooms').doc(code);
+ for(let n=0;n<5;n++){const x=await ref.get();if(!x.exists)break;code=ghPartyCode();ref=fs.collection('partyRooms').doc(code)}
+ const d={roomId:code,leaderUid:user.uid,memberUids:[user.uid],status:'waiting',visibility:'public',gameSlug:'ghost-night',gameTitle:'Ghost Night',maxPlayers:4,createdAt:Date.now(),updatedAt:Date.now()};
+ await ref.set(d);await ghPartyWatch(code);ghPartyStatus('Party created. Share code '+code+' with friends.');
+}
+async function ghPartyJoin(code){
+ const {fs,user}=await ghPartyFirebase();GH_PARTY.fs=fs;GH_PARTY.user=user;
+ code=String(code||'').trim().toUpperCase();if(!/^[A-HJ-NP-Z2-9]{8}$/.test(code))throw Error('Enter a valid 8-character code.');
+ const ref=fs.collection('partyRooms').doc(code),snap=await ref.get();if(!snap.exists)throw Error('Party not found.');
+ const d=snap.data(),members=d.memberUids||[];
+ if(d.gameSlug!=='ghost-night')throw Error('This code is not a Ghost Night party.');
+ if(d.status!=='waiting')throw Error('This party has already started.');
+ if(!members.includes(user.uid)){if(members.length>=4)throw Error('Party is full (4/4).');await ref.update({memberUids:firebase.firestore.FieldValue.arrayUnion(user.uid),updatedAt:Date.now()})}
+ await ghPartyWatch(code);ghPartyStatus('Joined party '+code+'. Wait for host to start.');
+}
+async function ghPartyStartMatch(){
+ const d=GH_PARTY.data,u=GH_PARTY.user;if(!d||d.leaderUid!==u.uid)throw Error('Only the host can start.');
+ if((d.memberUids||[]).length<2)throw Error('At least 2 real players are required.');
+ const {db}=await mpFirebase(),roomRef=db.ref('ghostnight/matches').push(),matchId=roomRef.key;
+ await roomRef.set({game:'ghostnight',hostUid:u.uid,status:'live',map:save.map,diff:save.diff,createdAt:Date.now(),lastSeen:Date.now(),partyCode:d.roomId});
+ await GH_PARTY.fs.collection('partyRooms').doc(d.roomId).update({status:'started',matchId,updatedAt:Date.now()});
+ ghPartyStatus('Match created. Connecting party members…');mpConnect(matchId);
+}
+async function ghPartyLeave(){
+ if(!GH_PARTY.id||!GH_PARTY.fs||!GH_PARTY.user)return;
+ const ref=GH_PARTY.fs.collection('partyRooms').doc(GH_PARTY.id),snap=await ref.get();
+ if(snap.exists){const d=snap.data();if(d.leaderUid===GH_PARTY.user.uid)await ref.delete();else await ref.update({memberUids:firebase.firestore.FieldValue.arrayRemove(GH_PARTY.user.uid)})}
+ if(GH_PARTY.unsub)GH_PARTY.unsub();GH_PARTY.id=null;GH_PARTY.data=null;ghPartyRender(null);ghPartyStatus('You left the party.');
+}
+async function ghPartyRefresh(){
+ try{const {fs,user}=await ghPartyFirebase();GH_PARTY.fs=fs;GH_PARTY.user=user;
+ const snap=await fs.collection('partyRooms').where('visibility','==','public').limit(40).get();
+ const rooms=snap.docs.map(x=>x.data()).filter(d=>d.gameSlug==='ghost-night'&&d.status==='waiting'&&(d.memberUids||[]).length<4);
+ $('ghPublicParties').innerHTML=rooms.length?rooms.map(d=>'<div style="display:flex;justify-content:space-between;gap:8px;padding:7px 0;border-bottom:1px solid #344157"><span>'+d.memberUids.length+'/4 · '+d.roomId+'</span><button class="small modebtn" data-gh-join="'+d.roomId+'">Join</button></div>').join(''):'No public Ghost Night parties found.';
+ $('ghPublicParties').querySelectorAll('[data-gh-join]').forEach(b=>b.onclick=()=>ghPartyJoin(b.dataset.ghJoin).catch(e=>ghPartyStatus(e.message)));
+ }catch(e){ghPartyStatus(e.message)}
+}
+function ghPartyOpen(){const p=$('ghPartyPanel');p.hidden=false;ghPartyRefresh()}
 async function mpFirebase(){
  if(!window.firebase)await mpLoadScript('https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js');
  if(!firebase.auth)await mpLoadScript('https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js');
@@ -533,7 +609,7 @@ async function mpClaimSlot(roomRef,user,name){
  }
  return null;
 }
-async function mpConnect(){
+async function mpConnect(forcedRoomId=null){
  if(MP.busy||MP.active)return;
  MP.busy=true;const btn=$('bMulti');if(btn)btn.disabled=true;
  let phase='initializing';
@@ -545,6 +621,15 @@ async function mpConnect(){
   const queueRef=db.ref('ghostnight/matchmaking/current');
   let chosen=null,chosenSlot=-1,chosenSlotRef=null;
   const now=Date.now();
+  if(forcedRoomId){
+   phase='joining host-created party match';
+   const roomRef=root.child(forcedRoomId);
+   let roomSnap=await roomRef.once('value');
+   if(!roomSnap.exists())throw new Error('Host match room is not available.');
+   const rd=roomSnap.val();
+   if(!rd||rd.status!=='live'||rd.game!=='ghostnight')throw new Error('Host match is not live.');
+   chosen={id:forcedRoomId,data:rd};
+  }else{
   phase='joining shared matchmaking queue';
   const queued=await queueRef.transaction(cur=>{
    const fresh=cur&&cur.game==='ghostnight'&&cur.map===save.map&&cur.diff===save.diff&&now-Number(cur.updatedAt||0)<45000;
@@ -607,12 +692,15 @@ async function mpConnect(){
    });
    roomId=queue.roomId;
   }
+  if(!forcedRoomId){
   if(!roomId)throw new Error('No shared room was assigned.');
   const roomRef=root.child(roomId);
   const roomSnap=await roomRef.once('value');
   const roomData=roomSnap.val();
   if(!roomData||roomData.status!=='live'||roomData.game!=='ghostnight')throw new Error('Shared match is no longer available. Please retry.');
   chosen={id:roomId,data:roomData};
+  }
+  if(forcedRoomId){roomId=forcedRoomId;const snap=await root.child(roomId).once('value');chosen={id:roomId,data:snap.val()};}
   phase='claiming player slot';
   const claimed=await mpClaimSlot(roomRef,user,name);
   if(!claimed)throw new Error('All four player slots are full. Please retry matchmaking.');
@@ -3714,7 +3802,11 @@ function playClicked(){
  if(!save.seenIntro)startIntro();else startRun();
 }
 $('bPlay').onclick=playClicked;
-$('bMulti').onclick=()=>{ensureAudio();mpConnect()};
+$('bMulti').onclick=()=>{ensureAudio();ghPartyOpen()};
+$('ghPartyClose').onclick=()=>{$('ghPartyPanel').hidden=true};
+$('ghCreateParty').onclick=()=>ghPartyCreate().catch(e=>ghPartyStatus('Create failed: '+e.message));
+$('ghJoinParty').onclick=()=>ghPartyJoin($('ghPartyCode').value).catch(e=>ghPartyStatus('Join failed: '+e.message));
+$('ghPartyCode').addEventListener('keydown',e=>{if(e.key==='Enter')$('ghJoinParty').click()});
 $('bMode').onclick=()=>{ensureAudio();openModes()};
 $('modesBack').onclick=toMenu;
 $('bHearth').onclick=()=>{ensureAudio();openHearth()};
