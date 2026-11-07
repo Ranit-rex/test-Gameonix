@@ -532,7 +532,10 @@ async function ghPartyRender(d){
  if(!d){box.innerHTML='';return}
  const members=d.memberUids||[],host=d.leaderUid===GH_PARTY.user.uid;
  box.innerHTML='<div style="padding:10px;border:1px solid #35445b;border-radius:9px"><b>ROOM '+d.roomId+'</b> · '+members.length+'/4<br><div style="margin:8px 0;color:#b8c7dc;font-size:11px">Members: '+members.length+' · '+(host?'YOU ARE HOST':'Waiting for host')+'</div>'+(host?'<button id="ghInviteFriends" class="small modebtn" type="button">＋ Invite Friends</button> <button id="ghPartyStart" class="primary" type="button" '+(members.length<2?'disabled':'')+'>▶ Start Match for Everyone</button>':'<span style="color:#b8c7dc;font-size:11px">Host will start when everyone is ready.</span>')+' <button id="ghPartyLeave" class="small modebtn" type="button">Leave</button></div>';
- $('ghPartyStart')?.addEventListener('click',ghPartyStartMatch);
+ $('ghPartyStart')?.addEventListener('click',async e=>{
+  const btn=e.currentTarget;if(btn.disabled)return;btn.disabled=true;btn.textContent='Starting…';
+  try{await ghPartyStartMatch()}catch(err){console.error('Start Match failed:',err);ghPartyStatus('Start Match failed: '+(err&&err.message||'Unknown error'));btn.disabled=false;btn.textContent='▶ Start Match for Everyone'}
+ });
  $('ghInviteFriends')?.addEventListener('click',ghPartyInviteFriends);
  $('ghPartyLeave')?.addEventListener('click',ghPartyLeave);
 }
@@ -566,12 +569,24 @@ async function ghPartyJoin(code){
  await ghPartyWatch(code);ghPartyStatus('Joined party '+code+'. Wait for host to start.');
 }
 async function ghPartyStartMatch(){
- const d=GH_PARTY.data,u=GH_PARTY.user;if(!d||d.leaderUid!==u.uid)throw Error('Only the host can start.');
- if((d.memberUids||[]).length<2)throw Error('At least 2 real players are required.');
- const {db}=await mpFirebase(),roomRef=db.ref('ghostnight/matches').push(),matchId=roomRef.key;
- await roomRef.set({game:'ghostnight',hostUid:u.uid,status:'live',map:save.map,diff:save.diff,createdAt:Date.now(),lastSeen:Date.now(),partyCode:d.roomId});
- await GH_PARTY.fs.collection('partyRooms').doc(d.roomId).update({status:'started',matchId,updatedAt:Date.now()});
- ghPartyStatus('Match created. Connecting party members…');mpConnect(matchId);
+ const d=GH_PARTY.data,u=GH_PARTY.user;
+ if(!d||!u)throw Error('Party data is not ready. Reopen the party and try again.');
+ if(d.leaderUid!==u.uid)throw Error('Only the party host can start.');
+ const members=Array.isArray(d.memberUids)?d.memberUids:[];
+ if(members.length<2)throw Error('At least 2 real players must join before starting.');
+ if(d.status!=='waiting')throw Error('This party has already started.');
+ ghPartyStatus('Creating shared match…');
+ const {db}=await mpFirebase();
+ const roomRef=db.ref('ghostnight/matches').push(),matchId=roomRef.key;
+ if(!matchId)throw Error('Could not generate a match ID.');
+ try{
+  await roomRef.set({game:'ghostnight',hostUid:u.uid,status:'live',map:save.map,diff:save.diff,createdAt:Date.now(),lastSeen:Date.now(),partyCode:d.roomId});
+  await GH_PARTY.fs.collection('partyRooms').doc(d.roomId).update({status:'started',matchId,updatedAt:Date.now()});
+ }catch(err){
+  try{await roomRef.remove()}catch(cleanErr){console.warn('Could not clean up failed match room:',cleanErr)}
+  throw err;
+ }
+ ghPartyStatus('Match created. Connecting everyone…');
 }
 async function ghPartyInviteFriends(){
  const box=$('ghPartyRoom');const {fs,user}=GH_PARTY;
