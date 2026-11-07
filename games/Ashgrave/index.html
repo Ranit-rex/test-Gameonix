@@ -328,8 +328,8 @@ async function mpJoin(){
    memberRef.update({lastSeen:stamp}).catch(e=>{console.warn('member heartbeat',e);mpStatus('Player connection issue: '+(e.code||e.message));});
    if(MP.isHost)MP.roomRef.child('lastSeen').set(stamp).catch(e=>{console.warn('room heartbeat',e);mpStatus('Match heartbeat issue: '+(e.code||e.message));});
   },10000);
-  mpStatus('Match found · '+Object.keys(chosenMembers).length+'/4 players · opening story…');
-  story();
+  mpStatus('Match found · '+(chosenSlot+1)+'/4 slot reserved · starting game…');
+  start();
  }catch(e){
   if(MP.slotRef){try{await MP.slotRef.remove()}catch(x){}MP.slotRef=null;}
   console.error('Ashgrave multiplayer failed during '+phase+':',e);
