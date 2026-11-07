@@ -646,8 +646,11 @@ async function mpFirebase(){
  if(!window.firebase)await mpLoadScript('https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js');
  if(!firebase.auth)await mpLoadScript('https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js');
  if(!firebase.database)await mpLoadScript('https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js');
- if(!firebase.apps.length)firebase.initializeApp(GH_FIREBASE);
- const auth=firebase.auth(),db=firebase.database();
+ // Use a dedicated named Firebase app so PlayHub's default app/config cannot redirect
+ // Ghost Night parties to a different database instance.
+ let ghApp=firebase.apps.find(app=>app.name==='ghostnight-multiplayer');
+ if(!ghApp)ghApp=firebase.initializeApp(GH_FIREBASE,'ghostnight-multiplayer');
+ const auth=ghApp.auth(),db=ghApp.database(GH_FIREBASE.databaseURL);
  let user=auth.currentUser;
  if(!user)user=await new Promise(resolve=>{let off=auth.onAuthStateChanged(u=>{off();resolve(u)})});
  if(!user)throw new Error('PlayHub account not found. Login to PlayHub first, then open Ghost Night again.');
