@@ -542,49 +542,82 @@ async function mpConnect(){
   const {db,user}=await mpFirebase();
   const name=mpSafeName(user.displayName||(user.email&&user.email.split('@')[0])||'Player');
   const root=db.ref('ghostnight/matches');
+  const queueRef=db.ref('ghostnight/matchmaking/current');
   let chosen=null,chosenSlot=-1,chosenSlotRef=null;
-  // Use Ashgrave's proven live-room discovery: scan rooms, then atomically claim a free slot.
-  // No shared matchmaking pointer is used, so pointer reservation permissions/races cannot split the players.
-  phase='finding live matches';
-  const snap=await root.orderByChild('status').equalTo('live').once('value');
-  const rooms=[];
-  snap.forEach(ch=>{
-   const v=ch.val()||{};
-   if(v.game==='ghostnight'&&v.map===save.map&&v.diff===save.diff&&Date.now()-Number(v.lastSeen||0)<45000)
-    rooms.push({id:ch.key,data:v});
+  const now=Date.now();
+  phase='joining shared matchmaking queue';
+  const queued=await queueRef.transaction(cur=>{
+   const fresh=cur&&cur.game==='ghostnight'&&cur.map===save.map&&cur.diff===save.diff&&now-Number(cur.updatedAt||0)<45000;
+   const players=fresh&&cur.players?cur.players:{};
+   const count=Object.keys(players).length;
+   if(fresh&&count<4){
+    const next={...cur,players:{...players},updatedAt:now};
+    if(!next.players[user.uid])next.players[user.uid]={name,joinedAt:now};
+    return next;
+   }
+   return {game:'ghostnight',map:save.map,diff:save.diff,hostUid:user.uid,createdAt:now,updatedAt:now,players:{[user.uid]:{name,joinedAt:now}}};
   });
-  rooms.sort((x,y)=>(x.data.createdAt||0)-(y.data.createdAt||0));
-  for(const room of rooms){
-   phase='checking match '+room.id;
-   const roomRef=root.child(room.id);
-   const membersSnap=await roomRef.child('members').once('value');
-   const members=membersSnap.val()||{};
-   const slotsSnap=await roomRef.child('slots').once('value');
-   const slots=slotsSnap.val()||{};
-   if(members[user.uid]){
-    const own=Object.entries(slots).find(([,v])=>v&&v.uid===user.uid);
-    if(own){chosen=room;chosenSlot=Number(own[0]);chosenSlotRef=roomRef.child('slots/'+own[0]);break;}
-   }
-   for(let n=0;n<4;n++){
-    if(slots[String(n)])continue;
-    phase='claiming player slot '+(n+1);
-    const sr=roomRef.child('slots/'+n);
-    const claim=await sr.transaction(cur=>cur===null?{uid:user.uid,name,joinedAt:Date.now()}:undefined,undefined,false);
-    if(claim.committed){chosen=room;chosenSlot=n;chosenSlotRef=sr;break;}
-   }
-   if(chosen)break;
-  }
-  if(!chosen){
-   phase='creating a new match';
+  if(!queued.committed)throw new Error('Could not reserve the shared matchmaking queue. Please retry.');
+  let queue=queued.snapshot.val();
+  if(!queue||!queue.players||!queue.players[user.uid])throw new Error('Matchmaking queue reservation was lost.');
+  let roomId=queue.roomId||null;
+  if(!roomId&&queue.hostUid===user.uid){
+   phase='waiting for real teammate';
+   mpStatus('Searching for teammate · 1/4 players');
+   queue=await new Promise((resolve,reject)=>{
+    let settled=false;
+    const finish=(err,value)=>{if(settled)return;settled=true;queueRef.off('value',watch);clearTimeout(timer);err?reject(err):resolve(value)};
+    const watch=snap=>{
+     const v=snap.val()||{};
+     if(v.hostUid!==user.uid||v.game!=='ghostnight'||v.map!==save.map||v.diff!==save.diff){finish(new Error('Matchmaking queue changed. Please retry.'));return;}
+     const count=Object.keys(v.players||{}).length;
+     mpStatus('Searching for teammate · '+count+'/4 players');
+     if(count>=2)finish(null,v);
+    };
+    const timer=setTimeout(()=>finish(new Error('No teammate found yet. Please try matchmaking again.')),60000);
+    queueRef.on('value',watch);
+    queueRef.once('value',watch);
+   });
+   phase='creating shared match';
    const ref=root.push();
    await ref.set({game:'ghostnight',hostUid:user.uid,status:'live',map:save.map,diff:save.diff,createdAt:Date.now(),lastSeen:Date.now()});
-   chosen={id:ref.key,data:{hostUid:user.uid}};
-   chosenSlot=0;
-   chosenSlotRef=ref.child('slots/0');
-   phase='reserving host slot';
-   const claim=await chosenSlotRef.transaction(cur=>cur===null?{uid:user.uid,name,joinedAt:Date.now()}:undefined,undefined,false);
-   if(!claim.committed)throw new Error('Could not reserve a player slot. Please retry matchmaking.');
+   const linked=await queueRef.transaction(cur=>{
+    if(!cur||cur.hostUid!==user.uid||cur.roomId)return;
+    return {...cur,roomId:ref.key,updatedAt:Date.now()};
+   });
+   if(!linked.committed||!linked.snapshot.val()||linked.snapshot.val().roomId!==ref.key){
+    await ref.remove().catch(()=>{});
+    throw new Error('Shared matchmaking room could not be announced. Please retry.');
+   }
+   roomId=ref.key;
+  }else if(!roomId){
+   phase='waiting for host to create shared match';
+   mpStatus('Teammate found · waiting for host');
+   queue=await new Promise((resolve,reject)=>{
+    let settled=false;
+    const finish=(err,value)=>{if(settled)return;settled=true;queueRef.off('value',watch);clearTimeout(timer);err?reject(err):resolve(value)};
+    const watch=snap=>{
+     const v=snap.val()||{};
+     if(v.hostUid!==queue.hostUid||v.game!=='ghostnight'||v.map!==save.map||v.diff!==save.diff){finish(new Error('Host matchmaking session expired. Please retry.'));return;}
+     if(v.roomId)finish(null,v);
+    };
+    const timer=setTimeout(()=>finish(new Error('Host did not create the shared room in time. Please retry.')),30000);
+    queueRef.on('value',watch);
+    queueRef.once('value',watch);
+   });
+   roomId=queue.roomId;
   }
+  if(!roomId)throw new Error('No shared room was assigned.');
+  const roomRef=root.child(roomId);
+  const roomSnap=await roomRef.once('value');
+  const roomData=roomSnap.val();
+  if(!roomData||roomData.status!=='live'||roomData.game!=='ghostnight')throw new Error('Shared match is no longer available. Please retry.');
+  chosen={id:roomId,data:roomData};
+  phase='claiming player slot';
+  const claimed=await mpClaimSlot(roomRef,user,name);
+  if(!claimed)throw new Error('All four player slots are full. Please retry matchmaking.');
+  chosenSlot=claimed.slot;
+  chosenSlotRef=claimed.slotRef;
   MP.uid=user.uid;MP.name=name;MP.roomId=chosen.id;MP.roomRef=root.child(chosen.id);
   MP.slot=chosenSlot;MP.slotRef=chosenSlotRef;MP.isHost=chosen.data.hostUid===user.uid;MP.hostUid=chosen.data.hostUid||null;
   phase='registering player';
