@@ -20,8 +20,8 @@ import * as THREE from 'three';
 const $=id=>document.getElementById(id);
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x9bc9e8);scene.fog=new THREE.Fog(0x9bc9e8,48,175);
 const camera=new THREE.PerspectiveCamera(64,innerWidth/innerHeight,.1,220);camera.position.set(0,5.2,10);camera.lookAt(0,1,-4);
-const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.12;document.body.appendChild(renderer.domElement);
-scene.add(new THREE.HemisphereLight(0xd9f5ff,0x30452a,2.0));const sun=new THREE.DirectionalLight(0xffedcf,3.1);sun.position.set(-12,22,9);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);scene.add(sun);
+const smallScreen=()=>innerWidth<=700;const renderer=new THREE.WebGLRenderer({antialias:!smallScreen(),powerPreference:'high-performance'});renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,smallScreen()?1:1.35));renderer.shadowMap.enabled=!smallScreen();renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.12;document.body.appendChild(renderer.domElement);
+scene.add(new THREE.HemisphereLight(0xd9f5ff,0x30452a,2.0));const sun=new THREE.DirectionalLight(0xffedcf,3.1);sun.position.set(-12,22,9);sun.castShadow=!smallScreen();sun.shadow.mapSize.set(1024,1024);scene.add(sun);
 const mat=(c,r=.9)=>new THREE.MeshStandardMaterial({color:c,roughness:r});
 const groundMat=mat(0x4a5960),roadMat=mat(0x303943),edgeMat=mat(0x9daab2),lineMat=mat(0xf4e7ad);
 const ground=new THREE.Mesh(new THREE.PlaneGeometry(260,260),groundMat);ground.rotation.x=-Math.PI/2;ground.position.y=-.2;ground.receiveShadow=true;scene.add(ground);
@@ -39,7 +39,7 @@ function addModel(key,height,x,y,z,parent=scene){const g=fitModel(models[key],he
 
 // Procedural neon-city block: buildings, lit windows, street lamps and trees.
 const scenery=[];const buildingMats=[mat(0x263b55),mat(0x34465d),mat(0x3c405b),mat(0x344e58),mat(0x51445d)];const windowMat=new THREE.MeshStandardMaterial({color:0xffd783,emissive:0xffb84a,emissiveIntensity:1.1});
-function makeBuilding(x,z){const group=new THREE.Group(),w=3.8+Math.random()*2.5,h=8+Math.random()*17,d=5+Math.random()*4;const body=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),buildingMats[Math.floor(Math.random()*buildingMats.length)]);body.position.y=h/2;body.castShadow=true;body.receiveShadow=true;group.add(body);const rows=Math.max(2,Math.floor(h/2.3));for(let y=1.5;y<h-1;y+=2.2)for(let xx=-w/2+.7;xx<w/2-.4;xx+=1.15){const win=new THREE.Mesh(new THREE.PlaneGeometry(.48,.72),windowMat);win.position.set(xx,y,d/2+.012);group.add(win);const sideWin=win.clone();sideWin.rotation.y=Math.PI/2;sideWin.position.set(w/2+.012,y,xx*(d/w));group.add(sideWin)}group.position.set(x,0,z);scene.add(group);return group}
+function makeBuilding(x,z){const group=new THREE.Group(),w=3.8+Math.random()*2.5,h=8+Math.random()*17,d=5+Math.random()*4;const body=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),buildingMats[Math.floor(Math.random()*buildingMats.length)]);body.position.y=h/2;body.castShadow=true;body.receiveShadow=true;group.add(body);const mobile=innerWidth<=700,rowStep=mobile?3.1:2.2,colStep=mobile?1.65:1.15;for(let y=1.5;y<h-1;y+=rowStep)for(let xx=-w/2+.7;xx<w/2-.4;xx+=colStep){const win=new THREE.Mesh(new THREE.PlaneGeometry(.48,.72),windowMat);win.position.set(xx,y,d/2+.012);group.add(win);if(!mobile){const sideWin=win.clone();sideWin.rotation.y=Math.PI/2;sideWin.position.set(w/2+.012,y,xx*(d/w));group.add(sideWin)}}group.position.set(x,0,z);scene.add(group);return group}
 function makeLamp(x,z){const g=new THREE.Group(),pole=new THREE.Mesh(new THREE.CylinderGeometry(.055,.09,5.2,8),mat(0x293541));pole.position.y=2.6;g.add(pole);const arm=new THREE.Mesh(new THREE.BoxGeometry(1.15,.08,.08),mat(0x293541));arm.position.set(x>0?-.48:.48,5.05,0);g.add(arm);const bulb=new THREE.Mesh(new THREE.SphereGeometry(.18,10,8),new THREE.MeshStandardMaterial({color:0xffe5a0,emissive:0xffb84a,emissiveIntensity:2}));bulb.position.set(x>0?-.95:.95,4.95,0);g.add(bulb);g.position.set(x,0,z);scene.add(g);return g}
 for(let z=12;z>-205;z-=22){for(const side of [-1,1])scenery.push(makeBuilding(side*(9+Math.random()*4),z+(side===1?-7:0)));if(z%44===12)for(const side of [-1,1])scenery.push(makeLamp(side*5.6,z-8))}
 const treeMat=mat(0x28734f);for(let z=4;z>-200;z-=34)for(const side of [-1,1]){const tree=new THREE.Group(),trunk=new THREE.Mesh(new THREE.CylinderGeometry(.16,.23,1.8,7),mat(0x684a36));trunk.position.y=.9;tree.add(trunk);const crown=new THREE.Mesh(new THREE.SphereGeometry(1.15,9,8),treeMat);crown.position.y=2.3;tree.add(crown);tree.position.set(side*6.4,0,z);scene.add(tree);scenery.push(tree)}
@@ -69,7 +69,7 @@ function animate(){requestAnimationFrame(animate);const dt=Math.min(clock.getDel
  if(running&&!paused){score+=dt*speed*.55;speed=Math.min(34,19+score*.009);updateHUD();hero.position.x=THREE.MathUtils.damp(hero.position.x,lane*2,11,dt);
   if(jumpV!==0||jumpY>0){jumpV-=25*dt;jumpY+=jumpV*dt;if(jumpY<=0){jumpY=0;jumpV=0}}
   if(sliding){slideTimer-=dt;if(slideTimer<=0)sliding=false}
-  hero.position.y=jumpY+(sliding?-.28:0);hero.scale.y=sliding?.78:1;
+  hero.position.y=jumpY+(sliding?-.28:0);hero.scale.y=sliding?.55:1;
   const swing=Math.sin(t*speed*.62)*.62;
   if(parts.leg_L)parts.leg_L.rotation.x=swing;if(parts.leg_R)parts.leg_R.rotation.x=-swing;
   if(parts.boot_L)parts.boot_L.rotation.x=swing;if(parts.boot_R)parts.boot_R.rotation.x=-swing;
@@ -78,13 +78,13 @@ function animate(){requestAnimationFrame(animate);const dt=Math.min(clock.getDel
   hero.rotation.z=THREE.MathUtils.damp(hero.rotation.z,Math.sin(t*speed*.3)*.025,5,dt);
   for(const m of laneMarks){m.position.z+=speed*dt;if(m.position.z>17)m.position.z-=190}
   for(const s of scenery){s.position.z+=speed*dt;if(s.position.z>22)s.position.z-=190}for(const s of mapDecor){s.position.z+=speed*dt;if(s.position.z>22)s.position.z-=190}
-  for(let i=obstacles.length-1;i>=0;i--){const o=obstacles[i];o.mesh.position.z+=speed*dt;if(o.mesh.position.z>9){scene.remove(o.mesh);obstacles.splice(i,1);continue}if(o.mesh.userData.moving)o.mesh.position.x=o.lane*2+Math.sin(t*2.2+o.mesh.position.z)*.72;const depth=o.type==='car'?1.75:o.type==='barricade'?1.35:1.05;const near=Math.abs(o.mesh.position.z-4)<depth,same=Math.abs(o.mesh.position.x-hero.position.x)<.82;if(near&&same){let hit=true;if(['cone','barricade','crate','log','boulder','woodwall','templegate'].includes(o.type)&&jumpY>(o.type==='boulder'?1.45:1.25))hit=false;if(o.type==='pothole'&&jumpY>.55)hit=false;if(['overhead','spikegate'].includes(o.type)&&sliding)hit=false;if(hit){endGame();break}}}
+  for(let i=obstacles.length-1;i>=0;i--){const o=obstacles[i];o.mesh.position.z+=speed*dt;if(o.mesh.position.z>9){scene.remove(o.mesh);obstacles.splice(i,1);continue}if(o.mesh.userData.moving)o.mesh.position.x=o.lane*2+Math.sin(t*2.2+o.mesh.position.z)*.72;const depth=o.type==='car'?1.75:o.type==='barricade'?1.35:1.05;const near=Math.abs(o.mesh.position.z-4)<depth,same=Math.abs(o.mesh.position.x-hero.position.x)<.82;if(near&&same){let hit=true;const jumpClearance={cone:1.05,barricade:1.15,crate:1.35,log:.55,boulder:1.72,woodwall:1.72,movingbar:1.15};if(jumpClearance[o.type]!==undefined&&jumpY>jumpClearance[o.type])hit=false;if(o.type==='pothole'&&jumpY>.55)hit=false;if((o.type==='overhead'||o.type==='spikegate')&&sliding)hit=false;if(hit){endGame();break}}}
   for(let i=coins.length-1;i>=0;i--){const c=coins[i];c.position.z+=speed*dt;c.rotation.y+=dt*2.8;if(c.position.z>9){scene.remove(c);coins.splice(i,1);continue}if(Math.abs(c.position.z-4)<.9&&Math.abs(c.position.x-hero.position.x)<.58&&Math.abs(c.position.y-(.92+jumpY))<.72){coinCount++;scene.remove(c);coins.splice(i,1);updateHUD()}}
   spawnTimer+=dt;if(spawnTimer>1.55){spawnRow(-170);spawnTimer=0}
  }
  camera.position.x=THREE.MathUtils.damp(camera.position.x,hero.position.x*.22,3,dt);camera.lookAt(hero.position.x*.16,1.15,-4);renderer.render(scene,camera)}
 
 $('loading').style.display='none';showMenu('CITY RUSH','Sprint through the neon city, dodge traffic and collect coins.','START RUNNING');animate();
-addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setPixelRatio(Math.min(devicePixelRatio,smallScreen()?1:1.35));renderer.shadowMap.enabled=!smallScreen();sun.castShadow=!smallScreen();renderer.setSize(innerWidth,innerHeight)});
 </script>
 </body></html>
