@@ -235,47 +235,108 @@ async function mpInit(){
  MP.playerName=(MP.user.displayName||MP.user.email&&MP.user.email.split('@')[0]||'Player').slice(0,24);
 }
 async function mpJoin(){
- const btn=$('mp');btn.disabled=true;mpStatus('Connecting to PlayHub multiplayer…');
+ const btn=$('mp');btn.disabled=true;
+ let phase='initializing';
+ mpStatus('Connecting to PlayHub multiplayer…');
  try{
   await mpInit();
+  phase='finding live matches';
   const root=MP.db.ref('ashgrave/matches');
   const snap=await root.orderByChild('status').equalTo('live').once('value');
-  let chosen=null,chosenMembers=null,chosenSlot=-1,chosenSlotRef=null;
-  const rooms=[];snap.forEach(ch=>{const v=ch.val()||{};if(v.game==='ashgrave'&&Number(v.chapter)===ci&&Date.now()-Number(v.lastSeen||0)<45000)rooms.push({id:ch.key,data:v})});
-  rooms.sort((a,b)=>(a.data.createdAt||0)-(b.data.createdAt||0));
+  let chosen=null,chosenMembers={},chosenSlot=-1,chosenSlotRef=null;
+  const rooms=[];
+  snap.forEach(ch=>{
+   const v=ch.val()||{};
+   if(v.game==='ashgrave'&&Number(v.chapter)===ci&&Date.now()-Number(v.lastSeen||0)<45000)
+    rooms.push({id:ch.key,data:v});
+  });
+  rooms.sort((x,y)=>(x.data.createdAt||0)-(y.data.createdAt||0));
   for(const room of rooms){
-   const ms=await root.child(room.id+'/members').once('value'),members=ms.val()||{};
-   const slotsSnap=await root.child(room.id+'/slots').once('value'),slots=slotsSnap.val()||{};
-   if(members[MP.user.uid]){const existing=Object.entries(slots).find(([,v])=>v&&v.uid===MP.user.uid);if(existing){chosen=room;chosenMembers=members;chosenSlot=Number(existing[0]);chosenSlotRef=root.child(room.id+'/slots/'+existing[0]);break}}
-   for(let i=0;i<4;i++){if(!slots[String(i)]){const sr=root.child(room.id+'/slots/'+i);try{await sr.set({uid:MP.user.uid,name:MP.playerName,joinedAt:Date.now()});chosen=room;chosenMembers=members;chosenSlot=i;chosenSlotRef=sr;break}catch(e){}}}
+   phase='checking match '+room.id;
+   const roomRef=root.child(room.id);
+   const ms=await roomRef.child('members').once('value');
+   const members=ms.val()||{};
+   if(members[MP.user.uid]){
+    const ss=await roomRef.child('slots').once('value');
+    const own=Object.entries(ss.val()||{}).find(([,v])=>v&&v.uid===MP.user.uid);
+    if(own){chosen=room;chosenMembers=members;chosenSlot=Number(own[0]);chosenSlotRef=roomRef.child('slots/'+own[0]);break;}
+   }
+   const ss=await roomRef.child('slots').once('value');
+   const slots=ss.val()||{};
+   for(let i=0;i<4;i++){
+    if(slots[String(i)])continue;
+    phase='claiming player slot '+(i+1);
+    const sr=roomRef.child('slots/'+i);
+    const claim=await sr.transaction(current=>{
+     if(current===null)return {uid:MP.user.uid,name:MP.playerName,joinedAt:Date.now()};
+     return;
+    },undefined,false);
+    if(claim.committed){
+     chosen=room;chosenMembers=members;chosenSlot=i;chosenSlotRef=sr;break;
+    }
+   }
    if(chosen)break;
   }
   if(!chosen){
-   const ref=root.push();MP.roomId=ref.key;MP.roomRef=ref;
+   phase='creating a new match';
+   const ref=root.push();
    await ref.set({game:'ashgrave',chapter:ci,hostUid:MP.user.uid,status:'live',createdAt:Date.now(),lastSeen:Date.now()});
-   chosen={id:ref.key,data:{hostUid:MP.user.uid}};chosenMembers={};chosenSlot=0;chosenSlotRef=ref.child('slots/0');
-   await chosenSlotRef.set({uid:MP.user.uid,name:MP.playerName,joinedAt:Date.now()});
-  }else{MP.roomId=chosen.id;MP.roomRef=root.child(MP.roomId)}
-  if(chosenSlot<0)throw new Error('This match is full. Please try again.');
-  MP.seat=chosenSlot;MP.slotRef=chosenSlotRef;MP.isHost=chosen.data.hostUid===MP.user.uid;
+   chosen={id:ref.key,data:{hostUid:MP.user.uid}};
+   chosenMembers={};
+   chosenSlot=0;
+   chosenSlotRef=ref.child('slots/0');
+   phase='reserving host slot';
+   const claim=await chosenSlotRef.transaction(current=>{
+    if(current===null)return {uid:MP.user.uid,name:MP.playerName,joinedAt:Date.now()};
+    return;
+   },undefined,false);
+   if(!claim.committed)throw new Error('Could not reserve a player slot. Please retry.');
+  }
+  MP.roomId=chosen.id;
+  MP.roomRef=root.child(MP.roomId);
+  MP.seat=chosenSlot;
+  MP.slotRef=chosenSlotRef;
+  MP.isHost=chosen.data.hostUid===MP.user.uid;
+  phase='registering player';
   const memberRef=MP.roomRef.child('members').child(MP.user.uid);
-  if(!chosenMembers[MP.user.uid])await memberRef.set({name:MP.playerName,joinedAt:Date.now(),lastSeen:Date.now()});
-  else await memberRef.update({name:MP.playerName,lastSeen:Date.now()});
-  const membersNow=await MP.roomRef.child('members').once('value'),members=membersNow.val()||{};
+  await memberRef.set({name:MP.playerName,joinedAt:Date.now(),lastSeen:Date.now()});
   MP.membersRef=MP.roomRef.child('members');
   MP.playersRef=MP.db.ref('ashgrave/players/'+MP.roomId);
-  await memberRef.onDisconnect().remove();await MP.slotRef.onDisconnect().remove();
-  const myPlayer=MP.playersRef.child(MP.user.uid);await myPlayer.onDisconnect().remove();
+  phase='setting disconnect cleanup';
+  await memberRef.onDisconnect().remove();
+  await MP.slotRef.onDisconnect().remove();
+  const myPlayer=MP.playersRef.child(MP.user.uid);
+  await myPlayer.onDisconnect().remove();
   if(MP.isHost)await MP.roomRef.child('status').onDisconnect().set('closed');
   MP.active=true;MP.pending=true;MP.remote={};MP.visual={};
-  MP.membersRef.on('value',ss=>{const mm=ss.val()||{};const count=Object.keys(mm).length;mpStatus('Match found · '+count+'/4 players · '+(mm[MP.user.uid]?'Connected':'Reconnecting'));mpBadge()});
-  MP.playersRef.on('value',ss=>{const all=ss.val()||{},now=Date.now(),out={};for(const [uid,p] of Object.entries(all)){if(uid!==MP.user.uid&&p&&Number(p.updatedAt)>now-15000&&Number(p.chapter)===ci)out[uid]=p}MP.remote=out;mpBadge()});
+  MP.membersRef.on('value',ss=>{
+   const mm=ss.val()||{},count=Object.keys(mm).length;
+   mpStatus('Match found · '+count+'/4 players · '+(mm[MP.user.uid]?'Connected':'Reconnecting'));
+   mpBadge();
+  });
+  MP.playersRef.on('value',ss=>{
+   const all=ss.val()||{},now=Date.now(),out={};
+   for(const [uid,p] of Object.entries(all)){
+    if(uid!==MP.user.uid&&p&&Number(p.updatedAt)>now-15000&&Number(p.chapter)===ci)out[uid]=p;
+   }
+   MP.remote=out;mpBadge();
+  });
   if(MP.beat)clearInterval(MP.beat);
-  MP.beat=setInterval(()=>{if(!MP.active||!MP.roomId)return;const stamp=Date.now();memberRef.update({lastSeen:stamp}).catch(()=>{});if(chosen.data.hostUid===MP.user.uid)MP.roomRef.child('lastSeen').set(stamp).catch(()=>{})},10000);
-  mpStatus('Match found · '+Object.keys(members).length+'/4 players · starting…');
+  MP.beat=setInterval(()=>{
+   if(!MP.active||!MP.roomId)return;
+   const stamp=Date.now();
+   memberRef.update({lastSeen:stamp}).catch(e=>{console.warn('member heartbeat',e);mpStatus('Player connection issue: '+(e.code||e.message));});
+   if(MP.isHost)MP.roomRef.child('lastSeen').set(stamp).catch(e=>{console.warn('room heartbeat',e);mpStatus('Match heartbeat issue: '+(e.code||e.message));});
+  },10000);
+  mpStatus('Match found · '+Object.keys(chosenMembers).length+'/4 players · opening story…');
   story();
- }catch(e){if(MP.slotRef){try{await MP.slotRef.remove()}catch(x){}MP.slotRef=null}console.error('Ashgrave multiplayer:',e);mpStatus(e.message||'Could not connect. Check Firebase rules and sign-in.')}
- finally{btn.disabled=false}
+ }catch(e){
+  if(MP.slotRef){try{await MP.slotRef.remove()}catch(x){}MP.slotRef=null;}
+  console.error('Ashgrave multiplayer failed during '+phase+':',e);
+  const code=e&&e.code?' ['+e.code+']':'';
+  mpStatus('Failed while '+phase+code+': '+(e&&e.message||'Unknown error'));
+ }
+ finally{btn.disabled=false;}
 }
 function mpStartGame(){
  if(!MP.active||!G)return;
