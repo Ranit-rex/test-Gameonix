@@ -1402,7 +1402,15 @@ function newGame(){
  if(save.runs>=1)g.mod=MODS[Math.floor(Math.random()*MODS.length)].id;
  if(g.mod==='fog'){g.light*=.75;S.magnet+=40}
  const a0=Math.random()*TAU;
- const NS=CURMAP.shrines;for(let k=0;k<NS;k++){const a=a0+k*TAU/NS,r0=WORLD*.52;g.shrines.push({x:Math.cos(a)*r0,y:Math.sin(a)*r0,prog:0,cool:0,uses:0,guard:false,rev:false,revT:9,name:SHRN[k%SHRN.length]})}
+ const NS=CURMAP.shrines;for(let k=0;k<NS;k++){
+  const a=a0+k*TAU/NS,r0=WORLD*(CURMAP.id==='marsh'?.42+.12*(k%2):CURMAP.id==='barrows'?.46+.07*(k%3):.52);
+  let x=Math.cos(a)*r0,y=Math.sin(a)*r0;
+  if(CURMAP.id==='frostfall'){x=Math.round(x/240)*240;y+=Math.sin(k*1.7)*150}
+  else if(CURMAP.id==='glacier'){x=Math.round(x/280)*280;y=Math.round(y/180)*180}
+  else if(CURMAP.id==='catacombs'){x=Math.round(x/190)*190;y=Math.round(y/190)*190}
+  else if(CURMAP.id==='embercoast'){y+=Math.sin(a*2)*WORLD*.16}
+  g.shrines.push({x,y,prog:0,cool:0,uses:0,guard:false,rev:false,revT:9,name:SHRN[k%SHRN.length]})
+ }
  return g;
 }
 function startRun(){
@@ -3000,14 +3008,19 @@ SFX.cap=()=>{tone(740,.2,'sine',.03);tone(1110,.3,'sine',.018,0,.08)};
 const DEC=[];
 function genDecals(){
  DEC.length=0;
- const R=mulberry(7+CURMAP.world),n=Math.round(230*Math.pow(WORLD/1500,2)*(WORLD>1500?.7:1)),id=CURMAP.id;
+ const id=CURMAP.id,R=mulberry(7+CURMAP.world+id.length*101),n=Math.round(250*Math.pow(WORLD/1500,2)*(WORLD>1500?.7:1));
  for(let i=0;i<n;i++){
-  const a=R()*TAU,d=Math.sqrt(R())*(WORLD-60),k=R();
-  const x=Math.cos(a)*d,y=Math.sin(a)*d;if(Math.hypot(x,y)<270)continue;
+  const a=R()*TAU,d=Math.sqrt(R())*(WORLD-60),k=R();let x=Math.cos(a)*d,y=Math.sin(a)*d;
+  if(Math.hypot(x,y)<270)continue;
   let t;
-  if(id==='marsh')t=k<.45?'puddle':k<.8?'reed':'mush';
-  else if(id==='barrows')t=k<.5?'crack':k<.75?'ember':'bone';
+  if(id==='marsh')t=k<.4?'puddle':k<.78?'reed':'mush';
+  else if(id==='barrows')t=k<.48?'crack':k<.76?'ember':'bone';
+  else if(id==='frostfall')t=k<.55?'snow':k<.82?'icecrack':'icepool';
+  else if(id==='glacier')t=k<.48?'icecrack':k<.78?'snow':'icepool';
+  else if(id==='catacombs')t=k<.48?'rune':k<.78?'stone':'crystalshard';
+  else if(id==='embercoast')t=k<.42?'lava':k<.72?'ash':'basalt';
   else t=k<.4?'flower':k<.75?'mush':'stone';
+  if(id==='marsh'&&i%5===0){x=Math.round(x/180)*180;y=Math.round(y/180)*180}
   DEC.push({x,y,t,s:.7+R()*.8,v:R(),a:R()*TAU});
  }
 }
@@ -3048,6 +3061,22 @@ function drawDecals(c,t){
   case'bone':
    c.rotate(d.a);c.strokeStyle='rgba(210,200,180,.7)';c.lineWidth=2.2;c.lineCap='round';c.beginPath();c.moveTo(-8*d.s,0);c.lineTo(8*d.s,1);c.stroke();c.fillStyle='rgba(210,200,180,.7)';c.beginPath();c.arc(-9*d.s,0,2,0,TAU);c.arc(9*d.s,1,2,0,TAU);c.fill();
    break;
+  case'snow':
+   c.fillStyle='rgba(210,241,255,.2)';c.beginPath();c.ellipse(0,0,18*d.s,7*d.s,d.a,0,TAU);c.fill();c.fillStyle='rgba(245,252,255,.62)';c.beginPath();c.ellipse(-3*d.s,-2*d.s,11*d.s,4*d.s,d.a,0,TAU);c.fill();break;
+  case'icecrack':
+   c.rotate(d.a);c.strokeStyle='rgba(150,224,255,.55)';c.lineWidth=2;c.beginPath();c.moveTo(-22*d.s,0);c.lineTo(-8*d.s,-4*d.s);c.lineTo(1*d.s,3*d.s);c.lineTo(12*d.s,-5*d.s);c.lineTo(23*d.s,-2*d.s);c.stroke();break;
+  case'icepool':
+   c.fillStyle='rgba(42,139,190,.32)';c.beginPath();c.ellipse(0,0,24*d.s,9*d.s,d.a,0,TAU);c.fill();c.strokeStyle='rgba(220,250,255,.7)';c.lineWidth=2;c.stroke();break;
+  case'lava':
+   c.fillStyle='rgba(22,8,7,.9)';c.beginPath();c.ellipse(0,0,20*d.s,8*d.s,d.a,0,TAU);c.fill();c.strokeStyle='rgba(255,94,24,.9)';c.lineWidth=2.5;c.stroke();c.fillStyle='rgba(255,171,54,.7)';c.beginPath();c.ellipse(0,0,8*d.s,3*d.s,0,0,TAU);c.fill();break;
+  case'ash':
+   c.fillStyle='rgba(195,118,77,.22)';c.beginPath();c.ellipse(0,0,16*d.s,5*d.s,d.a,0,TAU);c.fill();break;
+  case'basalt':
+   c.fillStyle='#211b1c';c.beginPath();c.moveTo(-12*d.s,0);c.lineTo(-8*d.s,-8*d.s);c.lineTo(4*d.s,-11*d.s);c.lineTo(13*d.s,-3*d.s);c.lineTo(8*d.s,5*d.s);c.closePath();c.fill();break;
+  case'rune':
+   c.rotate(d.a);c.strokeStyle='rgba(174,135,230,.65)';c.lineWidth=2;c.beginPath();c.arc(0,0,8*d.s,0,TAU);c.moveTo(-5*d.s,5*d.s);c.lineTo(5*d.s,-5*d.s);c.moveTo(-4*d.s,-5*d.s);c.lineTo(4*d.s,5*d.s);c.stroke();break;
+  case'crystalshard':
+   c.fillStyle='rgba(149,121,205,.5)';c.beginPath();c.moveTo(-8*d.s,3*d.s);c.lineTo(-2*d.s,-12*d.s);c.lineTo(3*d.s,-4*d.s);c.lineTo(9*d.s,4*d.s);c.closePath();c.fill();break;
   }
   c.restore();
  }
