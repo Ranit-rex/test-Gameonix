@@ -2019,7 +2019,7 @@ function drawWorldBase(t){
  ctx.fillStyle=groundPat;ctx.fillRect(cam.x,cam.y,VW,VH);
  if(CURMAP.tint){ctx.fillStyle=CURMAP.tint;ctx.fillRect(cam.x,cam.y,VW,VH)}
  drawDecals(ctx,t);
- drawPlaza(ctx);
+ ctx.save();const plazaAt=mapAnchor();ctx.translate(plazaAt.x,plazaAt.y);drawPlaza(ctx);ctx.restore();
  for(const p of props)if(visible(p.x,p.y,80))drawProp(ctx,p,t);
  ctx.fillStyle='rgba(3,2,8,.78)';const anchor=mapAnchor();ctx.beginPath();ctx.rect(cam.x-50,cam.y-50,VW+100,VH+100);ctx.arc(anchor.x,anchor.y,WORLD+8,0,TAU,true);ctx.fill('evenodd');
  ctx.strokeStyle='#2b1f2a';ctx.lineWidth=4;ctx.lineCap='round';
