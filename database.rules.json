@@ -251,7 +251,6 @@
         }
       },
       "matches": {
-        ".read": "auth != null",
         "$matchId": {
           ".read": "auth != null && root.child('guesscountry/parties').child(data.child('roomCode').val()).child('members').child(auth.uid).exists()",
           ".write": "auth != null && !data.exists() && newData.child('gameSlug').val() === 'guesscountry' && newData.child('hostUid').val() === auth.uid && root.child('guesscountry/parties').child(newData.child('roomCode').val()).child('hostUid').val() === auth.uid && root.child('guesscountry/parties').child(newData.child('roomCode').val()).child('status').val() === 'waiting'",
