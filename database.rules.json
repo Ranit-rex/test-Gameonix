@@ -10,7 +10,6 @@
           ".validate": "newData.hasChildren(['game','hostUid','status','createdAt','lastSeen']) && newData.child('game').val() === 'ashgrave' && newData.child('hostUid').isString() && newData.child('status').val() === 'live' && newData.child('createdAt').isNumber() && newData.child('lastSeen').isNumber()",
           "members": {
             "$uid": {
-              ".read": "auth != null",
               ".write": "auth != null && auth.uid === $uid && root.child('ashgrave/matches').child($roomId).exists() && root.child('ashgrave/matches').child($roomId).child('status').val() === 'live'",
               ".validate": "newData.hasChildren(['name','joinedAt','lastSeen']) && newData.child('name').isString() && newData.child('name').val().length <= 32 && newData.child('joinedAt').isNumber() && newData.child('lastSeen').isNumber()"
             },
@@ -88,7 +87,6 @@
           "members": {
             ".read": "auth != null",
             "$uid": {
-              ".read": "auth != null",
               ".write": "auth != null && auth.uid === $uid && root.child('ghostnight/matches').child($roomId).exists() && root.child('ghostnight/matches').child($roomId).child('status').val() === 'live'",
               ".validate": "newData.hasChildren(['name','joinedAt','lastSeen']) && newData.child('name').isString() && newData.child('name').val().length <= 20 && newData.child('joinedAt').isNumber() && newData.child('lastSeen').isNumber()"
             }
