@@ -22,6 +22,12 @@
           "status": {
             ".write": "auth != null && auth.uid === root.child('ashgrave/matches').child($roomId).child('hostUid').val()",
             ".validate": "newData.val() === 'live' || newData.val() === 'closed'"
+          },
+          "slots": {
+            "$slot": {
+              ".write": "auth != null && ($slot === '0' || $slot === '1' || $slot === '2' || $slot === '3') && ((!data.exists() && newData.child('uid').val() === auth.uid) || (data.exists() && data.child('uid').val() === auth.uid && !newData.exists()))",
+              ".validate": "newData.hasChildren(['uid','name','joinedAt']) && newData.child('uid').val() === auth.uid && newData.child('name').isString() && newData.child('name').val().length <= 32 && newData.child('joinedAt').isNumber()"
+            }
           }
         }
       },
