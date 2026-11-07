@@ -688,7 +688,7 @@ function mpTick(dt){
   else MP.playerRef.update(patch).catch(e=>console.warn('Ghost Night position sync:',e));
  }
  if(MP.isHost&&MP.worldT<=0){MP.worldT=.14;MP.playerRef.update({world:mpWorldSnapshot()}).catch(e=>console.warn('Ghost Night world sync:',e))}
- if(MP.beatT<=0){MP.beatT=3;const now=Date.now();MP.memberRef.update({lastSeen:now}).catch(()=>{});if(MP.isHost)MP.roomRef.update({lastSeen:now}).catch(()=>{})}
+ if(MP.beatT<=0){MP.beatT=3;const now=Date.now();MP.memberRef.update({lastSeen:now}).catch(()=>{});if(MP.isHost)MP.roomRef.child('lastSeen').set(now).catch(e=>console.warn('Ghost Night host heartbeat:',e))}
 }
 async function mpLeave(closed){
  if(MP.beat)clearInterval(MP.beat);MP.beat=null;
