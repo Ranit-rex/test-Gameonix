@@ -63,6 +63,26 @@ Create one match at `multiplayer/matches` and store all game-specific fields ins
 6. Update the current player's `members/{uid}/lastSeen` heartbeat and remove the player on leave. Host can close the room.
 7. Treat a room as stale after 30 minutes without an update; clients should ignore stale rooms and hosts should close them when practical.
 
+## Shared client helper
+
+Load the common helper before the game's own script:
+
+```html
+<script src="../../shared/multiplayer.js"></script>
+```
+
+Use `window.PlayoviaMultiplayer` (also available as `PlayoviaMultiplayer`) for the common lifecycle:
+
+- `createRoom({ db, uid, name, gameId, mode, gameTitle, maxPlayers, visibility })`
+- `joinRoom({ db, uid, name, gameId, code })`
+- `listRooms({ db, gameId })` — returns only fresh waiting rooms for that game
+- `startMatch({ db, roomRef, uid, gameId, state })`
+- `leaveRoom({ roomRef, uid, isHost })`
+- `heartbeat(roomRef, uid)`
+- `rooms(db)`, `room(db, code)`, `matches(db)`, `match(db, id)` for references
+
+The game keeps its own UI and gameplay logic, but should not reimplement code generation, capacity checks, game filtering, room creation/joining, host verification, match envelope creation, or leave/heartbeat behaviour.
+
 ## Firebase Rules
 
 The generic wildcard rules in `database.rules.json` validate the shared room/match envelope and member access. A new game only needs a unique `gameId`, its mode, and the common room/match shape. No new RTDB rules are required.
