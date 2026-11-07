@@ -496,7 +496,7 @@ button.danger{color:#ff8a7a;border-color:#7a3028}
 'use strict';
 const $=id=>document.getElementById(id);
 let HOUR=60;
-let WORLD=1500;const TAU=Math.PI*2, HOURS=12, BEACON_R=200, Q=0.5;
+let WORLD=1500;const TAU=Math.PI*2, HOURS=12, BEACON_R=200, Q=0.42;
 const rnd=(a,b)=>a+Math.random()*(b-a);
 const clamp=(v,a,b)=>v<a?a:v>b?b:v;
 const lerp=(a,b,t)=>a+(b-a)*t;
@@ -712,12 +712,7 @@ async function mpConnect(forcedRoomId=null){
   },e=>{console.error('Ghost Night players listener:',e);mpStatus('Player sync failed: '+(e.code||e.message))});
   await localPlayerRef.set({name,x:0,y:130,face:1,hp:100,max:100,cos:save.costume,color:mpColor(user.uid),updatedAt:Date.now()});
   roomRef.child('members').on('value',snap=>{const members=snap.val()||{};mpStatus((MP.isHost?'HOST':'GUEST')+' · ROOM '+forcedRoomId.slice(-6).toUpperCase()+' · '+Object.keys(members).length+'/4 players')},e=>mpStatus('Member sync failed: '+(e.code||e.message)));
-  if(MP.beat)clearInterval(MP.beat);
-  MP.beat=setInterval(()=>{
-   if(!MP.active)return;const stamp=Date.now();
-   MP.memberRef.update({lastSeen:stamp}).catch(e=>console.warn('member heartbeat',e));
-   if(MP.isHost)MP.roomRef.child('lastSeen').set(stamp).catch(e=>console.warn('host heartbeat',e));
-  },3000);
+  if(MP.beat)clearInterval(MP.beat);MP.beat=null;
   if(MP.isHost){
    phase='waiting for party members';mpStatus('HOST · Waiting for another player to connect…');
    await new Promise((resolve,reject)=>{
@@ -762,7 +757,7 @@ function mpCleanFirebase(value){
 }
 function mpWorldSnapshot(){
  const g=G;if(!g)return null;
- return mpCleanFirebase({t:g.t,time:g.time,hour:g.hour,lastHour:g.lastHour,spawnT:g.spawnT,surgeAt:g.surgeAt,surgeW:g.surgeW,mod:g.mod,night:g.night,bgap:g.bgap,bs:g.bs,enemies:g.enemies.map(e=>({...e})),ebul:g.ebul.map(e=>({...e})),items:g.items.map(e=>({...e})),orbs:g.orbs.map(e=>({...e})),shrines:g.shrines.map(e=>({...e})),haz:g.haz.map(e=>({...e})),gold:g.gold?{...g.gold}:null,bossId:g.boss&&g.boss.mid||null});
+ return mpCleanFirebase({t:g.t,time:g.time,hour:g.hour,lastHour:g.lastHour,spawnT:g.spawnT,surgeAt:g.surgeAt,surgeW:g.surgeW,mod:g.mod,night:g.night,bgap:g.bgap,bs:g.bs,map:CURMAP.id,enemies:g.enemies.map(e=>({...e})),ebul:g.ebul.map(e=>({...e})),items:g.items.map(e=>({...e})),orbs:g.orbs.map(e=>({...e})),shrines:g.shrines.map(e=>({...e})),haz:g.haz.map(e=>({...e})),gold:g.gold?{...g.gold}:null,bossId:g.boss&&g.boss.mid||null});
 }
 function mpProcessHits(){
  if(!MP.active||!MP.isHost||!G)return;
@@ -776,6 +771,7 @@ function mpApplyWorld(){
  if(!MP.active||MP.isHost||!G||!MP.world)return;
  const w=MP.world,g=G;
  if(!w||!Array.isArray(w.enemies))return;
+ if(w.map&&CURMAP.id!==w.map){setMap(w.map);caption('Team map: '+CURMAP.n,1800)}
  g.t=Number(w.t)||0;g.time=Number(w.time)||g.t;g.hour=Number(w.hour)||0;g.lastHour=Number(w.lastHour)||0;g.spawnT=Number(w.spawnT)||0;g.surgeAt=Number(w.surgeAt)||-1;g.surgeW=!!w.surgeW;g.mod=w.mod||g.mod;g.night=Number(w.night)||g.night;g.bgap=Number(w.bgap)||0;g.bs=w.bs||g.bs;
  g.enemies=w.enemies.map(e=>({...e}));g.boss=w.bossId?g.enemies.find(e=>e.mid===w.bossId)||null:null;
  g.ebul=(w.ebul||[]).map(e=>({...e}));g.items=(w.items||[]).map(e=>({...e}));g.orbs=(w.orbs||[]).map(e=>({...e}));g.shrines=(w.shrines||[]).map(e=>({...e}));g.haz=(w.haz||[]).map(e=>({...e}));g.gold=w.gold?{...w.gold}:null;
@@ -784,11 +780,11 @@ function mpTick(dt){
  if(!MP.active||!G||!MP.playerRef)return;
  MP.sendT-=dt;MP.beatT-=dt;MP.worldT-=dt;
  if(MP.isHost)mpProcessHits();
- if(MP.sendT<=0){MP.sendT=.14;const p=G.p,patch={name:MP.name,x:p.x,y:p.y,face:p.face||1,hp:Math.round(p.hp),max:Math.round(p.max),cos:p.cos||save.costume,color:mpColor(MP.uid),moving:!!p.moving,updatedAt:Date.now()};
+ if(MP.sendT<=0){MP.sendT=.22;const p=G.p,patch={name:MP.name,x:p.x,y:p.y,face:p.face||1,hp:Math.round(p.hp),max:Math.round(p.max),cos:p.cos||save.costume,color:mpColor(MP.uid),moving:!!p.moving,updatedAt:Date.now()};
   if(MP.hitQueue.length){const sent=MP.hitQueue.slice();patch.hits=sent;MP.playerRef.update(patch).then(()=>{MP.hitQueue.splice(0,sent.length)}).catch(e=>console.warn('Ghost Night hit sync:',e))}
   else MP.playerRef.update(patch).catch(e=>console.warn('Ghost Night position sync:',e));
  }
- if(MP.isHost&&MP.worldT<=0){MP.worldT=.14;MP.playerRef.update({world:mpWorldSnapshot()}).catch(e=>console.warn('Ghost Night world sync:',e))}
+ if(MP.isHost&&MP.worldT<=0){MP.worldT=.38;MP.playerRef.update({world:mpWorldSnapshot()}).catch(e=>console.warn('Ghost Night world sync:',e))}
  if(MP.beatT<=0){MP.beatT=3;const now=Date.now();MP.memberRef.update({lastSeen:now}).catch(()=>{});if(MP.isHost)MP.roomRef.child('lastSeen').set(now).catch(e=>console.warn('Ghost Night host heartbeat:',e))}
 }
 async function mpLeave(closed){
@@ -1272,7 +1268,7 @@ const menuGhosts=[];for(let i=0;i<9;i++)menuGhosts.push({a:rnd(0,TAU),r:rnd(190,
 const BOSSES={gourd:'The Stone Colossus',king:'The Hollow King',mother:'The Raven Mother',witch:'The Ashen Queen'};
 
 function resize(){
- const r=stage.getBoundingClientRect();DPR=Math.min(2,window.devicePixelRatio||1);
+ const r=stage.getBoundingClientRect();DPR=Math.min(1.25,window.devicePixelRatio||1);
  W=Math.max(200,Math.floor(r.width));H=Math.max(200,Math.floor(r.height));
  Z=clamp(Math.min(W/900,H/560),.62,1);VW=W/Z;VH=H/Z;SC=DPR*Z;
  cv.width=W*DPR;cv.height=H*DPR;
@@ -1983,7 +1979,7 @@ function renderGame0(){
   if(!visible(e.x,e.y,120))continue;
   if(e===p){if(!g.dead||g.deadT<.3)drawPlayer(ctx,p,t,p.moving)}else{drawEnemy(ctx,e,t);if(e.elite)drawElite(ctx,e,t)}
  }
- for(const rp of Object.values(MP.remotes)){if(!visible(rp.x,rp.y,160))continue;const ghost={x:rp.x,y:rp.y,vx:0,vy:0,face:rp.face||1,dashT:0,inv:0,cos:rp.cos||'witch'};ctx.save();ctx.globalAlpha=.9;ctx.strokeStyle=rp.color||'#69d8ff';ctx.lineWidth=2;ctx.beginPath();ctx.arc(rp.x,rp.y-5,15,0,TAU);ctx.stroke();drawPlayer(ctx,ghost,t,!!rp.moving);ctx.fillStyle=rp.color||'#69d8ff';ctx.font='700 11px "DM Mono",monospace';ctx.textAlign='center';ctx.fillText(rp.name||'Teammate',rp.x,rp.y-27);ctx.restore()}
+ for(const rp of Object.values(MP.remotes)){if(!visible(rp.x,rp.y,160))continue;const ghost={x:rp.x,y:rp.y,vx:0,vy:0,face:rp.face||1,dashT:0,inv:0,cos:rp.cos||'witch'};ctx.save();ctx.globalAlpha=.9;ctx.strokeStyle=rp.color||'#69d8ff';ctx.lineWidth=2;ctx.beginPath();ctx.arc(rp.x,rp.y-5,15,0,TAU);ctx.stroke();drawPlayer(ctx,ghost,t,!!rp.moving);ctx.fillStyle=rp.color||'#69d8ff';ctx.font='700 11px "DM Mono",monospace';ctx.textAlign='center';ctx.fillText(rp.name||'Teammate',rp.x,rp.y-31);const hp=clamp(Number(rp.hp)||0,0,Math.max(1,Number(rp.max)||100)),hm=Math.max(1,Number(rp.max)||100),bw=34;ctx.fillStyle='rgba(0,0,0,.8)';ctx.fillRect(rp.x-bw/2,rp.y-25,bw,5);ctx.fillStyle=hp/hm>.55?'#65e69a':hp/hm>.25?'#ffd166':'#ff657a';ctx.fillRect(rp.x-bw/2+1,rp.y-24,bw-2,3*hp/hm);ctx.restore()}
  drawFXOver(ctx,g,t);
  for(const w of g.wisps){ctx.fillStyle='rgba(159,216,255,.3)';ctx.beginPath();ctx.arc(w.x,w.y,12,0,TAU);ctx.fill();ctx.fillStyle='#e8f7ff';ctx.beginPath();ctx.arc(w.x,w.y,5,0,TAU);ctx.fill()}
  drawBeams(ctx,g,t);for(const b of g.bombs)drawBomb(ctx,b,t);
@@ -2071,7 +2067,7 @@ function frame(now){
  let dt=(now-last)/1000;last=now;if(dt>.05)dt=.05;if(dt<0)dt=0;
  TT+=dt;FDT=dt||.016;if(MP.active)mpTick(dt);
  try{
-  if(state==='play'){let sd=dt;if(G&&G.cine){const ns=G.cine.noSlow;cineTick(dt);sd=ns?dt:dt*.15}else if(G&&G.slow>0){G.slow-=dt;sd=dt*.35}update(sd);if(MP.active&&!MP.isHost)mpApplyWorld()}
+  if(state==='play'){let sd=dt;if(G&&G.cine){const ns=G.cine.noSlow;cineTick(dt);sd=ns?dt:dt*.15}else if(G&&G.slow>0){G.slow-=dt;sd=dt*.35}update(sd);/* Guest world is applied only when a fresh host snapshot arrives. */}
   if(G)renderGame();else renderMenu();
  }catch(err){console.error(err)}
 }
@@ -3209,7 +3205,7 @@ function metaTick(dt){
 function rrect(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.lineTo(x+w-r,y);c.quadraticCurveTo(x+w,y,x+w,y+r);c.lineTo(x+w,y+h-r);c.quadraticCurveTo(x+w,y+h,x+w-r,y+h);c.lineTo(x+r,y+h);c.quadraticCurveTo(x,y+h,x,y+h-r);c.lineTo(x,y+r);c.quadraticCurveTo(x,y,x+r,y);c.closePath()}
 function drawMinimap(g){
  if(g.dead||g.won||g.cine||!save.set.map)return;
- const S=Math.round(clamp(VH*.22,84,112)),x0=14,y0=76,k=S/(WORLD*2.06),cx=x0+S/2,cy=y0+S/2,p=g.p;
+ const S=Math.round(clamp(VH*.26,108,148)),x0=14,y0=76,k=S/(WORLD*2.06),cx=x0+S/2,cy=y0+S/2,p=g.p;
  ctx.save();
  rrect(ctx,x0,y0,S,S,7);ctx.fillStyle='rgba(8,10,18,.66)';ctx.fill();ctx.clip();
  ctx.strokeStyle='rgba(120,135,170,.14)';ctx.lineWidth=1;
@@ -3224,7 +3220,7 @@ function drawMinimap(g){
  if(g.gold){ctx.fillStyle='#ffe27a';ctx.beginPath();ctx.arc(cx+g.gold.x*k,cy+g.gold.y*k,2.6,0,TAU);ctx.fill()}
  if(g.boss){ctx.fillStyle='#ff7a2a';ctx.beginPath();ctx.arc(cx+g.boss.x*k,cy+g.boss.y*k,4,0,TAU);ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=1;ctx.stroke()}
  ctx.strokeStyle='rgba(255,255,255,.5)';ctx.lineWidth=1;ctx.strokeRect(cx+cam.x*k,cy+cam.y*k,VW*k,VH*k);
- for(const rp of Object.values(MP.remotes)){const age=Date.now()-(rp.updatedAt||0);if(age>10000)continue;const rx=cx+rp.x*k,ry=cy+rp.y*k;ctx.fillStyle=rp.color||'#69d8ff';ctx.beginPath();ctx.arc(rx,ry,4,0,TAU);ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=1;ctx.stroke();ctx.fillStyle='#fff';ctx.font='700 7px "DM Mono",monospace';ctx.textAlign='left';ctx.fillText((rp.name||'Mate').slice(0,9),rx+5,ry-4)}
+ for(const rp of Object.values(MP.remotes)){const age=Date.now()-(rp.updatedAt||0);if(age>10000)continue;const rx=cx+rp.x*k,ry=cy+rp.y*k;ctx.fillStyle=rp.color||'#69d8ff';ctx.beginPath();ctx.arc(rx,ry,6,0,TAU);ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=1;ctx.stroke();ctx.fillStyle='#fff';ctx.font='700 9px "DM Mono",monospace';ctx.textAlign='left';ctx.fillText((rp.name||'Mate').slice(0,9),rx+5,ry-4)}
  const px=cx+p.x*k,py=cy+p.y*k,a=Math.atan2(p.dy||1,p.dx||0);
  ctx.fillStyle='#fff';ctx.save();ctx.translate(px,py);ctx.rotate(a);ctx.beginPath();ctx.moveTo(5,0);ctx.lineTo(-3.5,3.2);ctx.lineTo(-2,0);ctx.lineTo(-3.5,-3.2);ctx.closePath();ctx.fill();ctx.restore();
  ctx.restore();
