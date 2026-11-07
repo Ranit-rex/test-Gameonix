@@ -163,10 +163,15 @@ async function receiveVoiceCandidate(d){const pc=voiceConnections.get(d.fromUid)
 async function flushVoiceCandidates(pc,uid){const pending=pc._pendingCandidates||[];pc._pendingCandidates=[];for(const c of pending)try{await pc.addIceCandidate(new RTCIceCandidate(c))}catch(e){console.warn(e)}}
 async function leavePartyVoice(){if(!activePartyId||!currentUser)return;if(voicePresenceUnsub){voicePresenceUnsub();voicePresenceUnsub=null}if(voiceSignalsUnsub){voiceSignalsUnsub();voiceSignalsUnsub=null}for(const uid of [...voiceConnections.keys()])closeVoicePeer(uid);if(voiceLocalStream){voiceLocalStream.getTracks().forEach(t=>t.stop());voiceLocalStream=null}try{await voiceMemberPath().doc(currentUser.uid).delete()}catch(_){}voiceSeenSignals.clear();voicePendingCandidates.clear();voiceMuted=false;voiceDeafened=false;voiceButtons(false);$('muteVoiceBtn').textContent='Mute Mic';$('deafenVoiceBtn').textContent='Deafen';voiceStatus('You left party voice.')}
 function closeVoicePeer(uid){const pc=voiceConnections.get(uid);if(pc){try{pc.close()}catch(_){}voiceConnections.delete(uid)}const audio=document.getElementById('voice-audio-'+uid);if(audio){audio.srcObject=null;audio.remove()}updateVoicePeers()}
-$('joinVoiceBtn').addEventListener('click',joinPartyVoice);
-$('muteVoiceBtn').addEventListener('click',()=>{voiceMuted=!voiceMuted;voiceLocalStream?.getAudioTracks().forEach(t=>t.enabled=!voiceMuted);$('muteVoiceBtn').textContent=voiceMuted?'Unmute Mic':'Mute Mic';voiceStatus(voiceMuted?'Microphone muted.':'Microphone live.')});
-$('deafenVoiceBtn').addEventListener('click',()=>{voiceDeafened=!voiceDeafened;document.querySelectorAll('audio[id^="voice-audio-"]').forEach(a=>a.muted=voiceDeafened);$('deafenVoiceBtn').textContent=voiceDeafened?'Undeafen':'Deafen'});
-$('leaveVoiceBtn').addEventListener('click',leavePartyVoice);
+// Party voice controls are rendered dynamically inside the party room; use delegation.
+document.addEventListener('click',e=>{
+ const button=e.target.closest('#joinVoiceBtn,#muteVoiceBtn,#deafenVoiceBtn,#leaveVoiceBtn');
+ if(!button)return;
+ if(button.id==='joinVoiceBtn')joinPartyVoice();
+ else if(button.id==='muteVoiceBtn'){voiceMuted=!voiceMuted;voiceLocalStream?.getAudioTracks().forEach(t=>t.enabled=!voiceMuted);button.textContent=voiceMuted?'Unmute Mic':'Mute Mic';voiceStatus(voiceMuted?'Microphone muted.':'Microphone live.')}
+ else if(button.id==='deafenVoiceBtn'){voiceDeafened=!voiceDeafened;document.querySelectorAll('audio[id^="voice-audio-"]').forEach(a=>a.muted=voiceDeafened);button.textContent=voiceDeafened?'Undeafen':'Deafen'}
+ else if(button.id==='leaveVoiceBtn')leavePartyVoice();
+});
 
 function watchFriendPresence(uid){if(presenceUnsubs[uid])presenceUnsubs[uid]();presenceUnsubs[uid]=db.collection('presence').doc(uid).onSnapshot(s=>{const el=$('playing-'+uid);if(!el)return;const d=s.exists?s.data():{},fresh=d.playingGame&&d.playingAt&&Date.now()-((d.playingAt.toMillis&&d.playingAt.toMillis())||0)<10*60*1000;el.textContent=fresh?'▶ Playing '+(d.playingGame||'a game'):''},()=>{})}
 async function setPlayingPresence(title,slug){if(!currentUser||!db)return;try{await db.collection('presence').doc(currentUser.uid).set({uid:currentUser.uid,playingGame:title||slug||'a game',playingAt:stamp(),updatedAt:stamp()},{merge:true})}catch(e){console.warn('Presence update:',e)}}
