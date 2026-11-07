@@ -213,11 +213,20 @@ function menuUI(){const a=$('chs');a.innerHTML='';CH.forEach((h,i)=>{const b=doc
 
 /* ---------- Ashgrave live multiplayer ---------- */
 const MP_CONFIG={apiKey:'AIzaSyB_pZ9WfVSx2XHuDeSZ7VrwEr-Pz_m_2QM',authDomain:'play-hub-688e8.firebaseapp.com',databaseURL:'https://play-hub-688e8-default-rtdb.asia-southeast1.firebasedatabase.app',projectId:'play-hub-688e8',storageBucket:'play-hub-688e8.firebasestorage.app',messagingSenderId:'195222206861',appId:'1:195222206861:web:828a8cf16991f982a925c4'};
-const MP={auth:null,db:null,user:null,roomId:null,roomRef:null,playersRef:null,membersRef:null,remote:{},active:false,pending:false,seat:0,sendAt:0,beat:null,playerName:'Player'};
+const MP={auth:null,db:null,user:null,roomId:null,roomRef:null,playersRef:null,membersRef:null,remote:{},visual:{},active:false,pending:false,seat:0,sendAt:0,beat:null,playerName:'Player'};
 function mpStatus(t){const e=$('mpStatus');if(e)e.textContent=t}
 function mpBadge(){const e=$('mpBadge');if(!e)return;const n=Object.keys(MP.remote).length+1;e.hidden=!MP.active;e.textContent='ONLINE · '+Math.min(4,n)+'/4'}
+async function mpLoadSdk(file,test){
+ if(test())return;
+ const bases=['https://www.gstatic.com/firebasejs/10.12.2/','https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.2/','https://cdn.jsdelivr.net/npm/firebase@10.12.2/','https://unpkg.com/firebase@10.12.2/'];
+ let errors=[];
+ for(const base of bases){try{await new Promise((resolve,reject)=>{const sc=document.createElement('script'),timer=setTimeout(()=>{sc.remove();reject(new Error('timeout'))},12000);sc.src=base+file;sc.onload=()=>{clearTimeout(timer);resolve()};sc.onerror=()=>{clearTimeout(timer);reject(new Error('load failed'))};document.head.appendChild(sc)});if(test())return}catch(e){errors.push(base+e.message)}}
+ throw new Error('Firebase SDK unavailable: '+errors.join(' | '));
+}
 async function mpInit(){
- if(!window.firebase||!firebase.database)throw new Error('Firebase multiplayer SDK could not load. Refresh and try again.');
+ await mpLoadSdk('firebase-app-compat.js',()=>!!(window.firebase&&firebase.initializeApp));
+ await mpLoadSdk('firebase-auth-compat.js',()=>!!(window.firebase&&firebase.auth));
+ await mpLoadSdk('firebase-database-compat.js',()=>!!(window.firebase&&firebase.database));
  if(!firebase.apps.length)firebase.initializeApp(MP_CONFIG);
  MP.auth=firebase.auth();MP.db=firebase.database();
  await MP.auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
@@ -258,14 +267,14 @@ async function mpJoin(){
   await memberRef.onDisconnect().remove();await MP.slotRef.onDisconnect().remove();
   const myPlayer=MP.playersRef.child(MP.user.uid);await myPlayer.onDisconnect().remove();
   if(chosen.data.hostUid===MP.user.uid)await MP.roomRef.child('status').onDisconnect().set('closed');
-  MP.active=true;MP.pending=true;MP.remote={};
+  MP.active=true;MP.pending=true;MP.remote={};MP.visual={};
   MP.membersRef.on('value',ss=>{const mm=ss.val()||{};const count=Object.keys(mm).length;mpStatus('Match found · '+count+'/4 players · '+(mm[MP.user.uid]?'Connected':'Reconnecting'));mpBadge()});
   MP.playersRef.on('value',ss=>{const all=ss.val()||{},now=Date.now(),out={};for(const [uid,p] of Object.entries(all)){if(uid!==MP.user.uid&&p&&Number(p.updatedAt)>now-15000&&Number(p.chapter)===ci)out[uid]=p}MP.remote=out;mpBadge()});
   if(MP.beat)clearInterval(MP.beat);
   MP.beat=setInterval(()=>{if(!MP.active||!MP.roomId)return;const stamp=Date.now();memberRef.update({lastSeen:stamp}).catch(()=>{});if(chosen.data.hostUid===MP.user.uid)MP.roomRef.child('lastSeen').set(stamp).catch(()=>{})},10000);
   mpStatus('Match found · '+Object.keys(members).length+'/4 players · starting…');
   story();
- }catch(e){console.error('Ashgrave multiplayer:',e);mpStatus(e.message||'Could not connect. Check Firebase rules and sign-in.')}
+ }catch(e){if(MP.slotRef){try{await MP.slotRef.remove()}catch(x){}MP.slotRef=null}console.error('Ashgrave multiplayer:',e);mpStatus(e.message||'Could not connect. Check Firebase rules and sign-in.')}
  finally{btn.disabled=false}
 }
 function mpStartGame(){
@@ -275,7 +284,7 @@ function mpStartGame(){
  MP.pending=false;MP.sendAt=0;mpBadge();
 }
 function mpTick(now){
- if(!MP.active||!G||mode!=='play'||now-MP.sendAt<220)return;
+ if(!MP.active||!G||mode!=='play'||now-MP.sendAt<150)return;
  MP.sendAt=now;
  const p=G.p;
  MP.playersRef.child(MP.user.uid).update({x:p.x,y:p.y,angle:p.ang,hp:p.hp,name:MP.playerName,mvv:!!p.mvv,dash:Math.max(0,p.dash||0),iv:Math.max(0,p.iv||0),chapter:ci,updatedAt:Date.now()}).catch(e=>{mpStatus('Connection lost: '+e.message)});
@@ -284,7 +293,7 @@ async function mpLeave(){
  if(MP.beat)clearInterval(MP.beat);MP.beat=null;
  if(MP.active&&MP.user&&MP.roomId){try{await MP.playersRef.child(MP.user.uid).remove();await MP.membersRef.child(MP.user.uid).remove();if(MP.slotRef)await MP.slotRef.remove();}catch(e){}}
  if(MP.membersRef)MP.membersRef.off();if(MP.playersRef)MP.playersRef.off();
- MP.active=false;MP.pending=false;MP.remote={};MP.roomId=null;MP.roomRef=null;MP.slotRef=null;MP.playersRef=null;MP.membersRef=null;mpBadge();mpStatus('Up to 4 players · same chapter · microphone off');
+ MP.active=false;MP.pending=false;MP.remote={};MP.visual={};MP.roomId=null;MP.roomRef=null;MP.slotRef=null;MP.playersRef=null;MP.membersRef=null;mpBadge();mpStatus('Up to 4 players · same chapter · microphone off');
 }
 $('mp').onclick=()=>{ac();mpJoin()};
 
@@ -446,7 +455,7 @@ function draw(t){const g=G;c.setTransform(Q,0,0,Q,0,0);c.fillStyle='#050405';c.f
  if(lit){const R=s.rng*fl;gr=d.createRadialGradient(W/2+sx,H/2+sy,10,W/2+sx,H/2+sy,R);gr.addColorStop(0,'rgba(0,0,0,.98)');gr.addColorStop(1,'rgba(0,0,0,0)');d.fillStyle=gr;d.beginPath();d.moveTo(W/2+sx,H/2+sy);d.arc(W/2+sx,H/2+sy,R,p.ang-s.cone,p.ang+s.cone);d.closePath();d.fill()}
  for(const o of g.props)if(o.k=='lamp'||o.k=='candle'){const lx=o.x+cx,ly=o.y+cy-20;if(lx<-140||lx>W+140||ly<-140||ly>H+140)continue;const R2=(o.k=='lamp'?130:90)*(1+Math.sin(t*9+o.x)*.04),g2=d.createRadialGradient(lx,ly,2,lx,ly,R2);g2.addColorStop(0,'rgba(0,0,0,.85)');g2.addColorStop(1,'rgba(0,0,0,0)');d.fillStyle=g2;d.beginPath();d.arc(lx,ly,R2,0,TAU);d.fill()}
  c.drawImage(dk,0,0,W,H);
- if(MP.active){c.save();c.translate(cx,cy);for(const [uid,rp] of Object.entries(MP.remote)){if(Math.hypot(rp.x-p.x,rp.y-p.y)>1800)continue;const other={x:Number(rp.x)||0,y:Number(rp.y)||0,ang:Number(rp.angle)||0,mvv:!!rp.mvv,dash:Number(rp.dash)||0,iv:Number(rp.iv)||0};drawMara(c,other,t);c.save();c.font='12px monospace';c.textAlign='center';c.fillStyle='#f4d99b';c.strokeStyle='rgba(0,0,0,.95)';c.lineWidth=3;c.strokeText(String(rp.name||'Player').slice(0,24),other.x,other.y-27);c.fillText(String(rp.name||'Player').slice(0,24),other.x,other.y-27);c.restore()}c.restore()}
+ if(MP.active){c.save();c.translate(cx,cy);for(const [uid,rp] of Object.entries(MP.remote)){if(Math.hypot(rp.x-p.x,rp.y-p.y)>1800)continue;let v=MP.visual[uid];if(!v)v=MP.visual[uid]={x:Number(rp.x)||0,y:Number(rp.y)||0,ang:Number(rp.angle)||0};v.x+=(Number(rp.x)-v.x)*.24;v.y+=(Number(rp.y)-v.y)*.24;let da=Math.atan2(Math.sin((Number(rp.angle)||0)-v.ang),Math.cos((Number(rp.angle)||0)-v.ang));v.ang+=da*.24;const other={x:v.x,y:v.y,ang:v.ang,mvv:!!rp.mvv,dash:Number(rp.dash)||0,iv:Number(rp.iv)||0};drawMara(c,other,t);c.save();c.font='12px monospace';c.textAlign='center';c.fillStyle='#f4d99b';c.strokeStyle='rgba(0,0,0,.95)';c.lineWidth=3;c.strokeText(String(rp.name||'Player').slice(0,24),other.x,other.y-27);c.fillText(String(rp.name||'Player').slice(0,24),other.x,other.y-27);c.restore()}for(const uid of Object.keys(MP.visual))if(!MP.remote[uid])delete MP.visual[uid];c.restore()}
  c.save();c.translate(cx,cy);for(const e of g.en)ey(e);for(const n of g.notes)if(!n.g){c.fillStyle='rgba(255,220,120,'+(.65+.35*Math.sin(t*4))+')';c.fillRect(n.x-8,n.y-10,16,20);c.strokeStyle='#ffe9a0';c.strokeRect(n.x-8,n.y-10,16,20)}c.restore();
  let nb=null,nq=1e9;for(const n of g.notes)if(!n.g){const q=Math.hypot(n.x-p.x,n.y-p.y);if(q<nq){nq=q;nb=n}}
  if(nb&&nq>160){const a=Math.atan2(nb.y-p.y,nb.x-p.x),R=Math.min(W,H)*.38;c.save();c.translate(W/2+Math.cos(a)*R,H/2+Math.sin(a)*R);c.rotate(a);c.fillStyle='#ffe28a';c.beginPath();c.moveTo(13,0);c.lineTo(-9,-9);c.lineTo(-9,9);c.fill();c.restore()}
