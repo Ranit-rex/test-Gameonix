@@ -230,7 +230,7 @@
           "members": {
             ".read": "auth != null",
             "$uid": {
-              ".write": "auth != null && auth.uid === $uid && root.child('guesscountry/parties').child($code).exists() && root.child('guesscountry/parties').child($code).child('status').val() === 'waiting' && ((newData.exists() && newData.child('uid').val() === auth.uid) || !newData.exists())",
+              ".write": "auth != null && auth.uid === $uid && root.child('guesscountry/parties').child($code).child('status').val() === 'waiting'",
               ".validate": "newData.hasChildren(['uid','name','joinedAt','lastSeen']) && newData.child('uid').val() === auth.uid && newData.child('name').isString() && newData.child('name').val().length <= 32 && newData.child('joinedAt').isNumber() && newData.child('lastSeen').isNumber()"
             }
           },
