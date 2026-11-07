@@ -502,7 +502,7 @@ function persist(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(save))}catch
 
 /* ---------- Ghost Night multiplayer (isolated from the solo save/gameplay path) ---------- */
 const GH_FIREBASE={apiKey:'AIzaSyB_pZ9WfVSx2XHuDeSZ7VrwEr-Pz_m_2QM',authDomain:'play-hub-688e8.firebaseapp.com',databaseURL:'https://play-hub-688e8-default-rtdb.asia-southeast1.firebasedatabase.app',projectId:'play-hub-688e8',storageBucket:'play-hub-688e8.firebasestorage.app',messagingSenderId:'195222206861',appId:'1:195222206861:web:828a8cf16991f982a925c4'};
-const MP={busy:false,active:false,uid:null,name:'',roomId:null,roomRef:null,memberRef:null,slotRef:null,playerRef:null,playersRef:null,listener:null,remotes:{},slot:0,sendT:0,beatT:0,isHost:false,hostUid:null,world:null,worldT:0,enemySeq:0,hitSeq:0,hitQueue:[],hitSeen:{}};
+const MP={busy:false,active:false,uid:null,name:'',roomId:null,roomRef:null,memberRef:null,slotRef:null,playerRef:null,playersRef:null,listener:null,remotes:{},slot:0,sendT:0,beatT:0,isHost:false,hostUid:null,world:null,worldT:0,enemySeq:0,hitSeq:0,hitQueue:[],hitSeen:{},worldReadyResolve:null};
 function mpStatus(t){const e=$('mpStatus');if(e)e.textContent=t}
 function mpLoadScript(src){return new Promise((resolve,reject)=>{const sc=document.createElement('script');sc.src=src;sc.async=true;sc.onload=resolve;sc.onerror=()=>reject(new Error('Could not load '+src));document.head.appendChild(sc)})}
 async function mpFirebase(){
@@ -550,11 +550,12 @@ async function mpConnect(){
   const cleanup=[()=>MP.memberRef.onDisconnect().remove(),()=>MP.slotRef.onDisconnect().remove(),()=>MP.playerRef.onDisconnect().remove()];
   if(MP.isHost)cleanup.push(()=>MP.roomRef.child('status').onDisconnect().set('closed'));
   for(const task of cleanup){try{await task()}catch(e){console.warn('Ghost Night disconnect cleanup unavailable:',e)}}
-  MP.playersRef.on('value',v=>{const all=v.val()||{},next={};for(const [uid,p] of Object.entries(all)){if(uid!==MP.uid&&p&&Date.now()-(p.updatedAt||0)<10000){next[uid]=p;if(!MP.isHost&&uid===MP.hostUid&&p.world)MP.world=p.world}}MP.remotes=next},e=>console.warn('Ghost Night teammate listener:',e));
+  MP.playersRef.on('value',v=>{const all=v.val()||{},next={};for(const [uid,p] of Object.entries(all)){if(uid!==MP.uid&&p&&Date.now()-(p.updatedAt||0)<10000){next[uid]=p;if(!MP.isHost&&uid===MP.hostUid&&p.world){MP.world=p.world;if(MP.worldReadyResolve){MP.worldReadyResolve();MP.worldReadyResolve=null}}}}MP.remotes=next},e=>console.warn('Ghost Night teammate listener:',e));
   MP.listener=true;
   await MP.playerRef.set({name,x:0,y:130,face:1,hp:100,max:100,cos:save.costume,color:mpColor(user.uid),updatedAt:Date.now()});
-  mpStatus('Match found · slot '+(MP.slot+1)+'/4 · starting…');
-  startRun();
+  if(!MP.isHost){mpStatus('Match found · waiting for host world…');await new Promise((resolve,reject)=>{let done=false;const finish=()=>{if(done)return;done=true;clearTimeout(timer);MP.worldReadyResolve=null;resolve()};const timer=setTimeout(()=>{if(done)return;done=true;MP.worldReadyResolve=null;reject(new Error('Host world did not sync. Ask the host to reconnect.'))},12000);MP.worldReadyResolve=finish;if(MP.world)finish()})}
+  mpStatus('Match found · slot '+(MP.slot+1)+'/4 · starting shared match…');
+  startRun();if(!MP.isHost)mpApplyWorld();
   caption('You are not alone. Find your teammates on the map.',5200);
  }catch(e){console.error('Ghost Night multiplayer:',e);mpStatus('Multiplayer error: '+(e.message||'Could not connect'))}
  finally{MP.busy=false;if(b)b.disabled=false}
@@ -1127,7 +1128,7 @@ function newGame(){
 }
 function startRun(){
  HOUR=(DIFFS[save.diff]||DIFFS[1]).hour;
- setMap(save.map);ensureAudio();hideAll();G=newGame();G.xl0=XLETTERS.filter(l=>l.cond()).map(l=>l.k);G.wp=curWeapon();G.tut=(FORCE_TUT||!save.tutDone)?0:-1;FORCE_TUT=false;$('tut').hidden=true;$('tip').className='';$('cine').className='';state='play';
+ setMap(save.map);ensureAudio();hideAll();G=newGame();G.xl0=XLETTERS.filter(l=>l.cond()).map(l=>l.k);G.wp=curWeapon();G.tut=MP.active?-1:((FORCE_TUT||!save.tutDone)?0:-1);FORCE_TUT=false;$('tut').hidden=true;$('tip').className='';$('cine').className='';state='play';
  cam.x=G.p.x-VW/2;cam.y=G.p.y-VH/2;
  $('hud').hidden=false;$('boss').hidden=true;$('dashBtn').hidden=false;
  const m=MODS.find(x=>x.id===G.mod);
@@ -1507,9 +1508,9 @@ function update(dt){
  }
  g.rings=g.rings.filter(r=>r.r<r.max);
 
- /* spawning */
+ /* spawning — host owns the shared enemy waves */
  const bossUp=!!g.boss;
- if(!g.dead&&!g.won){
+ if((!MP.active||MP.isHost)&&!g.dead&&!g.won){
   g.spawnT-=dt;
   let capK=1,ivK=1;if(g.mod==='swarm'){capK=1.6;ivK=1.4}else if(g.mod==='still'){capK=.6;ivK=.8}
   const cap=Math.min(280,Math.floor((28+g.hour*14)*(1+g.night*.25)*(bossUp?.6:1)*capK*(1+((g.t%HOUR)/HOUR)*.2)));
@@ -1517,7 +1518,8 @@ function update(dt){
   if(g.spawnT<=0&&g.enemies.length<cap&&!(g.tut>=0&&g.tut<4)&&!g.cine){g.spawnT=iv;spawnWave()}
  }
 
- /* enemies */
+ /* enemies — host owns AI and enemy movement; guests render host snapshots */
+ if(!MP.active||MP.isHost){
  for(const e of g.enemies){
   if(e.dead)continue;
   e.age+=dt;e.fl-=dt;e.wc-=dt;e.bc=(e.bc||0)-dt;
@@ -1551,6 +1553,7 @@ function update(dt){
     for(const o of a){if(o===e||o.cs===2)continue;const dx2=e.x-o.x,dy2=e.y-o.y,m=(e.r+o.r)*.8,d2=dx2*dx2+dy2*dy2;
      if(d2<m*m&&d2>.01){const dd=Math.sqrt(d2),push=(m-dd)*.5*mix;e.x+=dx2/dd*push;e.y+=dy2/dd*push}}}
   }
+ }
  }
 
  for(const b of g.ebul){
