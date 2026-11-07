@@ -388,7 +388,7 @@ button.danger{color:#ff8a7a;border-color:#7a3028}
 <div id="ghPartyPanel" hidden style="width:min(100%,420px);margin:10px auto;padding:14px;border:1px solid #526a86;border-radius:12px;background:rgba(13,20,34,.97);text-align:left">
  <div style="display:flex;justify-content:space-between;align-items:center"><b style="color:#d8eaff;font:700 13px monospace">GHOST NIGHT PARTY</b><button id="ghPartyClose" class="small modebtn" type="button">✕</button></div>
  <p class="how" style="margin:7px 0">Create a room, join with an 8-character code, or browse public Ghost Night parties.</p>
- <div style="display:flex;gap:7px;flex-wrap:wrap"><button id="ghCreateParty" class="primary" type="button">＋ Create Party</button><input id="ghPartyCode" maxlength="8" placeholder="PARTY CODE" style="min-width:0;flex:1;padding:10px;border-radius:8px;background:#101827;color:#fff;border:1px solid #526a86;text-transform:uppercase"><button id="ghJoinParty" class="small modebtn" type="button">Join</button></div>
+ <div style="display:flex;gap:7px;flex-wrap:wrap"><button id="ghChooseMap" class="small modebtn" type="button">🗺 Map: <span id="ghChosenMap">Hollow Fields</span></button><button id="ghCreateParty" class="primary" type="button">＋ Create Party</button><input id="ghPartyCode" maxlength="8" placeholder="PARTY CODE" style="min-width:0;flex:1;padding:10px;border-radius:8px;background:#101827;color:#fff;border:1px solid #526a86;text-transform:uppercase"><button id="ghJoinParty" class="small modebtn" type="button">Join</button></div>
  <div id="ghPublicParties" style="margin-top:10px;font:12px monospace;color:#b9c8dc">Loading public parties…</div>
  <div id="ghPartyRoom" style="margin-top:10px"></div>
  <p id="ghPartyStatus" class="how" aria-live="polite">Login to PlayHub to use parties.</p>
@@ -416,6 +416,8 @@ button.danger{color:#ff8a7a;border-color:#7a3028}
 <p id="storyText"></p>
 <div class="row"><button id="storyNext" class="primary">Continue</button><button id="storySkip" class="ghostbtn">Skip</button></div>
 </div></section>
+
+<section id="mapPicker" class="ov" hidden><div class="wrap wide"><div class="stick"><p class="eyebrow">Choose your realm</p><h2>Select a map</h2><p class="how" id="mapPickerHint">Choose where your night begins.</p></div><div id="mapPickerList" class="cards"></div><div class="row"><button id="mapPickerBack" class="primary">Back</button></div></div></section>
 
 <section id="modes" class="ov" hidden><div class="wrap wide">
 <div class="stick"><p class="eyebrow">Mode select</p><h2>Choose your night</h2></div>
@@ -523,7 +525,8 @@ async function ghPartyFirebase(){
  const {db,user}=await mpFirebase();
  return {db,user};
 }
-let GH_PARTY={id:null,data:null,unsub:null,ref:null,db:null,user:null,launching:false};
+let GH_PARTY={id:null,data:null,unsub:null,ref:null,db:null,user:null,launching:false,beat:null};
+let mapPickerReturn='solo';
 function ghPartyStatus(t){const e=$('ghPartyStatus');if(e)e.textContent=t}
 function ghPartyCode(){const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';return Array.from({length:8},()=>c[Math.floor(Math.random()*c.length)]).join('')}
 function ghPartyMembers(d){return Object.values(d&&d.members||{}).filter(Boolean)}
@@ -543,7 +546,9 @@ async function ghPartyRender(d){
 async function ghPartyWatch(code){
  if(GH_PARTY.unsub&&GH_PARTY.ref)GH_PARTY.ref.off('value',GH_PARTY.unsub);
  GH_PARTY.id=code;GH_PARTY.launching=false;
+ if(GH_PARTY.beat)clearInterval(GH_PARTY.beat);
  GH_PARTY.ref=GH_PARTY.db.ref('ghostnight/parties/'+code);
+ GH_PARTY.beat=setInterval(()=>{if(!GH_PARTY.id||!GH_PARTY.user||!GH_PARTY.ref)return;const now=Date.now();GH_PARTY.ref.update({updatedAt:now}).catch(()=>{});GH_PARTY.ref.child('members/'+GH_PARTY.user.uid+'/lastSeen').set(now).catch(()=>{})},30000);
  GH_PARTY.unsub=GH_PARTY.ref.on('value',async snap=>{
   if(!snap.exists()){GH_PARTY.id=null;GH_PARTY.data=null;ghPartyRender(null);ghPartyStatus('Party closed.');return}
   const d=snap.val();GH_PARTY.data=d;await ghPartyRender(d);
@@ -623,6 +628,7 @@ async function ghPartyInviteFriends(){
 async function ghPartyLeave(){
  if(!GH_PARTY.id||!GH_PARTY.ref||!GH_PARTY.user)return;
  const ref=GH_PARTY.ref,uid=GH_PARTY.user.uid,d=GH_PARTY.data;
+ if(GH_PARTY.beat)clearInterval(GH_PARTY.beat);GH_PARTY.beat=null;
  if(d&&d.leaderUid===uid)await ref.remove();
  else await ref.child('members/'+uid).remove();
  if(GH_PARTY.unsub)ref.off('value',GH_PARTY.unsub);
@@ -633,7 +639,9 @@ async function ghPartyRefresh(){
  try{
   const {db,user}=await ghPartyFirebase();GH_PARTY.db=db;GH_PARTY.user=user;
   const [partySnap,inviteSnap]=await Promise.all([db.ref('ghostnight/parties').once('value'),db.ref('ghostnight/partyInvites/'+user.uid).once('value')]);
-  const rooms=Object.values(partySnap.val()||{}).filter(d=>d&&d.gameSlug==='ghost-night'&&d.visibility==='public'&&d.status==='waiting'&&ghPartyMembers(d).length<4);
+  const allRooms=partySnap.val()||{},rooms=[];const now=Date.now();
+  for(const [code,d] of Object.entries(allRooms)){if(!d||d.gameSlug!=='ghost-night')continue;const members=ghPartyMembers(d),fresh=members.some(m=>now-Number(m.lastSeen||m.joinedAt||0)<1800000),roomFresh=now-Number(d.updatedAt||d.createdAt||0)<1800000;if(!fresh&&!roomFresh){db.ref('ghostnight/parties/'+code).remove().catch(()=>{});continue}if(d.visibility==='public'&&d.status==='waiting'&&members.length<4)rooms.push(d)}
+  const matchSnap=await db.ref('ghostnight/matches').once('value');for(const [id,m] of Object.entries(matchSnap.val()||{})){if(m&&now-Number(m.lastSeen||m.createdAt||0)>=1800000)db.ref('ghostnight/matches/'+id).remove().catch(()=>{})}
   const invites=Object.values(inviteSnap.val()||{}).filter(Boolean);
   const list=$('ghPublicParties');
   list.innerHTML=(invites.length?'<b>PARTY INVITES</b>':'')+invites.map(i=>'<div style="display:flex;justify-content:space-between;gap:8px;padding:7px 0;border-bottom:1px solid #344157"><span>'+mpSafeName(i.fromName)+' invited you · '+i.roomId+'</span><button class="small modebtn" data-gh-invite="'+i.roomId+'">Accept</button></div>').join('')+(rooms.length?'<b style="display:block;margin-top:8px">PUBLIC PARTIES</b>':'')+rooms.map(d=>'<div style="display:flex;justify-content:space-between;gap:8px;padding:7px 0;border-bottom:1px solid #344157"><span>'+ghPartyMembers(d).length+'/4 · '+d.roomId+'</span><button class="small modebtn" data-gh-join="'+d.roomId+'">Join</button></div>').join('')+(!invites.length&&!rooms.length?'No public Ghost Night parties found.':'');
@@ -796,7 +804,7 @@ async function mpLeave(closed){
   if(old.playerRef)await old.playerRef.remove();
   if(old.memberRef)await old.memberRef.remove();
   if(old.slotRef)await old.slotRef.remove();
-  if(old.isHost&&old.roomRef)await old.roomRef.child('status').set('closed');
+  if(old.isHost&&old.roomRef){await old.roomRef.update({status:'closed',closedAt:Date.now()});const code=old.roomId&&old.roomRef? (await old.roomRef.child('partyCode').once('value')).val():null;if(code)await old.roomRef.root.child('ghostnight/parties/'+code).remove();}
  }catch(e){console.warn('Ghost Night leave cleanup:',e)}
  MP.uid=null;MP.name='';MP.roomId=null;MP.roomRef=null;MP.memberRef=null;MP.slotRef=null;MP.playerRef=null;MP.playersRef=null;MP.listener=null;MP.isHost=false;MP.hostUid=null;MP.world=null;
  if(closed)mpStatus('You left the multiplayer match.');
@@ -3695,6 +3703,7 @@ function menuInfo(){
  $('bestLine').textContent=save.bestHour>0?'Furthest: '+clockAtHour(Math.min(save.bestHour,HOURS))+(save.wins?' · '+save.wins+' dawn'+(save.wins>1?'s':''):''):'Never yet seen past dusk';
  setSnd();
 }
+function openMapPicker(where){mapPickerReturn=where||'solo';$('mapPickerHint').textContent=mapPickerReturn==='party'?'Host: choose the map for everyone in this party.':'Choose a map for your solo night.';const box=$('mapPickerList');box.innerHTML='';const ic=n=>'<svg class="ic"><use href="#i-'+n+'"/></svg>';MAPS.forEach((m,i)=>{const ok=mapUnlocked(i),sel=save.map===m.id,b=document.createElement('button');b.className='mode map r'+i+(sel?' sel':'')+(ok?' ok':' lock');b.innerHTML='<span class="mico">'+ic(ok?MAPICO[i]:'lock')+'</span><span class="mtxt"><b>'+m.n+'</b><span class="d">'+(ok?m.d:'Reach dawn '+(m.unlock>1?m.unlock+' times':'once')+' to open this realm.')+'</span><span class="m">'+MAPSIZE[i]+' · '+m.shrines+' shrines</span>'+(sel?'<span class="badge">Selected</span>':'')+'</span>';b.onclick=()=>{if(!ok)return;save.map=m.id;persist();setMap(m.id);sfx('treat');if(mapPickerReturn==='solo'){hideAll();menuInfo();playClicked()}else{hideAll();$('ghPartyPanel').hidden=false;$('ghChosenMap').textContent=CURMAP.n;ghPartyStatus('Map selected for the next match: '+CURMAP.n)} };box.appendChild(b)});$('mapPicker').hidden=false;}
 function openHearth(){
  G=null;state='menu';$('hud').hidden=true;
  const list=$('hearthList');list.innerHTML='';
@@ -3747,7 +3756,9 @@ function playClicked(){
  try{if(COARSE&&stage.requestFullscreen&&!document.fullscreenElement)stage.requestFullscreen().catch(()=>{})}catch(e){}
  if(!save.seenIntro)startIntro();else startRun();
 }
-$('bPlay').onclick=playClicked;
+$('bPlay').onclick=()=>{ensureAudio();openMapPicker('solo')};
+$('mapPickerBack').onclick=()=>{hideAll();if(mapPickerReturn==='party')$('ghPartyPanel').hidden=false;else show('menu')};
+$('ghChooseMap').onclick=()=>openMapPicker('party');
 $('bMulti').onclick=()=>{ensureAudio();ghPartyOpen()};
 $('ghPartyClose').onclick=()=>{$('ghPartyPanel').hidden=true};
 $('ghCreateParty').onclick=()=>ghPartyCreate().catch(e=>ghPartyStatus('Create failed: '+e.message));
