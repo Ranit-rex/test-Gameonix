@@ -6,14 +6,22 @@
       "matches": {
         ".read": "auth != null",
         "$roomId": {
-          ".write": "auth != null && ((!data.exists() && newData.child('hostUid').val() === auth.uid) || (data.exists() && data.child('hostUid').val() === auth.uid))",
-          ".validate": "newData.hasChildren(['game','hostUid','status','createdAt','lastSeen']) && newData.child('game').val() === 'ashgrave' && newData.child('hostUid').isString() && newData.child('status').val() in ['live','closed'] && newData.child('createdAt').isNumber() && newData.child('lastSeen').isNumber()",
+          ".write": "auth != null && !data.exists() && newData.child('hostUid').val() === auth.uid",
+          ".validate": "newData.hasChildren(['game','hostUid','status','createdAt','lastSeen']) && newData.child('game').val() === 'ashgrave' && newData.child('hostUid').isString() && newData.child('status').val() === 'live' && newData.child('createdAt').isNumber() && newData.child('lastSeen').isNumber()",
           "members": {
             "$uid": {
               ".read": "auth != null",
               ".write": "auth != null && auth.uid === $uid && root.child('ashgrave/matches').child($roomId).exists() && root.child('ashgrave/matches').child($roomId).child('status').val() === 'live' && ((newData.exists() && (!data.exists() && root.child('ashgrave/matches').child($roomId).child('members').numChildren() < 4 || data.exists())) || (!newData.exists() && data.exists()))",
               ".validate": "newData.hasChildren(['name','joinedAt','lastSeen']) && newData.child('name').isString() && newData.child('name').val().length <= 32 && newData.child('joinedAt').isNumber() && newData.child('lastSeen').isNumber()"
             }
+          },
+          "lastSeen": {
+            ".write": "auth != null && auth.uid === root.child('ashgrave/matches').child($roomId).child('hostUid').val()",
+            ".validate": "newData.isNumber()"
+          },
+          "status": {
+            ".write": "auth != null && auth.uid === root.child('ashgrave/matches').child($roomId).child('hostUid').val()",
+            ".validate": "newData.val() === 'live' || newData.val() === 'closed'"
           }
         }
       },
