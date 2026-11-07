@@ -507,7 +507,7 @@ function mpStatus(t){const e=$('mpStatus');if(e)e.textContent=t}
 function mpFillBots(){
  if(!MP.active||!G)return;
  const humans=Object.values(MP.remotes||{}).filter(function(p){return !p.isBot}).length+1;
- const need=Math.max(0,Math.min(3,4-humans));
+ const need=humans===1?3:0;
  const names=['Aarav_27','MiraPlays','ShadowFox_8'],colors=['#ffca70','#c9a2ff','#8df0b1'];
  for(let i=0;i<3;i++){const id='npc_'+i;if(i<need&&!MP.bots[id]){const a=i*TAU/3,p=G.p;MP.bots[id]={name:names[i],x:p.x+Math.cos(a)*95,y:p.y+Math.sin(a)*95,face:1,hp:100,max:100,cos:'witch',color:colors[i],moving:true,isBot:true,attackT:.5,phase:a}}else if(i>=need)delete MP.bots[id]}
  MP.remotes=Object.assign({},Object.fromEntries(Object.entries(MP.remotes||{}).filter(function(pair){return !pair[1].isBot})),MP.bots);
@@ -653,7 +653,7 @@ function mpTick(dt){
   if(MP.hitQueue.length){const sent=MP.hitQueue.slice();patch.hits=sent;MP.playerRef.update(patch).then(()=>{MP.hitQueue.splice(0,sent.length)}).catch(e=>console.warn('Ghost Night hit sync:',e))}
   else MP.playerRef.update(patch).catch(e=>console.warn('Ghost Night position sync:',e));
  }
- if(MP.isHost&&MP.worldT<=0){MP.worldT=.28;MP.playerRef.update({world:mpWorldSnapshot()}).catch(e=>console.warn('Ghost Night world sync:',e))}
+ if(MP.isHost&&MP.worldT<=0){MP.worldT=.14;MP.playerRef.update({world:mpWorldSnapshot()}).catch(e=>console.warn('Ghost Night world sync:',e))}
  if(MP.beatT<=0){MP.beatT=3;const now=Date.now();MP.memberRef.update({lastSeen:now}).catch(()=>{});if(MP.isHost)MP.roomRef.update({lastSeen:now}).catch(()=>{})}
 }
 async function mpLeave(closed){
@@ -1479,22 +1479,22 @@ function enemyAI(e,dt,nx,ny,d,sp,dx,dy){
 }
 function update(dt){
  const g=G,p=g.p,st=g.st;
- g.time+=dt;
+ if(!MP.active||MP.isHost)g.time+=dt;
  if(g.pend>0&&!g.dead){g.pend--;levelOffer(true);if(state==='level')return}
  if(g.xp>=g.need&&!g.dead){levelOffer(false);if(state==='level')return}
- if(!g.dead&&!g.won)g.t+=dt;
+ if((!MP.active||MP.isHost)&&!g.dead&&!g.won)g.t+=dt;
  g.hour=Math.min(HOURS,Math.floor(g.t/HOUR));
  if(g.hour!==g.lastHour&&!g.won){
   g.lastHour=g.hour;if(g.hour<HOURS){caption(CAPS[g.hour],6000);sfx('bell')}
   if([2,3,5,7,9,11].includes(g.hour)){g.surgeAt=g.t+16;g.surgeW=false}
  }
  if(g.hour<HOURS&&!g.won&&g.midHour!==g.hour&&(g.t%HOUR)>HOUR*.5){g.midHour=g.hour;caption(MIDCAPS[g.hour],5600)}
- if(g.surgeAt>0&&!g.won&&!g.dead){
+ if((!MP.active||MP.isHost)&&g.surgeAt>0&&!g.won&&!g.dead){
   if(!g.surgeW&&g.t>=g.surgeAt-4){g.surgeW=true;caption('Something is circling in the dark. Get ready.',3500)}
   if(g.t>=g.surgeAt){g.surgeAt=-1;caption('The Hollows close in from every side!',3500);spawnSurge()}
  }
- if(!g.won&&!g.dead&&g.t>=HOUR*HOURS)startWin();
- if(!g.won&&!g.dead)bossQueue(dt);
+ if((!MP.active||MP.isHost)&&!g.won&&!g.dead&&g.t>=HOUR*HOURS)startWin();
+ if((!MP.active||MP.isHost)&&!g.won&&!g.dead)bossQueue(dt);
  g.oilT=Math.max(0,g.oilT-dt);g.lr=g.light*(g.oilT>0?1.45:1)*(g.boss&&g.boss.type==='unnamed'&&(g.boss.thi||0)>=2?.65:1);
 
  /* movement: acceleration, momentum, obstacle sliding */
