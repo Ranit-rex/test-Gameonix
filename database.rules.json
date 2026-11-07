@@ -82,6 +82,12 @@
             ".validate": "newData.hasChildren(['x','y','face','hp','max','cos','color','updatedAt']) && newData.child('x').isNumber() && newData.child('y').isNumber() && newData.child('face').isNumber() && newData.child('hp').isNumber() && newData.child('max').isNumber() && newData.child('cos').isString() && newData.child('color').isString() && newData.child('updatedAt').isNumber()"
           }
         }
+      },
+      "matchmaking": {
+        "current": {
+          ".read": "auth != null",
+          ".write": "auth != null"
+        }
       }
     }
   }
