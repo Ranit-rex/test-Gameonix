@@ -550,115 +550,107 @@ async function mpClaimSlot(roomRef,user,name){
 }
 async function mpConnect(){
  if(MP.busy||MP.active)return;
- MP.busy=true;const button=$('bMulti'),panel=$('mpLobby');
- if(button)button.disabled=true;if(panel)panel.hidden=false;
- const delay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
- const paintLobby=(queue,startAt)=>{
-  const players=Object.values(queue&&queue.players||{}).filter(p=>p&&Date.now()-(p.lastSeen||p.joinedAt||queue.createdAt)<18000);
-  const count=Math.max(1,Math.min(4,players.length));
-  const countEl=$('mpLobbyCount'),timerEl=$('mpLobbyTimer'),fill=$('mpLobbyFill'),slots=$('mpLobbySlots'),names=$('mpLobbyNames');
-  if(countEl)countEl.textContent=count+'/4 PLAYERS';
-  if(timerEl)timerEl.textContent=Math.max(0,Math.ceil((startAt-Date.now())/1000))+'s';
-  if(fill)fill.style.width=Math.max(0,Math.min(100,(1-(startAt-Date.now())/12000)*100))+'%';
-  if(slots)slots.innerHTML=Array.from({length:4},(_,i)=>'<i style="display:block;height:9px;border-radius:6px;background:'+(i<count?'#83c8ff':'#273449')+';box-shadow:'+(i<count?'0 0 9px #5c9bd8':'none')+'"></i>').join('');
-  if(names)names.textContent=players.map(p=>p.name||'Player').join(' · ')||'Finding teammates…';
-  mpStatus('Matchmaking · '+count+'/4 players');
- };
+ MP.busy=true;const btn=$('bMulti');if(btn)btn.disabled=true;
+ let phase='initializing';
+ mpStatus('Connecting to PlayHub multiplayer…');
  try{
-  const {db,user}=await mpFirebase(),name=mpSafeName(user.displayName||user.email?.split('@')[0]||'Player');
-  const matches=db.ref('ghostnight/matches'),queueRef=db.ref('ghostnight/matchmaking/current');
-  let reservation=null,queueData=null,host=false,roomRef=null;
-  // One atomic transaction reserves a slot in a single shared queue. This prevents
-  // two phones from independently creating separate host rooms.
-  for(let attempt=0;attempt<30&&!reservation;attempt++){
-   const proposed=matches.push(),now=Date.now();
-   const tx=await queueRef.transaction(cur=>{
-    const usable=cur&&cur.status==='waiting'&&Number(cur.startAt)>now-1500&&cur.players&&Object.keys(cur.players).length<4;
-    if(usable&&cur.players[user.uid])return cur;
-    if(usable){
-     const used=Object.values(cur.players||{}).map(p=>Number(p.slot));
-     let slot=-1;for(let n=0;n<4;n++)if(!used.includes(n)){slot=n;break}
-     if(slot<0)return;
-     const players=Object.assign({},cur.players,{[user.uid]:{uid:user.uid,name,slot,joinedAt:now,lastSeen:now}});
-     return Object.assign({},cur,{players});
-    }
-    return {roomId:proposed.key,hostUid:user.uid,status:'waiting',createdAt:now,startAt:now+12000,map:save.map,diff:save.diff,players:{[user.uid]:{uid:user.uid,name,slot:0,joinedAt:now,lastSeen:now}}};
-   },undefined,false);
-   if(tx.committed){
-    queueData=tx.snapshot.val();reservation=queueData&&queueData.players&&queueData.players[user.uid];
-    host=!!(queueData&&queueData.hostUid===user.uid&&queueData.roomId===proposed.key);
-   }else await delay(250);
-  }
-  if(!reservation||!queueData)throw new Error('Matchmaking queue is busy. Please retry.');
-  const roomId=queueData.roomId;roomRef=matches.child(roomId);
-  if(host){
-   const now=Date.now();
-   await roomRef.set({game:'ghostnight',hostUid:user.uid,status:'live',map:queueData.map||save.map,diff:queueData.diff==null?save.diff:queueData.diff,createdAt:queueData.createdAt||now,lastSeen:now,members:{[user.uid]:{name,joinedAt:now,lastSeen:now}},slots:{0:{uid:user.uid,name,joinedAt:now}}});
-  }else{
-   // Wait for the elected host to create the shared match document.
-   let ready=false,lastErr=null;
-   for(let k=0;k<40&&!ready;k++){
-    try{const snap=await roomRef.once('value');ready=snap.exists()&&snap.child('status').val()==='live';}catch(e){lastErr=e;throw e}
-    if(!ready)await delay(200);
+  const {db,user}=await mpFirebase();
+  const name=mpSafeName(user.displayName||(user.email&&user.email.split('@')[0])||'Player');
+  phase='finding live matches';
+  const root=db.ref('ghostnight/matches');
+  const snap=await root.orderByChild('status').equalTo('live').once('value');
+  let chosen=null,chosenSlot=-1,chosenSlotRef=null;
+  const rooms=[];
+  snap.forEach(ch=>{
+   const v=ch.val()||{};
+   if(v.game==='ghostnight'&&Date.now()-Number(v.lastSeen||0)<45000)
+    rooms.push({id:ch.key,data:v});
+  });
+  rooms.sort((x,y)=>(Number(x.data.createdAt)||0)-(Number(y.data.createdAt)||0));
+  for(const room of rooms){
+   phase='checking match '+room.id;
+   const roomRef=root.child(room.id);
+   const membersSnap=await roomRef.child('members').once('value');
+   const members=membersSnap.val()||{};
+   if(members[user.uid]){
+    const slotsSnap=await roomRef.child('slots').once('value');
+    const own=Object.entries(slotsSnap.val()||{}).find(([,v])=>v&&v.uid===user.uid);
+    if(own){chosen=room;chosenSlot=Number(own[0]);chosenSlotRef=roomRef.child('slots/'+own[0]);break}
    }
-   if(!ready)throw lastErr||new Error('Host could not open the match room.');
-   const slotRef=roomRef.child('slots/'+reservation.slot);
-   const claim=await slotRef.transaction(cur=>cur==null?{uid:user.uid,name,joinedAt:Date.now()}:cur.uid===user.uid?cur:undefined);
-   if(!claim.committed)throw new Error('Your player slot was taken. Please search again.');
-   await roomRef.child('members/'+user.uid).set({name,joinedAt:Date.now(),lastSeen:Date.now()});
-   const roomSnap=await roomRef.once('value'),room=roomSnap.val()||{};
-   if(room.map){save.map=room.map;setMap(save.map)}
-   if(room.diff!=null)save.diff=Number(room.diff);persist();
+   for(let n=0;n<4;n++){
+    phase='claiming player slot '+(n+1);
+    const sr=roomRef.child('slots/'+n);
+    const claim=await sr.transaction(cur=>cur==null?{uid:user.uid,name,joinedAt:Date.now()}:undefined,undefined,false);
+    if(claim.committed){chosen=room;chosenSlot=n;chosenSlotRef=sr;break}
+   }
+   if(chosen)break;
   }
-  const ownSlot=Number(reservation.slot);
-  MP.uid=user.uid;MP.name=name;MP.roomId=roomId;MP.roomRef=roomRef;MP.hostUid=queueData.hostUid;
-  MP.memberRef=roomRef.child('members/'+user.uid);MP.slotRef=roomRef.child('slots/'+ownSlot);
-  MP.playerRef=db.ref('ghostnight/players/'+roomId+'/'+user.uid);MP.playersRef=db.ref('ghostnight/players/'+roomId);
-  MP.slot=ownSlot;MP.isHost=host;MP.world=null;MP.hitSeen={};MP.hitQueue=[];MP.hitSeq=0;MP.worldT=0;MP.bots={};MP.botFillT=0;MP.botFillDone=false;MP.offlineBots=false;MP.active=true;
-  for(const task of [()=>MP.memberRef.onDisconnect().remove(),()=>MP.slotRef.onDisconnect().remove(),()=>MP.playerRef.onDisconnect().remove()]){try{await task()}catch(e){console.warn('Ghost Night disconnect cleanup:',e)}}
-  if(MP.isHost){try{await MP.roomRef.child('status').onDisconnect().set('closed')}catch(e){console.warn('Host disconnect cleanup:',e)}}
+  if(!chosen){
+   phase='creating a new match';
+   const ref=root.push(),now=Date.now();
+   await ref.set({game:'ghostnight',hostUid:user.uid,status:'live',map:save.map,diff:save.diff,createdAt:now,lastSeen:now});
+   chosen={id:ref.key,data:{hostUid:user.uid}};
+   chosenSlot=0;chosenSlotRef=ref.child('slots/0');
+   phase='reserving host slot';
+   const claim=await chosenSlotRef.transaction(cur=>cur==null?{uid:user.uid,name,joinedAt:Date.now()}:undefined,undefined,false);
+   if(!claim.committed)throw new Error('Could not reserve host player slot. Please retry.');
+  }
+  MP.uid=user.uid;MP.name=name;MP.roomId=chosen.id;MP.roomRef=root.child(chosen.id);
+  MP.slot=chosenSlot;MP.slotRef=chosenSlotRef;MP.isHost=chosen.data.hostUid===user.uid;MP.hostUid=chosen.data.hostUid||null;
+  phase='registering player';
+  MP.memberRef=MP.roomRef.child('members/'+user.uid);
+  await MP.memberRef.set({name,joinedAt:Date.now(),lastSeen:Date.now()});
+  MP.playersRef=db.ref('ghostnight/players/'+MP.roomId);
+  MP.playerRef=MP.playersRef.child(user.uid);
+  const cleanupTasks=[
+   ['member',()=>MP.memberRef.onDisconnect().remove()],
+   ['slot',()=>MP.slotRef.onDisconnect().remove()],
+   ['player',()=>MP.playerRef.onDisconnect().remove()]
+  ];
+  if(MP.isHost)cleanupTasks.push(['host room',()=>MP.roomRef.child('status').onDisconnect().set('closed')]);
+  const cleanupFailures=[];
+  for(const [label,register] of cleanupTasks){
+   try{await register()}catch(e){cleanupFailures.push(label);console.warn('Ghost Night disconnect cleanup unavailable for '+label,e)}
+  }
+  MP.world=null;MP.hitSeen={};MP.hitQueue=[];MP.hitSeq=0;MP.worldT=0;
+  MP.bots={};MP.botFillT=9;MP.botFillDone=false;MP.offlineBots=false;MP.active=true;
   MP.playersRef.on('value',snap=>{
    const all=snap.val()||{},next={};
    for(const [uid,p] of Object.entries(all)){
-    if(uid!==MP.uid&&p&&Date.now()-(p.updatedAt||0)<10000){
+    if(uid!==MP.uid&&p&&Date.now()-Number(p.updatedAt||0)<15000){
      next[uid]=p;
      if(!MP.isHost&&uid===MP.hostUid&&p.world){MP.world=p.world;if(G)mpApplyWorld();if(MP.worldReadyResolve){MP.worldReadyResolve();MP.worldReadyResolve=null}}
     }
    }
    MP.remotes=Object.assign({},next,MP.bots);
    if(MP.botFillDone)mpFillBots();
-  },e=>{console.error('Ghost Night player listener:',e);mpStatus('Connection lost: '+(e.message||'permission denied'))});
+  },e=>{console.error('Ghost Night players listener:',e);mpStatus('Connection lost: '+(e.code||e.message||'permission denied'))});
   MP.listener=true;
   await MP.playerRef.set({name,x:0,y:130,face:1,hp:100,max:100,cos:save.costume,color:mpColor(user.uid),updatedAt:Date.now()});
-  // All members use the same server queue startAt, so they enter together.
-  const startAt=Number(queueData.startAt)||Date.now()+12000;
-  let liveQueue=queueData;
-  const queueListener=snap=>{const v=snap.val();if(v&&v.roomId===roomId){liveQueue=v;paintLobby(liveQueue,startAt)}};
-  queueRef.on('value',queueListener,e=>console.warn('Queue listener:',e));
-  while(Date.now()<startAt){paintLobby(liveQueue,startAt);await delay(150)}
-  queueRef.off('value',queueListener);
-  try{await queueRef.transaction(cur=>cur&&cur.roomId===roomId?Object.assign({},cur,{status:'started'}):cur)}catch(e){console.warn('Queue close:',e)}
-  const finalPlayers=Object.values(liveQueue.players||{}).filter(p=>p&&Date.now()-(p.lastSeen||p.joinedAt||liveQueue.createdAt)<18000);
-  MP.remotes=Object.assign({},MP.remotes||{});
-  MP.botFillDone=true;
-  // Fill only after the local world exists, and only if this queue had no real teammate.
-  const fillBots=finalPlayers.length<=1;
-  if(!fillBots){MP.bots={};MP.remotes=Object.fromEntries(Object.entries(MP.remotes).filter(([,p])=>!p.isBot))}
-  if(panel)panel.hidden=true;
-  mpStatus('Match ready · '+Math.min(4,Math.max(1,finalPlayers.length+(fillBots?3:0)))+'/4 players');
+  MP.memberRef.on('value',snap=>{
+   const members=snap.val()||{},count=Object.keys(members).length;
+   mpStatus('Match found · '+count+'/4 players · '+(members[MP.uid]?'Connected':'Reconnecting'));
+  },e=>console.warn('Ghost Night members listener:',e));
+  if(MP.beat)clearInterval(MP.beat);
+  MP.beat=setInterval(()=>{
+   if(!MP.active||!MP.roomId)return;
+   const stamp=Date.now();
+   MP.memberRef.update({lastSeen:stamp}).catch(e=>{console.warn('member heartbeat',e);mpStatus('Player connection issue: '+(e.code||e.message))});
+   if(MP.isHost)MP.roomRef.update({lastSeen:stamp}).catch(e=>{console.warn('room heartbeat',e);mpStatus('Match heartbeat issue: '+(e.code||e.message))});
+  },10000);
+  mpStatus(cleanupFailures.length?'Connected · '+(chosenSlot+1)+'/4 players · cleanup fallback active':'Match found · '+(chosenSlot+1)+'/4 slot reserved · starting game…');
   startRun();
-  if(fillBots){MP.offlineBots=false;mpFillBots()}
-  if(!MP.isHost&&MP.world)mpApplyWorld();
-  caption('Your lantern squad is ready. Find your teammates on the map.',5200);
+  caption('Match found. Find your teammates on the map.',4200);
  }catch(e){
-  console.error('Ghost Night matchmaking:',e);
   if(MP.active)await mpLeave(false);
-  MP.active=true;MP.offlineBots=true;MP.isHost=true;MP.uid='offline-squad';MP.name='You';MP.remotes={};MP.bots={};MP.botFillDone=true;MP.botFillT=0;
-  if(panel)panel.hidden=true;
-  startRun();mpFillBots();
-  mpStatus('Online matchmaking unavailable · Bot squad 4/4');
-  caption('The matchmaking gate is quiet. Your lantern squad is ready.',5200);
- }finally{MP.busy=false;if(button)button.disabled=false}
+  else{
+   try{if(MP.slotRef)await MP.slotRef.remove()}catch(x){}
+   try{if(MP.memberRef)await MP.memberRef.remove()}catch(x){}
+  }
+  console.error('Ghost Night multiplayer failed during '+phase+':',e);
+  const code=e&&e.code?' ['+e.code+']':'';
+  mpStatus('Failed while '+phase+code+': '+(e&&e.message||'Unknown error'));
+ }finally{MP.busy=false;if(btn)btn.disabled=false}
 }
 function mpWorldSnapshot(){
  const g=G;if(!g)return null;
