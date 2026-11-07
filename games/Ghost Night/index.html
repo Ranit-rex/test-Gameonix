@@ -502,7 +502,7 @@ function persist(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(save))}catch
 
 /* ---------- Ghost Night multiplayer (isolated from the solo save/gameplay path) ---------- */
 const GH_FIREBASE={apiKey:'AIzaSyB_pZ9WfVSx2XHuDeSZ7VrwEr-Pz_m_2QM',authDomain:'play-hub-688e8.firebaseapp.com',databaseURL:'https://play-hub-688e8-default-rtdb.asia-southeast1.firebasedatabase.app',projectId:'play-hub-688e8',storageBucket:'play-hub-688e8.firebasestorage.app',messagingSenderId:'195222206861',appId:'1:195222206861:web:828a8cf16991f982a925c4'};
-const MP={busy:false,active:false,uid:null,name:'',roomId:null,roomRef:null,memberRef:null,slotRef:null,playerRef:null,playersRef:null,listener:null,remotes:{},slot:0,sendT:0,beatT:0,isHost:false,hostUid:null,world:null,worldT:0,enemySeq:0,hitSeq:0,hitQueue:[],hitSeen:{},worldReadyResolve:null};
+const MP={busy:false,active:false,uid:null,name:'',roomId:null,roomRef:null,memberRef:null,slotRef:null,playerRef:null,playersRef:null,listener:null,remotes:{},slot:0,sendT:0,beatT:0,isHost:false,hostUid:null,world:null,worldT:0,enemySeq:0,hitSeq:0,hitQueue:[],hitSeen:{},worldReadyResolve:null,matchReadyResolve:null,matchReadyReject:null};
 function mpStatus(t){const e=$('mpStatus');if(e)e.textContent=t}
 function mpLoadScript(src){return new Promise((resolve,reject)=>{const sc=document.createElement('script');sc.src=src;sc.async=true;sc.onload=resolve;sc.onerror=()=>reject(new Error('Could not load '+src));document.head.appendChild(sc)})}
 async function mpFirebase(){
@@ -550,14 +550,14 @@ async function mpConnect(){
   const cleanup=[()=>MP.memberRef.onDisconnect().remove(),()=>MP.slotRef.onDisconnect().remove(),()=>MP.playerRef.onDisconnect().remove()];
   if(MP.isHost)cleanup.push(()=>MP.roomRef.child('status').onDisconnect().set('closed'));
   for(const task of cleanup){try{await task()}catch(e){console.warn('Ghost Night disconnect cleanup unavailable:',e)}}
-  MP.playersRef.on('value',v=>{const all=v.val()||{},next={};for(const [uid,p] of Object.entries(all)){if(uid!==MP.uid&&p&&Date.now()-(p.updatedAt||0)<10000){next[uid]=p;if(!MP.isHost&&uid===MP.hostUid&&p.world){MP.world=p.world;if(MP.worldReadyResolve){MP.worldReadyResolve();MP.worldReadyResolve=null}}}}MP.remotes=next},e=>console.warn('Ghost Night teammate listener:',e));
+  MP.playersRef.on('value',v=>{const all=v.val()||{},next={};for(const [uid,p] of Object.entries(all)){if(uid!==MP.uid&&p&&Date.now()-(p.updatedAt||0)<10000){next[uid]=p;if(!MP.isHost&&uid===MP.hostUid&&p.world){MP.world=p.world;if(MP.worldReadyResolve){MP.worldReadyResolve();MP.worldReadyResolve=null}}}}MP.remotes=next;if(MP.isHost&&Object.keys(next).length&&MP.matchReadyResolve){MP.matchReadyResolve();MP.matchReadyResolve=null}},e=>{console.warn('Ghost Night teammate listener:',e);if(MP.matchReadyReject)MP.matchReadyReject(e)});
   MP.listener=true;
   await MP.playerRef.set({name,x:0,y:130,face:1,hp:100,max:100,cos:save.costume,color:mpColor(user.uid),updatedAt:Date.now()});
-  if(!MP.isHost){mpStatus('Match found · waiting for host world…');await new Promise((resolve,reject)=>{let done=false;const finish=()=>{if(done)return;done=true;clearTimeout(timer);MP.worldReadyResolve=null;resolve()};const timer=setTimeout(()=>{if(done)return;done=true;MP.worldReadyResolve=null;reject(new Error('Host world did not sync. Ask the host to reconnect.'))},12000);MP.worldReadyResolve=finish;if(MP.world)finish()})}
+  if(MP.isHost){mpStatus('Matchmaking… waiting for another player (20s)');await new Promise((resolve,reject)=>{let done=false;const finish=()=>{if(done)return;done=true;clearTimeout(timer);MP.matchReadyResolve=null;MP.matchReadyReject=null;resolve()};const timer=setTimeout(()=>{if(done)return;done=true;MP.matchReadyResolve=null;MP.matchReadyReject=null;reject(new Error('No teammate joined within 20 seconds. Tap Multiplayer to search again.'))},20000);MP.matchReadyResolve=finish;if(Object.keys(MP.remotes).length)finish()})}else{mpStatus('Match found · waiting for host world…');await new Promise((resolve,reject)=>{let done=false;const finish=()=>{if(done)return;done=true;clearTimeout(timer);MP.worldReadyResolve=null;resolve()};const timer=setTimeout(()=>{if(done)return;done=true;MP.worldReadyResolve=null;reject(new Error('Host world did not sync. Ask the host to reconnect.'))},12000);MP.worldReadyResolve=finish;if(MP.world)finish()})}
   mpStatus('Shared match · '+(MP.isHost?'Host':'Teammate')+' · slot '+(MP.slot+1)+'/4');
   startRun();if(!MP.isHost)mpApplyWorld();
   caption('You are not alone. Find your teammates on the map.',5200);
- }catch(e){console.error('Ghost Night multiplayer:',e);mpStatus('Multiplayer error: '+(e.message||'Could not connect'))}
+ }catch(e){console.error('Ghost Night multiplayer:',e);if(MP.active)await mpLeave(false);mpStatus(e.message||'Could not connect. Please try again.')}
  finally{MP.busy=false;if(b)b.disabled=false}
 }
 function mpWorldSnapshot(){
