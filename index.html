@@ -88,7 +88,7 @@
 <div id="gameOverlay" class="gameoverlay hidden"><div class="gamebar"><strong id="playingTitle">Playing</strong><div><button id="fullscreenBtn" class="logout">Fullscreen</button><button id="closeGameBtn" class="login">Back to Hub</button></div></div><iframe id="gameFrame" allow="fullscreen; autoplay; gamepad" allowfullscreen title="PlayHub Game"></iframe></div>
 <script>
 'use strict';
-const FIREBASE_CONFIG={apiKey:'AIzaSyB_pZ9WfVSx2XHuDeSZ7VrwEr-Pz_m_2QM',authDomain:'play-hub-688e8.firebaseapp.com',projectId:'play-hub-688e8',storageBucket:'play-hub-688e8.firebasestorage.app',messagingSenderId:'195222206861',appId:'1:195222206861:web:828a8cf16991f982a925c4'};
+const FIREBASE_CONFIG={apiKey:'AIzaSyB_pZ9WfVSx2XHuDeSZ7VrwEr-Pz_m_2QM',authDomain:'play-hub-688e8.firebaseapp.com',databaseURL:'https://play-hub-688e8-default-rtdb.asia-southeast1.firebasedatabase.app',projectId:'play-hub-688e8',storageBucket:'play-hub-688e8.firebasestorage.app',messagingSenderId:'195222206861',appId:'1:195222206861:web:828a8cf16991f982a925c4'};
 const $=id=>document.getElementById(id);let auth=null,db=null,currentUser=null,currentUsername='',allGames=[],currentPage='home',firebaseReady=false,authError=null,firebaseInitPromise=null,gamesLoaded=false,manualOrder=null,currentSuggestedIds=[];
 window.addEventListener('error',e=>{authError='Page startup error: '+(e.message||'Unknown JavaScript error')+' at '+(e.filename||'page')+':'+(e.lineno||'?');console.error(authError)});window.addEventListener('unhandledrejection',e=>{authError='Startup promise error: '+(e.reason?.message||String(e.reason||'Unknown rejection'));console.error(authError)});
 const stamp=()=>firebase.firestore.FieldValue.serverTimestamp();
