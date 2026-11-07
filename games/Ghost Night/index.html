@@ -592,7 +592,7 @@ async function ghPartyStartMatch(){
  const roomRef=db.ref('ghostnight/matches').push(),matchId=roomRef.key;
  if(!matchId)throw Error('Could not generate a match ID.');
  try{
-  await roomRef.set({game:'ghostnight',hostUid:u.uid,status:'live',map:save.map,diff:save.diff,createdAt:Date.now(),lastSeen:Date.now(),partyCode:d.roomId});
+  await roomRef.set({game:'ghostnight',hostUid:u.uid,status:'live',map:(typeof save.map==='string'?save.map:'fields'),diff:(Number.isFinite(save.diff)?save.diff:1),createdAt:Date.now(),lastSeen:Date.now(),partyCode:d.roomId});
   await GH_PARTY.ref.child('matchId').set(matchId);
   await GH_PARTY.ref.child('status').set('started');
  }catch(err){
@@ -735,7 +735,7 @@ async function mpConnect(forcedRoomId=null){
    try{if(localSlotRef)await localSlotRef.remove()}catch(x){}
    MP.active=false;MP.teamReady=false;MP.uid=null;MP.roomId=null;MP.roomRef=null;MP.memberRef=null;MP.slotRef=null;MP.playerRef=null;MP.playersRef=null;
   }
-  mpStatus('Party connection failed during '+phase+': '+(e&&e.message||'Unknown error'));
+  const failure='Party connection failed during '+phase+': '+(e&&e.message||'Unknown error');mpStatus(failure);ghPartyStatus(failure);
  }finally{MP.busy=false;if(btn)btn.disabled=false}
 }
 function mpCleanFirebase(value){
