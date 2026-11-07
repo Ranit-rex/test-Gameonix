@@ -535,9 +535,9 @@ async function mpConnect(){
   const snap=await root.orderByChild('status').equalTo('live').once('value');
   const rooms=snap.val()||{};
   for(const [id,data] of Object.entries(rooms)){
-   if(!data||data.game!=='ghostnight'||data.status!=='live'||data.map!==save.map||Number(data.diff)!==Number(save.diff)||!data.lastSeen||now-data.lastSeen>45000||data.hostUid===user.uid)continue;
+   if(!data||data.game!=='ghostnight'||data.status!=='live'||!data.lastSeen||now-data.lastSeen>45000||data.hostUid===user.uid)continue;
    const ref=root.child(id),claimed=await mpClaimSlot(ref,user,name);if(!claimed)continue;
-   chosen={id,ref,slot:claimed.slot,slotRef:claimed.slotRef,isHost:false,hostUid:data.hostUid};break;
+   chosen={id,ref,slot:claimed.slot,slotRef:claimed.slotRef,isHost:false,hostUid:data.hostUid,map:data.map,diff:data.diff};break;
   }
   if(!chosen){
    const ref=root.push(),id=ref.key,member={name,joinedAt:now,lastSeen:now};
@@ -546,7 +546,7 @@ async function mpConnect(){
   }else{
    await chosen.ref.child('members/'+user.uid).set({name,joinedAt:now,lastSeen:now});
   }
-  MP.uid=user.uid;MP.name=name;MP.roomId=chosen.id;MP.roomRef=chosen.ref;MP.hostUid=chosen.hostUid||user.uid;MP.memberRef=chosen.ref.child('members/'+user.uid);MP.slotRef=chosen.slotRef;MP.playerRef=db.ref('ghostnight/players/'+chosen.id+'/'+user.uid);MP.playersRef=db.ref('ghostnight/players/'+chosen.id);MP.slot=chosen.slot;MP.isHost=chosen.isHost;MP.active=true;
+  MP.uid=user.uid;MP.name=name;MP.roomId=chosen.id;MP.roomRef=chosen.ref;MP.hostUid=chosen.hostUid||user.uid;MP.memberRef=chosen.ref.child('members/'+user.uid);MP.slotRef=chosen.slotRef;MP.playerRef=db.ref('ghostnight/players/'+chosen.id+'/'+user.uid);MP.playersRef=db.ref('ghostnight/players/'+chosen.id);MP.slot=chosen.slot;MP.isHost=chosen.isHost;if(!MP.isHost){if(chosen.map)save.map=chosen.map;if(chosen.diff!=null)save.diff=Number(chosen.diff)}MP.active=true;
   const cleanup=[()=>MP.memberRef.onDisconnect().remove(),()=>MP.slotRef.onDisconnect().remove(),()=>MP.playerRef.onDisconnect().remove()];
   if(MP.isHost)cleanup.push(()=>MP.roomRef.child('status').onDisconnect().set('closed'));
   for(const task of cleanup){try{await task()}catch(e){console.warn('Ghost Night disconnect cleanup unavailable:',e)}}
@@ -554,7 +554,7 @@ async function mpConnect(){
   MP.listener=true;
   await MP.playerRef.set({name,x:0,y:130,face:1,hp:100,max:100,cos:save.costume,color:mpColor(user.uid),updatedAt:Date.now()});
   if(!MP.isHost){mpStatus('Match found · waiting for host world…');await new Promise((resolve,reject)=>{let done=false;const finish=()=>{if(done)return;done=true;clearTimeout(timer);MP.worldReadyResolve=null;resolve()};const timer=setTimeout(()=>{if(done)return;done=true;MP.worldReadyResolve=null;reject(new Error('Host world did not sync. Ask the host to reconnect.'))},12000);MP.worldReadyResolve=finish;if(MP.world)finish()})}
-  mpStatus('Match found · slot '+(MP.slot+1)+'/4 · starting shared match…');
+  mpStatus('Shared match · '+(MP.isHost?'Host':'Teammate')+' · slot '+(MP.slot+1)+'/4');
   startRun();if(!MP.isHost)mpApplyWorld();
   caption('You are not alone. Find your teammates on the map.',5200);
  }catch(e){console.error('Ghost Night multiplayer:',e);mpStatus('Multiplayer error: '+(e.message||'Could not connect'))}
