@@ -614,14 +614,14 @@ async function mpConnect(){
   },e=>{console.error('Ghost Night players listener:',e);mpStatus('Connection lost: '+(e.code||e.message||'permission denied'))});
   MP.listener=true;
   await MP.playerRef.set({name,x:0,y:130,face:1,hp:100,max:100,cos:save.costume,color:mpColor(user.uid),updatedAt:Date.now()});
-  MP.memberRef.on('value',snap=>{const members=snap.val()||{},count=Object.keys(members).length;mpStatus((MP.isHost?'HOST':'GUEST')+' · ROOM '+String(MP.roomId||'').slice(-6).toUpperCase()+' · '+count+'/4 players · '+(members[MP.uid]?'Connected':'Reconnecting'))},e=>console.warn('Ghost Night members listener:',e));
+  MP.roomRef.child('members').on('value',snap=>{const members=snap.val()||{},count=Object.keys(members).length;mpStatus((MP.isHost?'HOST':'GUEST')+' · ROOM '+String(MP.roomId||'').slice(-6).toUpperCase()+' · '+count+'/4 players · '+(members[MP.uid]?'Connected':'Reconnecting'))},e=>{console.error('Ghost Night members listener:',e);mpStatus('Member sync permission error: '+(e.code||e.message||'permission denied'))});
   if(MP.beat)clearInterval(MP.beat);
   MP.beat=setInterval(()=>{
    if(!MP.active||!MP.roomId)return;
    const stamp=Date.now();
    MP.memberRef.update({lastSeen:stamp}).catch(e=>{console.warn('member heartbeat',e);mpStatus('Player connection issue: '+(e.code||e.message))});
    if(MP.isHost){
-    MP.roomRef.update({lastSeen:stamp}).catch(e=>{console.warn('room heartbeat',e);mpStatus('Match heartbeat issue: '+(e.code||e.message))});
+    MP.roomRef.child('lastSeen').set(stamp).catch(e=>{console.warn('room heartbeat',e);mpStatus('Match heartbeat issue: '+(e.code||e.message))});
    }
   },10000);
   const roomTag=String(MP.roomId||'').slice(-6).toUpperCase();
