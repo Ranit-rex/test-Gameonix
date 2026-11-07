@@ -628,7 +628,19 @@ async function mpConnect(){
   const roleTag=MP.isHost?'HOST':'GUEST';
   mpStatus(roleTag+' · ROOM '+roomTag+' · '+(chosenSlot+1)+'/4 slot reserved'+(cleanupFailures.length?' · cleanup fallback active':' · starting…'));
   if(MP.isHost){
-   // The host is the only client that creates the authoritative game world.
+   // Host waits for at least one real teammate. Multiplayer never falls back to solo.
+   phase='waiting for teammate';
+   await new Promise(resolve=>{
+    const membersRef=MP.roomRef.child('members');
+    const onMembers=snap=>{
+     const members=snap.val()||{},count=Object.keys(members).length;
+     mpStatus('HOST · ROOM '+roomTag+' · '+count+'/4 players · waiting for teammate');
+     if(count>=2){membersRef.off('value',onMembers);resolve();}
+    };
+    membersRef.on('value',onMembers);
+    membersRef.once('value',onMembers);
+   });
+   // Only now create the shared world for everyone in this room.
    startRun();
   }else{
    // Guests wait for the host's first world snapshot instead of generating
@@ -659,9 +671,18 @@ async function mpConnect(){
   mpStatus('Failed while '+phase+code+': '+(e&&e.message||'Unknown error'));
  }finally{MP.busy=false;if(btn)btn.disabled=false}
 }
+function mpCleanFirebase(value){
+ if(value===undefined||typeof value==='function')return undefined;
+ if(typeof value==='number'&&!Number.isFinite(value))return null;
+ if(value===null||typeof value!=='object')return value;
+ if(Array.isArray(value))return value.map(v=>{const x=mpCleanFirebase(v);return x===undefined?null:x});
+ const out={};
+ for(const [key,val] of Object.entries(value)){const clean=mpCleanFirebase(val);if(clean!==undefined)out[key]=clean}
+ return out;
+}
 function mpWorldSnapshot(){
  const g=G;if(!g)return null;
- return {t:g.t,time:g.time,hour:g.hour,lastHour:g.lastHour,spawnT:g.spawnT,surgeAt:g.surgeAt,surgeW:g.surgeW,mod:g.mod,night:g.night,bgap:g.bgap,bs:g.bs,enemies:g.enemies.map(e=>({...e})),ebul:g.ebul.map(e=>({...e})),items:g.items.map(e=>({...e})),orbs:g.orbs.map(e=>({...e})),shrines:g.shrines.map(e=>({...e})),haz:g.haz.map(e=>({...e})),gold:g.gold?{...g.gold}:null,bossId:g.boss&&g.boss.mid||null};
+ return mpCleanFirebase({t:g.t,time:g.time,hour:g.hour,lastHour:g.lastHour,spawnT:g.spawnT,surgeAt:g.surgeAt,surgeW:g.surgeW,mod:g.mod,night:g.night,bgap:g.bgap,bs:g.bs,enemies:g.enemies.map(e=>({...e})),ebul:g.ebul.map(e=>({...e})),items:g.items.map(e=>({...e})),orbs:g.orbs.map(e=>({...e})),shrines:g.shrines.map(e=>({...e})),haz:g.haz.map(e=>({...e})),gold:g.gold?{...g.gold}:null,bossId:g.boss&&g.boss.mid||null});
 }
 function mpProcessHits(){
  if(!MP.active||!MP.isHost||!G)return;
