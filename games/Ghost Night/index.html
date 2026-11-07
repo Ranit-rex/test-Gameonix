@@ -553,7 +553,7 @@ async function mpConnect(){
   MP.playersRef.on('value',v=>{const all=v.val()||{},next={};for(const [uid,p] of Object.entries(all)){if(uid!==MP.uid&&p&&Date.now()-(p.updatedAt||0)<10000)next[uid]=p}MP.remotes=next},e=>console.warn('Ghost Night teammate listener:',e));
   MP.listener=true;
   await MP.playerRef.set({name,x:0,y:130,face:1,hp:100,max:100,cos:save.costume,color:mpColor(user.uid),updatedAt:Date.now()});
-  mpStatus('Match found · '+(MP.slot+1)+'/4 players · starting…');
+  mpStatus('Match found · slot '+(MP.slot+1)+'/4 · starting…');
   startRun();
   caption('You are not alone. Find your teammates on the map.',5200);
  }catch(e){console.error('Ghost Night multiplayer:',e);mpStatus('Multiplayer error: '+(e.message||'Could not connect'))}
