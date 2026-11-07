@@ -213,7 +213,7 @@ function menuUI(){const a=$('chs');a.innerHTML='';CH.forEach((h,i)=>{const b=doc
 
 /* ---------- Ashgrave live multiplayer ---------- */
 const MP_CONFIG={apiKey:'AIzaSyB_pZ9WfVSx2XHuDeSZ7VrwEr-Pz_m_2QM',authDomain:'play-hub-688e8.firebaseapp.com',databaseURL:'https://play-hub-688e8-default-rtdb.asia-southeast1.firebasedatabase.app',projectId:'play-hub-688e8',storageBucket:'play-hub-688e8.firebasestorage.app',messagingSenderId:'195222206861',appId:'1:195222206861:web:828a8cf16991f982a925c4'};
-const MP={auth:null,db:null,user:null,roomId:null,roomRef:null,playersRef:null,membersRef:null,remote:{},visual:{},active:false,pending:false,seat:0,sendAt:0,beat:null,playerName:'Player'};
+const MP={auth:null,db:null,user:null,roomId:null,roomRef:null,playersRef:null,membersRef:null,remote:{},visual:{},active:false,pending:false,isHost:false,seat:0,sendAt:0,beat:null,playerName:'Player'};
 function mpStatus(t){const e=$('mpStatus');if(e)e.textContent=t}
 function mpBadge(){const e=$('mpBadge');if(!e)return;const n=Object.keys(MP.remote).length+1;e.hidden=!MP.active;e.textContent='ONLINE · '+Math.min(4,n)+'/4'}
 async function mpLoadSdk(file,test){
@@ -257,16 +257,16 @@ async function mpJoin(){
    await chosenSlotRef.set({uid:MP.user.uid,name:MP.playerName,joinedAt:Date.now()});
   }else{MP.roomId=chosen.id;MP.roomRef=root.child(MP.roomId)}
   if(chosenSlot<0)throw new Error('This match is full. Please try again.');
+  MP.seat=chosenSlot;MP.slotRef=chosenSlotRef;MP.isHost=chosen.data.hostUid===MP.user.uid;
   const memberRef=MP.roomRef.child('members').child(MP.user.uid);
   if(!chosenMembers[MP.user.uid])await memberRef.set({name:MP.playerName,joinedAt:Date.now(),lastSeen:Date.now()});
   else await memberRef.update({name:MP.playerName,lastSeen:Date.now()});
-  MP.seat=chosenSlot;MP.slotRef=chosenSlotRef;
   const membersNow=await MP.roomRef.child('members').once('value'),members=membersNow.val()||{};
   MP.membersRef=MP.roomRef.child('members');
   MP.playersRef=MP.db.ref('ashgrave/players/'+MP.roomId);
   await memberRef.onDisconnect().remove();await MP.slotRef.onDisconnect().remove();
   const myPlayer=MP.playersRef.child(MP.user.uid);await myPlayer.onDisconnect().remove();
-  if(chosen.data.hostUid===MP.user.uid)await MP.roomRef.child('status').onDisconnect().set('closed');
+  if(MP.isHost)await MP.roomRef.child('status').onDisconnect().set('closed');
   MP.active=true;MP.pending=true;MP.remote={};MP.visual={};
   MP.membersRef.on('value',ss=>{const mm=ss.val()||{};const count=Object.keys(mm).length;mpStatus('Match found · '+count+'/4 players · '+(mm[MP.user.uid]?'Connected':'Reconnecting'));mpBadge()});
   MP.playersRef.on('value',ss=>{const all=ss.val()||{},now=Date.now(),out={};for(const [uid,p] of Object.entries(all)){if(uid!==MP.user.uid&&p&&Number(p.updatedAt)>now-15000&&Number(p.chapter)===ci)out[uid]=p}MP.remote=out;mpBadge()});
@@ -291,9 +291,9 @@ function mpTick(now){
 }
 async function mpLeave(){
  if(MP.beat)clearInterval(MP.beat);MP.beat=null;
- if(MP.active&&MP.user&&MP.roomId){try{await MP.playersRef.child(MP.user.uid).remove();await MP.membersRef.child(MP.user.uid).remove();if(MP.slotRef)await MP.slotRef.remove();}catch(e){}}
+ if(MP.active&&MP.user&&MP.roomId){try{await MP.playersRef.child(MP.user.uid).remove();if(MP.slotRef)await MP.slotRef.remove();await MP.membersRef.child(MP.user.uid).remove();if(MP.isHost)await MP.roomRef.child('status').set('closed')}catch(e){}}
  if(MP.membersRef)MP.membersRef.off();if(MP.playersRef)MP.playersRef.off();
- MP.active=false;MP.pending=false;MP.remote={};MP.visual={};MP.roomId=null;MP.roomRef=null;MP.slotRef=null;MP.playersRef=null;MP.membersRef=null;mpBadge();mpStatus('Up to 4 players · same chapter · microphone off');
+ MP.active=false;MP.pending=false;MP.isHost=false;MP.remote={};MP.visual={};MP.roomId=null;MP.roomRef=null;MP.slotRef=null;MP.playersRef=null;MP.membersRef=null;mpBadge();mpStatus('Up to 4 players · same chapter · microphone off');
 }
 $('mp').onclick=()=>{ac();mpJoin()};
 
