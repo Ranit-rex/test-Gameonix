@@ -356,7 +356,7 @@
     }
   };
 
-  window.PlayHub = Playbrix;
+  window.PlayHub = PlayHub;
 
   const initializationPromise = initialize();
 
