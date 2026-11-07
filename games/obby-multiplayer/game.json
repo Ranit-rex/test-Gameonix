@@ -1,6 +1,7 @@
 {
   "title": "Obby Rush",
   "description": "A fresh third-person 3D parkour adventure with moving hazards, checkpoints and multiplayer rooms.",
+  "thumbnail": "thumbnail.svg",
   "category": "Multiplayer",
   "status": "published"
 }
