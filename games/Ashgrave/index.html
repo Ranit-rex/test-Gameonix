@@ -102,7 +102,7 @@ button{padding:.48em .88em;font-size:.88em}
 <div id="menu" class="ov">
  <p class="mut">Ashgrave Asylum, 1962</p>
  <h1>ASHGRAVE</h1>
- <p>Six hours. One flashlight. Something is knocking from the inside.</p>
+ <p>Eight hours. One flashlight. Something is knocking from the inside.</p>
  <div class="cards" id="chs"></div><button id="lb2" class="mut">आवाज़: हिन्दी</button> <button id="go">Play Solo</button><button id="mp">Find Multiplayer Match</button><p id="mpStatus" class="mut">Up to 4 players · same chapter · microphone off</p><div class="cards" id="shop"></div>
  <p class="mut">Move: WASD or drag the left side. Strike: J or click. Dash: Space. Find Eli’s 5 hidden pages. Your flashlight burns what it touches. Turn the sound up. Someone will talk to you.</p>
  <p class="mut" id="best"></p>
@@ -197,7 +197,7 @@ TR["When a ghost gets close, press Strike to hit it with the crowbar."]="जब 
 TR["You are hurt. Press Dash to jump away fast."]="तुम्हें चोट लगी है। जल्दी दूर भागने के लिए डैश बटन दबाओ।";
 TR["Battery is low. Stop shining the light for a moment to recharge it."]="बैटरी कम है। थोड़ी देर रोशनी किसी पर मत डालो, बैटरी अपने आप भर जाएगी।";
 TR["Walk over the glowing orbs to gain experience and level up."]="चमकते गोलों के ऊपर से गुज़रो। उनसे अनुभव मिलता है और लेवल बढ़ता है।";
-TR["Survive until six in the morning. Eli\u2019s pages give you health."]="सुबह छह बजे तक ज़िंदा रहो। एली के पन्ने उठाओगे तो सेहत बढ़ेगी।";
+TR["Survive until eight in the morning. Eli\u2019s pages give you health."]="सुबह आठ बजे तक ज़िंदा रहो। एली के पन्ने उठाओगे तो सेहत बढ़ेगी।";
 TR["Choose one upgrade to continue."]="आगे बढ़ने के लिए एक अपग्रेड चुनो।";
 TR["Voice test. If you can hear this, the sound works."]="आवाज़ की जाँच। अगर तुम यह सुन पा रहे हो, तो आवाज़ ठीक चल रही है।";
 function vstat(){const e=$('vs');if(!e)return;const ss=window.speechSynthesis;if(!ss){e.textContent='Is browser me phone-awaaz nahi hai, internet wali Hindi awaaz use hogi.';return}const h=pickHi();e.textContent=h?('Hindi voice mili: '+h.name):'Phone me Hindi voice nahi mili, isliye internet wali Hindi awaaz use hogi.'}
@@ -445,7 +445,7 @@ if(nn&&!TUT.c&&nd<110){TUT.c=1;hint('When a ghost gets close, press Strike to hi
 if(!TUT.d&&p.hp<70){TUT.d=1;hint('You are hurt. Press Dash to jump away fast.')}
 if(!TUT.e&&g.bat<35){TUT.e=1;hint('Battery is low. Stop shining the light for a moment to recharge it.')}
 if(!TUT.f&&g.gem.length){TUT.f=1;hint('Walk over the glowing orbs to gain experience and level up.')}
-if(!TUT.g&&g.t>40){TUT.g=1;hint('Survive until six in the morning. Eli\u2019s pages give you health.')}
+if(!TUT.g&&g.t>40){TUT.g=1;hint('Survive until eight in the morning. Eli\u2019s pages give you health.')}
  g.eliT-=dt;if(g.eliT<=0&&g.hr>=1){g.eliT=rnd(26,44);bark(ELI[Math.floor(Math.random()*ELI.length)])}
  g.lowT-=dt;if(p.hp<30&&g.lowT<=0){g.lowT=45;bark(MARA[Math.floor(Math.random()*2)])}
  if(g.xp>=g.need)upg();
