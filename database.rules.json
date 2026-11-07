@@ -155,7 +155,6 @@
       }
     },
     "multiplayer": {
-      ".read": "auth != null",
       "rooms": {
         ".read": "auth != null",
         "$roomCode": {
@@ -175,7 +174,6 @@
         }
       },
       "matches": {
-        ".read": "auth != null",
         "$matchId": {
           ".read": "auth != null && root.child('multiplayer/rooms').child(data.child('roomCode').val()).child('members').child(auth.uid).exists()",
           ".write": "auth != null && ((!data.exists() && newData.child('hostUid').val() === auth.uid && root.child('multiplayer/rooms').child(newData.child('roomCode').val()).child('hostUid').val() === auth.uid) || (data.exists() && data.child('hostUid').val() === auth.uid))",
