@@ -646,7 +646,7 @@ async function mpConnect(){
   },e=>{console.error('Ghost Night players listener:',e);mpStatus('Connection lost: '+(e.code||e.message||'permission denied'))});
   MP.listener=true;
   await MP.playerRef.set({name,x:0,y:130,face:1,hp:100,max:100,cos:save.costume,color:mpColor(user.uid),updatedAt:Date.now()});
-  MP.memberRef.on('value',snap=>{const members=snap.val()||{},count=Object.keys(members).length;mpStatus('Match found · '+count+'/4 players · '+(members[MP.uid]?'Connected':'Reconnecting'))},e=>console.warn('Ghost Night members listener:',e));
+  MP.memberRef.on('value',snap=>{const members=snap.val()||{},count=Object.keys(members).length;mpStatus((MP.isHost?'HOST':'GUEST')+' · ROOM '+String(MP.roomId||'').slice(-6).toUpperCase()+' · '+count+'/4 players · '+(members[MP.uid]?'Connected':'Reconnecting'))},e=>console.warn('Ghost Night members listener:',e));
   if(MP.beat)clearInterval(MP.beat);
   MP.beat=setInterval(()=>{
    if(!MP.active||!MP.roomId)return;
@@ -657,7 +657,9 @@ async function mpConnect(){
     pointerRef.transaction(cur=>cur&&cur.roomId===MP.roomId?Object.assign({},cur,{lastSeen:stamp}):cur,undefined,false).catch(()=>{});
    }
   },10000);
-  mpStatus(cleanupFailures.length?'Connected · '+(chosenSlot+1)+'/4 players · cleanup fallback active':'Match found · '+(chosenSlot+1)+'/4 slot reserved · starting game…');
+  const roomTag=String(MP.roomId||'').slice(-6).toUpperCase();
+  const roleTag=MP.isHost?'HOST':'GUEST';
+  mpStatus(roleTag+' · ROOM '+roomTag+' · '+(chosenSlot+1)+'/4 slot reserved'+(cleanupFailures.length?' · cleanup fallback active':' · starting…'));
   if(MP.isHost){
    // The host is the only client that creates the authoritative game world.
    startRun();
