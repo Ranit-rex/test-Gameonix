@@ -1,7 +1,7 @@
 {
   "title": "Ashgrave",
   "description": "A horror survival adventure. Explore the darkness, survive the threats, and uncover what happened.",
-  "thumbnail": "thumbnail.svg",
+  "thumbnail": "https://raw.githubusercontent.com/Ranit-rex/test-Gameonix/main/games/Ashgrave/thumbnail.svg?v=20261108b",
   "category": "Horror",
   "status": "published"
 }
