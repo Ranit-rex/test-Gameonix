@@ -220,6 +220,72 @@
           }
         }
       }
+    },
+    "guesscountry": {
+      ".read": "auth != null",
+      "parties": {
+        ".read": "auth != null",
+        "$code": {
+          ".read": "auth != null",
+          ".write": "auth != null && ((!data.exists() && newData.child('hostUid').val() === auth.uid && newData.child('roomId').val() === $code && newData.child('gameSlug').val() === 'guesscountry' && newData.child('status').val() === 'waiting' && newData.child('members').child(auth.uid).exists()) || (data.exists() && data.child('hostUid').val() === auth.uid))",
+          ".validate": "newData.hasChildren(['roomId','gameSlug','hostUid','hostName','status','visibility','members','maxPlayers','createdAt','updatedAt']) && newData.child('roomId').val() === $code && newData.child('gameSlug').val() === 'guesscountry' && newData.child('hostUid').isString() && newData.child('hostName').isString() && (newData.child('status').val() === 'waiting' || newData.child('status').val() === 'playing') && newData.child('visibility').val() === 'public' && newData.child('maxPlayers').val() === 4 && newData.child('createdAt').isNumber() && newData.child('updatedAt').isNumber() && newData.child('members').child(newData.child('hostUid').val()).exists()",
+          "members": {
+            ".read": "auth != null",
+            "$uid": {
+              ".write": "auth != null && auth.uid === $uid && root.child('guesscountry/parties').child($code).exists() && ((newData.exists() && root.child('guesscountry/parties').child($code).child('status').val() === 'waiting' && newData.child('uid').val() === auth.uid) || (data.exists() && !newData.exists() && root.child('guesscountry/parties').child($code).child('status').val() === 'waiting'))",
+              ".validate": "newData.hasChildren(['uid','name','joinedAt','lastSeen']) && newData.child('uid').val() === auth.uid && newData.child('name').isString() && newData.child('name').val().length <= 32 && newData.child('joinedAt').isNumber() && newData.child('lastSeen').isNumber()"
+            }
+          },
+          "matchId": {
+            ".write": "auth != null && auth.uid === root.child('guesscountry/parties').child($code).child('hostUid').val() && root.child('guesscountry/parties').child($code).child('status').val() === 'waiting' && newData.isString()",
+            ".validate": "newData.isString()"
+          },
+          "status": {
+            ".write": "auth != null && auth.uid === root.child('guesscountry/parties').child($code).child('hostUid').val() && data.val() === 'waiting' && newData.val() === 'playing' && root.child('guesscountry/parties').child($code).child('matchId').isString()",
+            ".validate": "newData.val() === 'waiting' || newData.val() === 'playing'"
+          },
+          "updatedAt": {
+            ".write": "auth != null && auth.uid === root.child('guesscountry/parties').child($code).child('hostUid').val()",
+            ".validate": "newData.isNumber()"
+          }
+        }
+      },
+      "matches": {
+        ".read": "auth != null",
+        "$matchId": {
+          ".read": "auth != null && root.child('guesscountry/parties').child(data.child('roomCode').val()).child('members').child(auth.uid).exists()",
+          ".write": "auth != null && !data.exists() && newData.child('gameSlug').val() === 'guesscountry' && newData.child('hostUid').val() === auth.uid && root.child('guesscountry/parties').child(newData.child('roomCode').val()).child('hostUid').val() === auth.uid && root.child('guesscountry/parties').child(newData.child('roomCode').val()).child('status').val() === 'waiting'",
+          ".validate": "newData.hasChildren(['gameSlug','hostUid','roomCode','seed','round','solved','winnerUid','startedAt','createdAt']) && newData.child('gameSlug').val() === 'guesscountry' && newData.child('hostUid').isString() && newData.child('roomCode').isString() && newData.child('seed').isNumber() && newData.child('round').isNumber() && newData.child('solved').isBoolean() && newData.child('winnerUid').isString() && newData.child('startedAt').isNumber() && newData.child('createdAt').isNumber()",
+          "players": {
+            "$uid": {
+              ".write": "auth != null && auth.uid === $uid && root.child('guesscountry/parties').child(root.child('guesscountry/matches').child($matchId).child('roomCode').val()).child('members').child(auth.uid).exists()",
+              "typing": {
+                ".validate": "newData.isString() && newData.val().length <= 48"
+              },
+              "guessed": {
+                ".validate": "newData.isBoolean()"
+              }
+            }
+          },
+          "winnerUid": {
+            ".write": "auth != null && root.child('guesscountry/parties').child(root.child('guesscountry/matches').child($matchId).child('roomCode').val()).child('members').child(auth.uid).exists() && (!data.exists() || data.val() === '' || data.val() === auth.uid)",
+            " .validate": "newData.isString()",
+            ".validate": "newData.isString()"
+          },
+          "solved": {
+            ".write": "auth != null && root.child('guesscountry/parties').child(root.child('guesscountry/matches').child($matchId).child('roomCode').val()).child('members').child(auth.uid).exists()",
+            " .validate": "newData.isBoolean()",
+            ".validate": "newData.isBoolean()"
+          },
+          "chat": {
+            ".read": "auth != null && root.child('guesscountry/parties').child(root.child('guesscountry/matches').child($matchId).child('roomCode').val()).child('members').child(auth.uid).exists()",
+            "$msg": {
+              ".write": "auth != null && root.child('guesscountry/parties').child(root.child('guesscountry/matches').child($matchId).child('roomCode').val()).child('members').child(auth.uid).exists() && !data.exists()",
+              ".validate": "newData.hasChildren(['uid','name','text','at']) && (newData.child('uid').val() === auth.uid || newData.child('uid').val() === 'system') && newData.child('name').isString() && newData.child('name').val().length <= 32 && newData.child('text').isString() && newData.child('text').val().length <= 120 && newData.child('at').isNumber()"
+            }
+          }
+        }
+      }
     }
   }
 }
