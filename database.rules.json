@@ -230,7 +230,7 @@
           "members": {
             ".read": "auth != null",
             "$uid": {
-              ".write": "auth != null && auth.uid === $uid && root.child('guesscountry/parties').child($code).exists() && ((newData.exists() && root.child('guesscountry/parties').child($code).child('status').val() === 'waiting' && newData.child('uid').val() === auth.uid) || (data.exists() && !newData.exists() && root.child('guesscountry/parties').child($code).child('status').val() === 'waiting'))",
+              ".write": "auth != null && auth.uid === $uid && root.child('guesscountry/parties').child($code).exists() && root.child('guesscountry/parties').child($code).child('status').val() === 'waiting' && ((newData.exists() && newData.child('uid').val() === auth.uid) || !newData.exists())",
               ".validate": "newData.hasChildren(['uid','name','joinedAt','lastSeen']) && newData.child('uid').val() === auth.uid && newData.child('name').isString() && newData.child('name').val().length <= 32 && newData.child('joinedAt').isNumber() && newData.child('lastSeen').isNumber()"
             }
           },
@@ -266,12 +266,10 @@
           },
           "winnerUid": {
             ".write": "auth != null && root.child('guesscountry/parties').child(root.child('guesscountry/matches').child($matchId).child('roomCode').val()).child('members').child(auth.uid).exists() && (!data.exists() || data.val() === '' || data.val() === auth.uid)",
-            " .validate": "newData.isString()",
             ".validate": "newData.isString()"
           },
           "solved": {
             ".write": "auth != null && root.child('guesscountry/parties').child(root.child('guesscountry/matches').child($matchId).child('roomCode').val()).child('members').child(auth.uid).exists()",
-            " .validate": "newData.isBoolean()",
             ".validate": "newData.isBoolean()"
           },
           "chat": {
