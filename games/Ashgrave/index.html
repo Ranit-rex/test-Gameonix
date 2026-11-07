@@ -84,6 +84,15 @@ button{padding:.48em .88em;font-size:.88em}
 #mpBadge{position:absolute;top:58px;right:10px;z-index:3;padding:5px 8px;background:rgba(12,8,8,.82);border:1px solid #8d6b3b;color:#f0d69b;font:11px 'Special Elite',monospace;pointer-events:none}
 #mpBadge[hidden]{display:none}
 
+
+/* Separate Ashgrave room-code mode; existing matchmaking styles/logic remain intact. */
+#mpModeRow{display:flex;gap:8px;width:min(440px,92vw);margin:8px auto 0}#mpModeRow button{flex:1;min-width:0;margin:0}#mpModeRow #ashRoomOpen{border-color:#b58a55;background:#302013;color:#f4d7a4}
+#ashRoomPanel{width:min(520px,94vw);max-height:62vh;overflow:auto;margin:12px auto;padding:12px;background:rgba(15,12,12,.97);border:1px solid #80613e;border-radius:12px;text-align:left;box-shadow:0 12px 36px #000a}
+#ashRoomPanel[hidden]{display:none!important}.ash-room-head{display:flex;align-items:center;justify-content:space-between}.ash-room-head small{color:#c7a477;letter-spacing:2px;font-size:9px}.ash-room-head h2{font:20px 'Special Elite',monospace;margin:3px 0 10px;color:#f1dfc1}.ash-room-close{width:34px!important;height:34px;padding:0!important;font-size:22px!important}
+.ash-room-tools{display:grid;grid-template-columns:1fr;gap:8px}.ash-room-join{display:flex;gap:7px}.ash-room-join input{flex:1;min-width:0;background:#090909;border:1px solid #594633;border-radius:7px;color:#f5e8d2;padding:10px;font:12px monospace;letter-spacing:2px;text-transform:uppercase}.ash-room-tools button{margin:0!important}.ash-room-tools #ashRoomCreate{background:#352516;border-color:#a77b43;color:#ffe0a8}
+#ashRoomStatus{font-size:11px;color:#c8b99f;min-height:25px;padding:9px 2px}.ash-room-card,.ash-room-public{border:1px solid #59452f;background:#211912;border-radius:9px;padding:10px;margin:7px 0}.ash-room-card h3{margin:2px 0 8px;font:18px 'Special Elite',monospace;color:#f4d6a0}.ash-room-meta{display:flex;gap:18px;flex-wrap:wrap;font-size:11px;color:#d8c6a9}.ash-room-meta b{color:#fff0d7}.ash-room-roster{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;margin:10px 0}.ash-room-member{background:#100e0c;border:1px solid #403426;border-radius:6px;padding:7px;font-size:11px;color:#e8ddcb}.ash-room-host{color:#e7b75e;font-size:9px;margin-left:4px}.ash-room-actions{display:flex;gap:7px;flex-wrap:wrap}.ash-room-actions button{flex:1;margin:0!important}.ash-room-actions button:disabled{opacity:.4}.ash-room-section{font:11px 'Special Elite',monospace;letter-spacing:1px;color:#c8a16b;margin:13px 0 5px}.ash-room-public{display:flex;align-items:center;justify-content:space-between;gap:8px}.ash-room-public b{font-size:12px;color:#f2e3ca}.ash-room-public small{display:block;font-size:10px;color:#b9aa93;margin-top:4px}.ash-room-public button{margin:0!important;padding:7px 10px!important;font-size:10px!important}.ash-room-empty{font-size:11px;color:#988b78;padding:8px}
+@media(max-width:420px){#ashRoomPanel{padding:9px}.ash-room-roster{grid-template-columns:repeat(2,minmax(0,1fr))}.ash-room-public{padding:8px}}
+
 </style></head>
 <body>
 <div id="st">
@@ -103,7 +112,8 @@ button{padding:.48em .88em;font-size:.88em}
  <p class="mut">Ashgrave Asylum, 1962</p>
  <h1>ASHGRAVE</h1>
  <p>Eight hours. One flashlight. Something is knocking from the inside.</p>
- <div class="cards" id="chs"></div><button id="lb2" class="mut">आवाज़: हिन्दी</button> <button id="go">Play Solo</button><button id="mp">Find Multiplayer Match</button><p id="mpStatus" class="mut">Up to 4 players · same chapter · microphone off</p><div class="cards" id="shop"></div>
+ <div class="cards" id="chs"></div><button id="lb2" class="mut">आवाज़: हिन्दी</button> <button id="go">Play Solo</button><div id="mpModeRow"><button id="mp">Find Multiplayer Match</button><button id="ashRoomOpen" type="button">Room</button></div><p id="mpStatus" class="mut">Up to 4 players · same chapter · microphone off</p>
+<section id="ashRoomPanel" hidden><div class="ash-room-head"><div><small>ASHGRAVE MULTIPLAYER</small><h2>PRIVATE ROOMS</h2></div><button id="ashRoomClose" type="button" class="ash-room-close">×</button></div><div class="ash-room-tools"><button id="ashRoomCreate" type="button">＋ Create Room</button><div class="ash-room-join"><input id="ashRoomCodeInput" maxlength="8" placeholder="ENTER ROOM CODE" autocomplete="off"><button id="ashRoomJoin" type="button">JOIN</button></div></div><div id="ashRoomStatus" aria-live="polite">Create a room or join with a friend's code.</div><div id="ashRoomCurrent"></div><div id="ashRoomPublic"></div></section><div class="cards" id="shop"></div>
  <p class="mut">Move: WASD or drag the left side. Strike: J or click. Dash: Space. Find Eli’s 5 hidden pages. Your flashlight burns what it touches. Turn the sound up. Someone will talk to you.</p>
  <p class="mut" id="best"></p>
  <p class="mut" id="vs"></p><button id="vt" class="mut">Test voice</button>
@@ -245,63 +255,81 @@ async function mpInit(){
  if(!MP.user)throw new Error('Please sign in to PlayHub first, then reopen Ashgrave.');
  MP.playerName=(MP.user.displayName||MP.user.email&&MP.user.email.split('@')[0]||'Player').slice(0,24);
 }
-async function mpJoin(){
+async function mpJoin(forcedRoomId=null){
  const btn=$('mp');btn.disabled=true;
  let phase='initializing';
  mpStatus('Connecting to PlayHub multiplayer…');
  try{
   await mpInit();
-  phase='finding live matches';
-  const root=MP.db.ref('ashgrave/matches');
-  const snap=await root.orderByChild('status').equalTo('live').once('value');
+  phase='findin  const root=MP.db.ref('ashgrave/matches');
   let chosen=null,chosenMembers={},chosenSlot=-1,chosenSlotRef=null;
-  const rooms=[];
-  snap.forEach(ch=>{
-   const v=ch.val()||{};
-   if(v.game==='ashgrave'&&Number(v.chapter)===ci&&Date.now()-Number(v.lastSeen||0)<45000)
-    rooms.push({id:ch.key,data:v});
-  });
-  rooms.sort((x,y)=>(x.data.createdAt||0)-(y.data.createdAt||0));
-  for(const room of rooms){
-   phase='checking match '+room.id;
-   const roomRef=root.child(room.id);
-   const ms=await roomRef.child('members').once('value');
-   const members=ms.val()||{};
-   if(members[MP.user.uid]){
-    const ss=await roomRef.child('slots').once('value');
-    const own=Object.entries(ss.val()||{}).find(([,v])=>v&&v.uid===MP.user.uid);
-    if(own){chosen=room;chosenMembers=members;chosenSlot=Number(own[0]);chosenSlotRef=roomRef.child('slots/'+own[0]);break;}
+  if(forcedRoomId){
+   phase='opening private room match';
+   const roomSnap=await root.child(forcedRoomId).once('value'),roomData=roomSnap.val();
+   if(!roomData||roomData.game!=='ashgrave'||roomData.status!=='live')throw new Error('The host match is not available.');
+   if(Number(roomData.chapter)!==Number(ci)){ci=Number(roomData.chapter)||0;pickCh();menuUI()}
+   const roomRef=root.child(forcedRoomId),slots=(await roomRef.child('slots').once('value')).val()||{};
+   const own=Object.entries(slots).find(([,v])=>v&&v.uid===MP.user.uid);
+   if(own){chosenSlot=Number(own[0]);chosenSlotRef=roomRef.child('slots/'+own[0]);}
+   else{
+    for(let i=0;i<4;i++){
+     const sr=roomRef.child('slots/'+i);
+     const claim=await sr.transaction(current=>current===null?{uid:MP.user.uid,name:MP.playerName,joinedAt:Date.now()}:undefined,undefined,false);
+     if(claim.committed){chosenSlot=i;chosenSlotRef=sr;break;}
+    }
    }
-   const ss=await roomRef.child('slots').once('value');
-   const slots=ss.val()||{};
-   for(let i=0;i<4;i++){
-    if(slots[String(i)])continue;
-    phase='claiming player slot '+(i+1);
-    const sr=roomRef.child('slots/'+i);
-    const claim=await sr.transaction(current=>{
+   if(chosenSlot<0)throw new Error('This room is full (4/4).');
+   chosen={id:forcedRoomId,data:roomData};
+   chosenMembers=(await roomRef.child('members').once('value')).val()||{};
+  }else{
+   phase='finding live matches';
+   const snap=await root.orderByChild('status').equalTo('live').once('value');
+   const rooms=[];
+   snap.forEach(ch=>{
+    const v=ch.val()||{};
+    if(v.game==='ashgrave'&&Number(v.chapter)===ci&&Date.now()-Number(v.lastSeen||0)<45000)
+     rooms.push({id:ch.key,data:v});
+   });
+   rooms.sort((x,y)=>(x.data.createdAt||0)-(y.data.createdAt||0));
+   for(const room of rooms){
+    phase='checking match '+room.id;
+    const roomRef=root.child(room.id);
+    const ms=await roomRef.child('members').once('value');
+    const members=ms.val()||{};
+    if(members[MP.user.uid]){
+     const ss=await roomRef.child('slots').once('value');
+     const own=Object.entries(ss.val()||{}).find(([,v])=>v&&v.uid===MP.user.uid);
+     if(own){chosen=room;chosenMembers=members;chosenSlot=Number(own[0]);chosenSlotRef=roomRef.child('slots/'+own[0]);break;}
+    }
+    const ss=await roomRef.child('slots').once('value');
+    const slots=ss.val()||{};
+    for(let i=0;i<4;i++){
+     if(slots[String(i)])continue;
+     phase='claiming player slot '+(i+1);
+     const sr=roomRef.child('slots/'+i);
+     const claim=await sr.transaction(current=>{
+      if(current===null)return {uid:MP.user.uid,name:MP.playerName,joinedAt:Date.now()};
+      return;
+     },undefined,false);
+     if(claim.committed){chosen=room;chosenMembers=members;chosenSlot=i;chosenSlotRef=sr;break;}
+    }
+    if(chosen)break;
+   }
+   if(!chosen){
+    phase='creating a new match';
+    const ref=root.push();
+    await ref.set({game:'ashgrave',chapter:ci,hostUid:MP.user.uid,status:'live',createdAt:Date.now(),lastSeen:Date.now()});
+    chosen={id:ref.key,data:{hostUid:MP.user.uid}};
+    chosenMembers={};chosenSlot=0;chosenSlotRef=ref.child('slots/0');
+    phase='reserving host slot';
+    const claim=await chosenSlotRef.transaction(current=>{
      if(current===null)return {uid:MP.user.uid,name:MP.playerName,joinedAt:Date.now()};
      return;
     },undefined,false);
-    if(claim.committed){
-     chosen=room;chosenMembers=members;chosenSlot=i;chosenSlotRef=sr;break;
-    }
+    if(!claim.committed)throw new Error('Could not reserve a player slot. Please retry.');
    }
-   if(chosen)break;
   }
-  if(!chosen){
-   phase='creating a new match';
-   const ref=root.push();
-   await ref.set({game:'ashgrave',chapter:ci,hostUid:MP.user.uid,status:'live',createdAt:Date.now(),lastSeen:Date.now()});
-   chosen={id:ref.key,data:{hostUid:MP.user.uid}};
-   chosenMembers={};
-   chosenSlot=0;
-   chosenSlotRef=ref.child('slots/0');
-   phase='reserving host slot';
-   const claim=await chosenSlotRef.transaction(current=>{
-    if(current===null)return {uid:MP.user.uid,name:MP.playerName,joinedAt:Date.now()};
-    return;
-   },undefined,false);
-   if(!claim.committed)throw new Error('Could not reserve a player slot. Please retry.');
+se retry.');
   }
   MP.roomId=chosen.id;
   MP.roomRef=root.child(MP.roomId);
@@ -381,6 +409,121 @@ async function mpLeave(){
  if(MP.membersRef)MP.membersRef.off();if(MP.playersRef)MP.playersRef.off();
  MP.active=false;MP.pending=false;MP.isHost=false;MP.remote={};MP.visual={};MP.roomId=null;MP.roomRef=null;MP.slotRef=null;MP.playersRef=null;MP.membersRef=null;mpBadge();mpStatus('Up to 4 players · same chapter · microphone off');
 }
+/* ---------- Independent Ashgrave room-code parties ---------- */
+const ASH_ROOM={id:null,data:null,ref:null,off:null,beat:null,db:null,user:null,launching:false};
+function ashRoomStatus(t){const e=$('ashRoomStatus');if(e)e.textContent=t}
+function ashRoomName(v){return String(v||'Player').replace(/[<>\\u0000-\\u001f]/g,'').trim().slice(0,22)||'Player'}
+function ashRoomCode(){const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';return Array.from({length:8},()=>chars[Math.floor(Math.random()*chars.length)]).join('')}
+function ashRoomMembers(d){return Object.values(d&&d.members||{}).filter(Boolean)}
+function ashRoomEsc(v){return String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
+async function ashRoomRender(d){
+ const box=$('ashRoomCurrent');if(!box)return;
+ if(!d){box.innerHTML='';return}
+ const members=ashRoomMembers(d),hostUid=d.hostUid||'',host=members.find(m=>m.uid===hostUid),hostName=ashRoomName(host&&host.name||d.hostName||'Host'),isHost=hostUid===ASH_ROOM.user.uid;
+ const chapter=CH[Number(d.chapter)||0]?.n||'Chapter '+(Number(d.chapter)+1);
+ const roster=members.map(m=>'<div class="ash-room-member">'+ashRoomEsc(ashRoomName(m.name))+(m.uid===hostUid?'<span class="ash-room-host">★ HOST</span>':'')+'</div>').join('');
+ box.innerHTML='<div class="ash-room-card"><div class="ash-room-section">YOUR ROOM</div><h3>ROOM '+ashRoomEsc(d.roomCode||ASH_ROOM.id)+'</h3><div class="ash-room-meta"><span>CHAPTER: <b>'+ashRoomEsc(chapter)+'</b></span><span>HOST: <b>'+ashRoomEsc(hostName)+'</b></span><span>PLAYERS: <b>'+members.length+'/4</b></span></div><div class="ash-room-roster">'+roster+'</div><div class="ash-room-actions">'+(isHost?'<button id="ashRoomInvite" type="button">＋ Invite Friends</button><button id="ashRoomStart" type="button" '+(members.length<2?'disabled':'')+'>▶ START FOR EVERYONE</button>':'<span style="font-size:11px;color:#d5bd96">Waiting for host to start…</span>')+'<button id="ashRoomLeave" type="button">LEAVE ROOM</button></div><div id="ashRoomFriendList"></div></div>';
+ $('ashRoomStart')?.addEventListener('click',async e=>{const b=e.currentTarget;b.disabled=true;b.textContent='STARTING…';try{await ashRoomStart()}catch(err){ashRoomStatus('Start failed: '+(err.message||err));b.disabled=false;b.textContent='▶ START FOR EVERYONE'}});
+ $('ashRoomLeave')?.addEventListener('click',()=>ashRoomLeave().catch(e=>ashRoomStatus('Leave failed: '+e.message)));
+ $('ashRoomInvite')?.addEventListener('click',ashRoomInviteFriends);
+}
+async function ashRoomWatch(code){
+ if(ASH_ROOM.off&&ASH_ROOM.ref)ASH_ROOM.ref.off('value',ASH_ROOM.off);
+ ASH_ROOM.id=code;ASH_ROOM.launching=false;ASH_ROOM.ref=ASH_ROOM.db.ref('ashgrave/parties/'+code);
+ if(ASH_ROOM.beat)clearInterval(ASH_ROOM.beat);
+ ASH_ROOM.beat=setInterval(()=>{if(!ASH_ROOM.id||!ASH_ROOM.ref||!ASH_ROOM.user)return;const now=Date.now();ASH_ROOM.ref.update({updatedAt:now}).catch(()=>{});ASH_ROOM.ref.child('members/'+ASH_ROOM.user.uid+'/lastSeen').set(now).catch(()=>{})},25000);
+ ASH_ROOM.off=ASH_ROOM.ref.on('value',async snap=>{
+  if(!snap.exists()){ASH_ROOM.id=null;ASH_ROOM.data=null;ashRoomRender(null);ashRoomStatus('Room closed.');ashRoomRefresh().catch(()=>{});return}
+  const d=snap.val();ASH_ROOM.data=d;await ashRoomRender(d);
+  if(d.status==='started'&&d.matchId&&!ASH_ROOM.launching){ASH_ROOM.launching=true;ashRoomStatus('Host started the game. Connecting…');mpJoin(d.matchId).catch(e=>{ASH_ROOM.launching=false;ashRoomStatus('Could not connect: '+e.message)})}
+ },e=>ashRoomStatus('Room sync failed: '+(e.code||e.message)));
+}
+async function ashRoomCreate(){
+ await mpInit();ASH_ROOM.db=MP.db;ASH_ROOM.user=MP.user;
+ const name=ashRoomName(MP.playerName),chapter=ci,now=Date.now();let code=null;
+ for(let i=0;i<8&&!code;i++){
+  const candidate=ashRoomCode(),ref=ASH_ROOM.db.ref('ashgrave/parties/'+candidate);
+  const result=await ref.transaction(cur=>cur===null?{roomCode:candidate,gameSlug:'ashgrave',hostUid:MP.user.uid,hostName:name,chapter,status:'waiting',visibility:'public',maxPlayers:4,members:{[MP.user.uid]:{uid:MP.user.uid,name,joinedAt:now,lastSeen:now}},createdAt:now,updatedAt:now}:undefined);
+  if(result.committed)code=candidate;
+ }
+ if(!code)throw new Error('Could not create a unique room code. Try again.');
+ await ashRoomWatch(code);ashRoomStatus('Room created. Share code '+code+' with friends.');await ashRoomRefresh();
+}
+async function ashRoomJoin(code){
+ await mpInit();ASH_ROOM.db=MP.db;ASH_ROOM.user=MP.user;
+ code=String(code||'').trim().toUpperCase();
+ if(!/^[A-HJ-NP-Z2-9]{8}$/.test(code))throw new Error('Enter a valid 8-character room code.');
+ const ref=ASH_ROOM.db.ref('ashgrave/parties/'+code),snap=await ref.once('value');
+ if(!snap.exists())throw new Error('Room not found.');
+ const d=snap.val(),members=ashRoomMembers(d);
+ if(d.gameSlug!=='ashgrave')throw new Error('This code is not an Ashgrave room.');
+ if(d.status!=='waiting')throw new Error('This room has already started.');
+ if(!d.members||!d.members[MP.user.uid]){
+  if(members.length>=4)throw new Error('Room is full (4/4).');
+  const name=ashRoomName(MP.playerName),now=Date.now();
+  await ref.child('members/'+MP.user.uid).set({uid:MP.user.uid,name,joinedAt:now,lastSeen:now});
+ }
+ ci=Math.max(0,Math.min(CH.length-1,Number(d.chapter)||0));pickCh();menuUI();
+ await ashRoomWatch(code);ashRoomStatus('Joined room '+code+'. Wait for the host.');await ashRoomRefresh();
+}
+async function ashRoomStart(){
+ const d=ASH_ROOM.data,u=ASH_ROOM.user;
+ if(!d||!u||!ASH_ROOM.ref)throw new Error('Room data is not ready.');
+ if(d.hostUid!==u.uid)throw new Error('Only the host can start.');
+ const members=ashRoomMembers(d);
+ if(members.length<2)throw new Error('At least 2 players are required.');
+ if(d.status!=='waiting')throw new Error('This room has already started.');
+ ashRoomStatus('Creating shared Ashgrave match…');
+ const matchRef=ASH_ROOM.db.ref('ashgrave/matches').push(),matchId=matchRef.key;
+ await matchRef.set({game:'ashgrave',chapter:Number(d.chapter)||0,hostUid:u.uid,status:'live',createdAt:Date.now(),lastSeen:Date.now(),partyCode:d.roomCode,partyMode:true});
+ try{await ASH_ROOM.ref.update({matchId,status:'started',updatedAt:Date.now()})}
+ catch(e){try{await matchRef.remove()}catch(x){}throw e}
+ ashRoomStatus('Match ready. Connecting everyone…');
+}
+async function ashRoomInviteFriends(){
+ const box=$('ashRoomFriendList');if(!box)return;box.innerHTML='Loading friends…';
+ try{
+  if(!firebase.firestore)await mpLoadSdk('firebase-firestore-compat.js',()=>!!(window.firebase&&firebase.firestore));
+  const fs=firebase.firestore(),friends=await fs.collection('friendships').doc(ASH_ROOM.user.uid).collection('friends').get();
+  box.innerHTML=friends.empty?'<p class="ash-room-empty">No friends yet. Add friends on PlayHub first.</p>':'';
+  for(const f of friends.docs){
+   const profile=await fs.collection('users').doc(f.id).get(),name=profile.exists?'@'+(profile.data().username||'player'):'Player';
+   const row=document.createElement('div');row.className='ash-room-public';const label=document.createElement('b');label.textContent=name;const btn=document.createElement('button');btn.textContent='INVITE';btn.onclick=async()=>{btn.disabled=true;try{await ASH_ROOM.db.ref('ashgrave/partyInvites/'+f.id+'/'+ASH_ROOM.id).set({roomCode:ASH_ROOM.id,fromUid:ASH_ROOM.user.uid,fromName:ashRoomName(MP.playerName),createdAt:Date.now()});btn.textContent='SENT'}catch(e){btn.disabled=false;ashRoomStatus('Invite failed: '+e.message)}};row.append(label,btn);box.appendChild(row);
+  }
+ }catch(e){box.textContent='Could not load friends: '+e.message}
+}
+async function ashRoomLeave(){
+ if(!ASH_ROOM.id||!ASH_ROOM.ref||!ASH_ROOM.user)return;
+ const ref=ASH_ROOM.ref,uid=ASH_ROOM.user.uid,d=ASH_ROOM.data;
+ if(ASH_ROOM.beat)clearInterval(ASH_ROOM.beat);ASH_ROOM.beat=null;
+ if(d&&d.hostUid===uid)await ref.remove();else await ref.child('members/'+uid).remove();
+ if(ASH_ROOM.off)ref.off('value',ASH_ROOM.off);
+ ASH_ROOM.id=null;ASH_ROOM.data=null;ASH_ROOM.ref=null;ASH_ROOM.off=null;ASH_ROOM.launching=false;
+ ashRoomRender(null);ashRoomStatus('You left the room.');ashRoomRefresh();
+}
+async function ashRoomRefresh(){
+ try{
+  await mpInit();ASH_ROOM.db=MP.db;ASH_ROOM.user=MP.user;
+  const [roomsSnap,invSnap]=await Promise.all([ASH_ROOM.db.ref('ashgrave/parties').once('value'),ASH_ROOM.db.ref('ashgrave/partyInvites/'+MP.user.uid).once('value')]);
+  const now=Date.now(),rooms=[],all=roomsSnap.val()||{};
+  for(const [code,d] of Object.entries(all)){
+   if(!d||d.gameSlug!=='ashgrave')continue;
+   const members=ashRoomMembers(d),fresh=members.some(m=>now-Number(m.lastSeen||m.joinedAt||0)<1800000),recent=now-Number(d.updatedAt||d.createdAt||0)<1800000;
+   if(!fresh&&!recent){ASH_ROOM.db.ref('ashgrave/parties/'+code).remove().catch(()=>{});continue}
+   if(d.visibility==='public'&&d.status==='waiting'&&members.length<4)rooms.push(d);
+  }
+  const invites=Object.values(invSnap.val()||{}).filter(Boolean),list=$('ashRoomPublic');if(!list)return;
+  list.innerHTML=(invites.length?'<div class="ash-room-section">ROOM INVITES</div>':'')+invites.map(i=>'<div class="ash-room-public"><div><b>'+ashRoomEsc(ashRoomName(i.fromName))+' invited you</b><small>Room '+ashRoomEsc(i.roomCode)+'</small></div><button data-ash-invite="'+ashRoomEsc(i.roomCode)+'">ACCEPT</button></div>').join('')+(rooms.length?'<div class="ash-room-section">PUBLIC ASHGRAVE ROOMS</div>':'')+rooms.map(d=>{const m=ashRoomMembers(d),host=m.find(x=>x.uid===d.hostUid);return '<div class="ash-room-public"><div><b>'+ashRoomEsc(d.roomCode)+' · '+m.length+'/4</b><small>'+ashRoomEsc(CH[Number(d.chapter)||0]?.n||'Ashgrave')+' · HOST: '+ashRoomEsc(ashRoomName(host&&host.name||d.hostName))+'</small></div><button data-ash-join="'+ashRoomEsc(d.roomCode)+'">JOIN</button></div>'}).join('')+(!invites.length&&!rooms.length?'<div class="ash-room-empty">No public Ashgrave rooms found.</div>':'');
+  list.querySelectorAll('[data-ash-join]').forEach(b=>b.onclick=()=>ashRoomJoin(b.dataset.ashJoin).catch(e=>ashRoomStatus(e.message)));
+  list.querySelectorAll('[data-ash-invite]').forEach(b=>b.onclick=async()=>{try{await ashRoomJoin(b.dataset.ashInvite);await ASH_ROOM.db.ref('ashgrave/partyInvites/'+MP.user.uid+'/'+b.dataset.ashInvite).remove()}catch(e){ashRoomStatus(e.message)}});
+ }catch(e){ashRoomStatus('Room list failed: '+(e.code||e.message))}
+}
+$('ashRoomOpen').onclick=()=>{$('ashRoomPanel').hidden=false;ashRoomRefresh()};
+$('ashRoomClose').onclick=()=>{$('ashRoomPanel').hidden=true};
+$('ashRoomCreate').onclick=async e=>{e.currentTarget.disabled=true;try{await ashRoomCreate()}catch(err){ashRoomStatus('Create failed: '+(err.code||err.message))}finally{e.currentTarget.disabled=false}};
+$('ashRoomJoin').onclick=async e=>{const b=e.currentTarget;b.disabled=true;try{await ashRoomJoin($('ashRoomCodeInput').value)}catch(err){ashRoomStatus('Join failed: '+(err.code||err.message))}finally{b.disabled=false}};
+$('ashRoomCodeInput').addEventListener('input',e=>{e.target.value=e.target.value.toUpperCase().replace(/[^A-HJ-NP-Z2-9]/g,'').slice(0,8)});
+
 $('mp').onclick=()=>{ac();mpJoin()};
 
 $('mn').onclick=()=>{mpLeave();$('over').hidden=true;$('menu').hidden=false;mode='menu';G=null;menuUI()};
