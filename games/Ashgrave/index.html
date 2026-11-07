@@ -39,6 +39,44 @@ button:focus-visible{outline:2px solid var(--amb);outline-offset:3px}
 .pad{position:absolute;bottom:20px;width:84px;height:84px;border-radius:50%;padding:0;font-size:.85rem;background:rgba(27,13,16,.8)}
 #bH{right:22px}#bD{right:118px;width:68px;height:68px;bottom:28px}
 #flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none}
+
+/* Compact interface pass */
+body{font-size:13px;line-height:1.38}
+.ov{gap:8px;padding:10px}
+h1{font-size:clamp(1.8rem,8vw,3.5rem);letter-spacing:.11em}
+h2{font-size:1.25rem}
+p{max-width:42ch}
+.mut{font-size:.76rem}
+button{padding:.48em .88em;font-size:.88em}
+#story p{font-size:1rem;min-height:4em;max-width:34ch}
+.cards{gap:7px}
+.cards button{width:min(132px,42vw);padding:.58em;text-align:left}
+.cards span{font-size:.72rem}
+#hud{top:7px;left:8px;right:8px;gap:7px}
+.bars{width:min(29vw,145px);gap:4px}
+.bar{height:7px}
+#clock{font-size:1.05rem}
+#clock small{font-size:.62rem}
+#hr{font-size:.7rem}
+#hr button{font-size:.72rem!important;padding:.22em .42em!important}
+#sub{bottom:15%;max-width:min(84vw,440px);padding:6px 10px;font-size:.82rem}
+.pad{bottom:14px;width:66px;height:66px;font-size:.76rem}
+#bH{right:14px}
+#bD{right:88px;width:54px;height:54px;bottom:20px}
+@media(max-width:600px){
+ .ov{gap:7px;padding:9px 8px;justify-content:safe center}
+ h1{font-size:clamp(1.7rem,9vw,2.7rem)}
+ #menu>p:nth-of-type(2){max-width:32ch;font-size:.84rem}
+ #menu>p:last-of-type{font-size:.66rem;max-width:46ch}
+ #chs button,#shop button{width:min(124px,43vw)}
+ #hud{align-items:flex-start}
+ .bars{width:27vw;max-width:112px}
+ #clock{font-size:.92rem}
+ #hr{max-width:42vw}
+ #bH{right:10px;bottom:12px;width:62px;height:62px}
+ #bD{right:80px;bottom:18px;width:50px;height:50px}
+}
+
 </style></head>
 <body>
 <div id="st">
