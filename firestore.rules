@@ -137,6 +137,20 @@ service cloud.firestore {
       allow delete: if signedIn() && resource.data.leaderUid == request.auth.uid;
     }
 
+
+      match /voiceMembers/{uid} {
+        allow read: if signedIn() && request.auth.uid in get(/databases/$(database)/documents/partyRooms/$(roomId)).data.memberUids;
+        allow create, update: if signedIn() && request.auth.uid == uid && request.auth.uid in get(/databases/$(database)/documents/partyRooms/$(roomId)).data.memberUids && request.resource.data.uid == uid && request.resource.data.active == true;
+        allow delete: if signedIn() && request.auth.uid == uid;
+      }
+      match /voiceSignals/{signalId} {
+        function partyMember() { return signedIn() && request.auth.uid in get(/databases/$(database)/documents/partyRooms/$(roomId)).data.memberUids; }
+        allow read: if partyMember();
+        allow create: if partyMember() && request.resource.data.fromUid == request.auth.uid && request.resource.data.toUid is string && request.resource.data.toUid != request.auth.uid && request.resource.data.kind in ['offer', 'candidate'];
+        allow update: if partyMember() && resource.data.toUid == request.auth.uid && resource.data.kind == 'offer' && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['answerSdp', 'answeredAt']);
+        allow delete: if partyMember() && (resource.data.fromUid == request.auth.uid || resource.data.toUid == request.auth.uid);
+      }
+
     match /partyInvites/{inviteId} {
       allow read: if signedIn() &&
         (resource.data.toUid == request.auth.uid || resource.data.fromUid == request.auth.uid);
