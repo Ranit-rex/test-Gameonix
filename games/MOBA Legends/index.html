@@ -95,7 +95,7 @@ const enemy=world.minions.filter(x=>x.team!==m.team&&x.lane===m.lane).sort((a,b)
 const tower=world.towers.filter(x=>x.team!==m.team&&x.hp>0&&Math.abs(x.y-m.y)<90).sort((a,b)=>dist(a,m)-dist(b,m))[0];
 const target=enemy&&dist(enemy,m)<38?enemy:(tower&&dist(tower,m)<75?tower:null);
 if(target){if(now-m.attackAt>900){target.hp-=target===tower?42:26;m.attackAt=now}}
-else{m.x+=(m.team===0?1:-1)*m.speed*dt}
+else{m.x+=(m.team===0?1:-1)*m.speed*dt;const enemySide=m.team===0?m.x>900:m.x<300;if(enemySide)m.y+=(400-m.y)*Math.min(1,dt*.65)}
 });
 world.towers.forEach(t=>{if(t.hp<=0)return;const targets=[...world.minions.filter(m=>m.team!==t.team&&Math.abs(m.y-t.y)<90),...world.heroes.filter(h=>h.team!==t.team&&h.alive&&Math.abs(h.y-t.y)<90)].filter(x=>dist(x,t)<205).sort((a,b)=>dist(a,t)-dist(b,t));if(targets.length&&now-(t.attackAt||0)>1050){targets[0].hp-=targets[0].maxHp?95:75;t.attackAt=now}});
 world.minions=world.minions.filter(m=>m.hp>0&&m.x>25&&m.x<W-25);
