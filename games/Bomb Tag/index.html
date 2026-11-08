@@ -32,30 +32,38 @@ for(const b of st.players.filter(x=>x.bot&&x.hp)){
   const others=st.players.filter(x=>x.hp&&x.uid!==b.uid);
   let target=null, flee=false, speed=0;
   if(b.uid===st.bombHolder){
-    // Bomb carrier bots deliberately hunt the nearest opponent to pass the bomb.
-    target=others.sort((a,c)=>dist(b,a)-dist(b,c))[0]; speed=190;
+    // A carrier bot prioritizes passing the bomb to the human, not another bot.
+    target=others.find(x=>!x.bot)||others.sort((a,c)=>dist(b,a)-dist(b,c))[0];
+    speed=205;
   }else if(holder&&holder.uid!==b.uid){
-    // Non-carriers create space from the carrier instead of forming a helpless pile.
-    target=holder; flee=true; speed=165;
+    // Every non-carrier bot actively escapes the bomb holder.
+    target=holder; flee=true;
+    speed=dist(b,holder)<155?225:190;
   }else{
     target=p; speed=125;
   }
   if(target){
     let vx=target.x-b.x,vy=target.y-b.y,d=Math.hypot(vx,vy)||1;
     let nx=vx/d*(flee?-1:1),ny=vy/d*(flee?-1:1);
-    // Add wall avoidance and a little orbiting so bots don't get trapped in corners.
+    // Keep bots separated so they don't crowd around the bomb or each other.
+    for(const other of st.players){
+      if(!other.hp||other.uid===b.uid||!other.bot)continue;
+      const sx=b.x-other.x,sy=b.y-other.y,sd=Math.hypot(sx,sy);
+      if(sd>0&&sd<76){const push=(76-sd)/76;nx+=sx/sd*push*1.8;ny+=sy/sd*push*1.8;}
+    }
+    // Wall avoidance keeps escape routes open near arena edges.
     const margin=95,wallX=b.x<margin?1:b.x>W-margin?-1:0,wallY=b.y<margin?1:b.y>H-margin?-1:0;
-    nx+=wallX*.9;ny+=wallY*.9;
+    nx+=wallX*1.2;ny+=wallY*1.2;
     const nn=Math.hypot(nx,ny)||1;
     b.x=clamp(b.x+nx/nn*speed*dt,28,W-28);b.y=clamp(b.y+ny/nn*speed*dt,28,H-28);
   }
-  // Bots try to pass at close range, with a small cooldown after every pass.
 }
 if(holder&&holder.hp){
   const candidates=st.players.filter(other=>other.hp&&other.uid!==holder.uid);
-  const nearest=candidates.sort((a,b)=>dist(holder,a)-dist(holder,b))[0];
-  if(nearest&&dist(holder,nearest)<48&&Date.now()>(st.passCooldown||0)){
-    passBomb(holder,nearest);st.passCooldown=Date.now()+850;
+  // When an AI has the bomb, hand it to the human whenever possible.
+  const target=holder.bot?(candidates.find(x=>!x.bot)||candidates.sort((a,b)=>dist(holder,a)-dist(holder,b))[0]):candidates.sort((a,b)=>dist(holder,a)-dist(holder,b))[0];
+  if(target&&dist(holder,target)<48&&Date.now()>(st.passCooldown||0)){
+    passBomb(holder,target);st.passCooldown=Date.now()+850;
   }
 }
 if(Date.now()>=st.fuseEndsAt&&holder)eliminate(holder.uid)}
