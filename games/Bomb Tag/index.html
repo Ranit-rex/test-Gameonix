@@ -34,8 +34,7 @@ for(const b of st.players.filter(x=>x.bot&&x.hp)){
   if(b.uid===st.bombHolder){
     // Carrier bots choose from every living opponent; rotate targets so the human isn't always selected.
     if(!b.aiTargetUid||Date.now()>(b.aiRetargetAt||0)||!others.some(x=>x.uid===b.aiTargetUid)){
-      const pool=others.slice().sort((a,c)=>dist(b,a)-dist(b,c)).slice(0,Math.min(4,others.length));
-      const choice=pool[Math.floor(Math.random()*pool.length)];
+      const choice=others[Math.floor(Math.random()*others.length)];
       b.aiTargetUid=choice?.uid||null;b.aiRetargetAt=Date.now()+1800+Math.random()*1200;
     }
     target=others.find(x=>x.uid===b.aiTargetUid)||others[Math.floor(Math.random()*others.length)];
