@@ -24,25 +24,45 @@ function code(){const a='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';return Array.from({le
 function rnd(seed){let x=seed>>>0;return()=>{x=(x*1664525+1013904223)>>>0;return x/4294967296}}
 function difficultyFor(level){return level<5?{name:"EASY",target:9+level}:level<10?{name:"NORMAL",target:14+(level-5)}:level<15?{name:"HARD",target:18+(level-10)}:level<20?{name:"VERY HARD",target:21+(level-15)}:{name:"EXTREME",target:24+(level-20)}}
 function makeBoard(level,seed){
- const R=rnd(seed||Date.now()),path=[0,1,2,3,4,9,14,19,24];
- const target=Math.min(25,difficultyFor(level).target);
- while(path.length<target){
-  const used=new Set(path),choices=[];
-  for(let i=0;i<path.length-1;i++){
-   const a=path[i],b=path[i+1],ax=a%5,ay=a/5|0,bx=b%5,by=b/5|0;
-   const horizontal=ay===by;
-   for(const side of [-1,1]){
-    const w=horizontal?a+side*5:a+side,z=horizontal?b+side*5:b+side;
-    if(w<0||w>=25||z<0||z>=25)continue;
-    if(horizontal&&((ay+side)<0||(ay+side)>4))continue;
-    if(!horizontal&&((ax+side)<0||(ax+side)>4))continue;
-    if(!used.has(w)&&!used.has(z))choices.push({i,w,z});
-   }
+ const R=rnd(seed||Date.now()),cfg=difficultyFor(level);
+ // Build a fresh randomized route for every chamber instead of reusing one fixed backbone.
+ function buildRoute(wanted){
+  let budget=18000,path=[0],used=new Set([0]);
+  function walk(at){
+   if(--budget<=0)return false;
+   if(at===24)return path.length===wanted;
+   const left=wanted-path.length,ax=at%5,ay=at/5|0,dist=(4-ax)+(4-ay);
+   if(dist>left-1||((left-1-dist)&1))return false;
+   const options=[at-5,at+1,at+5,at-1].filter(n=>{
+    if(n<0||n>=25||used.has(n))return false;
+    const x=n%5,y=n/5|0;
+    if(Math.abs(x-ax)+Math.abs(y-ay)!==1)return false;
+    if(n===24&&path.length+1!==wanted)return false;
+    return true;
+   });
+   for(let i=options.length-1;i>0;i--){const j=R()*(i+1)|0;[options[i],options[j]]=[options[j],options[i]]}
+   for(const n of options){used.add(n);path.push(n);if(walk(n))return true;path.pop();used.delete(n)}
+   return false;
   }
-  if(!choices.length)break;
-  const c=choices[R()*choices.length|0];path.splice(c.i+1,0,c.w,c.z);
+  return walk(0)?path.slice():null;
  }
- if(path.length<target)path.splice(0,path.length,...[0,5,10,15,20,21,16,11,6,1,2,7,12,17,22,23,18,13,8,3,4,9,14,19,24]);
+ let path=null,target=cfg.target;
+ // Retry with nearby route lengths if the randomized search hits a dead end.
+ for(let attempt=0;attempt<7&&!path;attempt++){
+  const wanted=Math.max(9,Math.min(25,target-(attempt%3)));
+  path=buildRoute(wanted);
+ }
+ // Guaranteed connected fallback, with randomized choice of a valid serpentine route.
+ if(!path){
+  const routes=[
+   [0,1,2,3,4,9,14,19,24],
+   [0,5,10,15,20,21,22,23,24],
+   [0,5,6,7,8,13,18,23,24],
+   [0,1,6,11,16,21,22,23,24],
+   [0,5,10,11,12,13,14,19,24]
+  ];
+  path=routes[R()*routes.length|0];
+ }
  const con=Array.from({length:25},()=>({type:'elbow',rot:R()*4|0,source:false,goal:false}));
  const dir=(a,b)=>{const dx=b%5-a%5,dy=(b/5|0)-(a/5|0);return dy===-1?0:dx===1?1:dy===1?2:3};
  const used=new Set(path);
@@ -51,7 +71,7 @@ function makeBoard(level,seed){
   const type=edges.length===1?'end':(edges[0]%2===edges[1]%2?'straight':'elbow');
   let base=edges[0];
   if(type==='straight')base=edges.includes(0)||edges.includes(2)?0:1;
-  if(type==='elbow'){base=[0,1,2,3].find(v=>edges.includes(v)&&edges.includes((v+1)%4))??edges[0];}
+  if(type==='elbow')base=[0,1,2,3].find(v=>edges.includes(v)&&edges.includes((v+1)%4))??edges[0];
   con[p]={type,rot:(base+(R()*4|0))%4,source:i===0,goal:i===path.length-1};
  });
  for(let i=0;i<25;i++)if(!used.has(i))con[i]={type:['end','straight','elbow'][R()*3|0],rot:R()*4|0,source:false,goal:false};
