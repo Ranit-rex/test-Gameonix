@@ -14,7 +14,7 @@
 <script>
 (()=>{'use strict';
 const $=id=>document.getElementById(id),CFG={apiKey:'AIzaSyB_pZ9WfVSx2XHuDeSZ7VrwEr-Pz_m_2QM',authDomain:'play-hub-688e8.firebaseapp.com',databaseURL:'https://play-hub-688e8-default-rtdb.asia-southeast1.firebasedatabase.app',projectId:'play-hub-688e8',storageBucket:'play-hub-688e8.firebasestorage.app',messagingSenderId:'195222206861',appId:'1:195222206861:web:828a8cf16991f982a925c4'};
-const state={mode:'solo',level:0,board:[],moves:0,started:0,seconds:0,won:false,room:null,roomData:null,uid:null,name:'Player',db:null,auth:null,roomRef:null,matchRef:null,roomOff:null,matchOff:null,timer:null,host:false,changing:false,seed:0};
+const state={mode:'solo',level:0,board:[],moves:0,started:0,seconds:0,won:false,advanceTimer:null,room:null,roomData:null,uid:null,name:'Player',db:null,auth:null,roomRef:null,matchRef:null,roomOff:null,matchOff:null,timer:null,host:false,changing:false,seed:0};
 const esc=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function screen(id){document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active'));$(id).classList.add('active')}
 function hidePartyUI(){const modal=$('partyModal');if(modal){modal.classList.remove('show');modal.classList.add('auto-closed');modal.style.setProperty('display','none','important');modal.setAttribute('aria-hidden','true')}const lobby=$('lobby');if(lobby)lobby.classList.add('hidden')}
@@ -24,15 +24,17 @@ function code(){const a='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';return Array.from({le
 function rnd(seed){let x=seed>>>0;return()=>{x=(x*1664525+1013904223)>>>0;return x/4294967296}}
 function difficultyFor(level){return level<5?{name:"EASY",target:9+level}:level<10?{name:"NORMAL",target:14+(level-5)}:level<15?{name:"HARD",target:18+(level-10)}:level<20?{name:"VERY HARD",target:21+(level-15)}:{name:"EXTREME",target:24+(level-20)}}
 function makeBoard(level,seed){
- const R=rnd(seed||Date.now()),cfg=difficultyFor(level);
- let wanted=Math.max(9,Math.min(25,Math.round(cfg.target)));
- if(wanted%2===0)wanted=Math.min(25,wanted+1);
+ const R=rnd((seed^((Math.random()*0xffffffff)>>>0))>>>0);
+ const minLen=level<5?9:level<10?11:level<15?15:level<20?19:21;
+ const maxLen=level<5?13:level<10?17:level<15?21:level<20?23:25;
+ const lengths=[];for(let n=minLen;n<=maxLen;n++)if(n%2===1)lengths.push(n);
+ for(let i=lengths.length-1;i>0;i--){const j=R()*(i+1)|0;[lengths[i],lengths[j]]=[lengths[j],lengths[i]]}
  function buildRoute(length){
-  let budget=120000,path=[0],used=new Set([0]);
+  let budget=350000,path=[0],used=new Set([0]);
   function walk(at){
    if(--budget<=0)return false;
    if(at===24)return path.length===length;
-   const remaining=length-path.length,x=at%5,y=at/5|0,dist=(4-x)+(4-y);
+   const remaining=length-path.length,x=at%5,y=at/5|0,dist=4-x+4-y;
    if(dist>remaining||((remaining-dist)&1))return false;
    const opts=[at-5,at+1,at+5,at-1].filter(n=>{
     if(n<0||n>=25||used.has(n))return false;
@@ -46,9 +48,20 @@ function makeBoard(level,seed){
   return walk(0)?path.slice():null;
  }
  let path=null;
- const lengths=[wanted,wanted-2,wanted+2,wanted-4,wanted+4,9,11,13,15,17,19,21,23,25].filter((v,i,a)=>v>=9&&v<=25&&a.indexOf(v)===i);
  for(const length of lengths){path=buildRoute(length);if(path)break}
- if(!path){const variants=[[0,1,2,3,4,9,14,19,24],[0,5,10,15,20,21,22,23,24],[0,5,6,7,8,13,18,23,24],[0,1,6,11,16,21,22,23,24],[0,5,10,11,12,13,14,19,24]];path=variants[R()*variants.length|0].slice()}
+ if(!path){
+  const variants=[
+   [0,5,10,15,20,21,16,11,6,1,2,3,4,9,14,19,24],
+   [0,1,2,7,12,17,22,21,20,15,10,5,6,11,16,17,18,19,24],
+   [0,5,6,7,8,13,12,11,16,21,22,23,18,19,24],
+   [0,1,6,11,10,15,20,21,22,17,12,13,14,19,24],
+   [0,5,10,11,12,7,2,3,8,13,18,23,24],
+   [0,1,2,3,8,7,6,11,16,17,18,19,24],
+   [0,5,6,7,12,17,16,15,20,21,22,23,24],
+   [0,1,6,7,8,13,18,17,16,21,22,23,24]
+  ];
+  path=variants[R()*variants.length|0].slice();
+ }
  const con=Array.from({length:25},()=>({type:'elbow',rot:R()*4|0,source:false,goal:false}));
  const dir=(a,b)=>{const dx=b%5-a%5,dy=(b/5|0)-(a/5|0);return dy===-1?0:dx===1?1:dy===1?2:3};
  const used=new Set(path);
@@ -58,9 +71,14 @@ function makeBoard(level,seed){
   let base=edges[0];
   if(type==='straight')base=edges.includes(0)||edges.includes(2)?0:1;
   if(type==='elbow')base=[0,1,2,3].find(v=>edges.includes(v)&&edges.includes((v+1)%4))??edges[0];
-  con[p]={type,rot:(base+(R()*4|0))%4,source:i===0,goal:i===path.length-1};
+  con[p]={type,rot:base,source:i===0,goal:i===path.length-1};
  });
  for(let i=0;i<25;i++)if(!used.has(i))con[i]={type:['end','straight','elbow'][R()*3|0],rot:R()*4|0,source:false,goal:false};
+ for(let attempt=0;attempt<8;attempt++){
+  path.forEach(p=>{const t=con[p];t.rot=(t.rot+1+(R()*3|0))%4});
+  if(!reachable(con).has(24))break;
+ }
+ if(reachable(con).has(24)){const p=path[Math.max(0,(R()*(path.length-1)|0))];con[p].rot=(con[p].rot+1)%4}
  return con;
 }
 function ports(t){let p=t.type==='end'?[0]:t.type==='straight'?[0,2]:[0,1];return p.map(v=>(v+t.rot)%4)}
@@ -68,8 +86,15 @@ function reachable(board){let seen=new Set([0]),q=[0];while(q.length){let i=q.sh
 function svg(t,powered){let ps=ports(t),lines=ps.map(d=>{let x=50+([0,50,0,-50][d]),y=50+([-50,0,50,0][d]);return '<path d="M50 50 L'+x+' '+y+'" stroke="'+(powered?'#8af4ff':'#7995b9')+'" stroke-width="13" stroke-linecap="round"/>'}).join('');return '<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="13" fill="'+(powered?'#b6fbff':'#4d6688')+'"/>'+lines+'</svg>'}
 function render(){let on=reachable(state.board);$('board').innerHTML=state.board.map((t,i)=>'<button class="tile '+(on.has(i)?'powered ':'')+(t.source?'source ':'')+(t.goal?'goal':'')+'" data-i="'+i+'" aria-label="Rotate conduit '+(i+1)+'">'+svg(t,on.has(i))+'</button>').join('');$('moves').textContent=state.moves;$('power').textContent=Math.round(on.size/25*100)+'%';const n=state.level+1,diff=difficultyFor(state.level).name;$('levelTitle').textContent='CHAMBER '+String(n).padStart(2,'0')+' · '+diff;$('progress').textContent=(state.level+1)+' / 25';$('progressBar').style.width=((state.level+1)/25*100)+'%';$('board').querySelectorAll('.tile').forEach(b=>{b.disabled=state.mode==='multi'&&state.turnUid!==state.uid;b.onclick=()=>rotate(+b.dataset.i)});renderTurn();if(on.has(24)&&!state.won)win()}
 function rotate(i){if(state.won||state.changing)return;if(state.mode==='multi'&&state.matchRef){if(state.turnUid!==state.uid){status('Wait for your turn.');return}state.changing=true;state.matchRef.transaction(current=>{if(!current||current.solved||current.turnUid!==state.uid)return;const order=Array.isArray(current.turnOrder)&&current.turnOrder.length?current.turnOrder:[state.uid];const idx=Math.max(0,order.indexOf(state.uid));const next=(idx+1)%order.length;const board=(current.board||[]).map(t=>({...t}));if(!board[i])return;board[i].rot=(Number(board[i].rot||0)+1)%4;return {...current,board,moves:(Number(current.moves)||0)+1,turnIndex:next,turnUid:order[next]}}).then(result=>{state.changing=false;if(!result?.committed&&state.turnUid===state.uid)status('Move was not accepted. Please wait for the board to sync.')}).catch(e=>{state.changing=false;status('Move sync failed: '+e.message)});return}state.board[i].rot=(state.board[i].rot+1)%4;state.moves++;render()}
-function win(synced=false){state.won=true;$('winToast').classList.remove('hidden');const canAdvance=state.mode==='solo'||state.host;const next=state.level<24?(canAdvance?'<button class="btn gold" id="nextLevel">NEXT CHAMBER →</button>':'<span class="muted">WAITING FOR THE HOST TO START THE NEXT CHAMBER…</span>'):'<b> YOU ESCAPED THE RIFT!</b>';$('winToast').innerHTML='✦ CIRCUIT RESTORED! <b>Chamber '+(state.level+1)+' cleared.</b> '+next;if(state.mode==='solo'){const unlocked=Math.max(Number(localStorage.getItem('riftboundUnlocked')||1),state.level+2);localStorage.setItem('riftboundUnlocked',String(Math.min(25,unlocked)));renderLevelPicker();$('nextLevel')?.addEventListener('click',()=>newLevel())}else if(state.host&&state.matchRef)$('nextLevel')?.addEventListener('click',()=>newLevel());if(state.mode==='multi'&&state.matchRef&&!synced)state.matchRef.child('solved').set(true)}
-function newLevel(){if(state.level>=24){$('winToast').textContent='VAULT COMPLETE — YOU ESCAPED THE RIFT!';return}state.level++;state.seed=(state.seed+9713)>>>0;state.board=makeBoard(state.level,state.seed);state.moves=0;state.won=false;$('winToast').classList.add('hidden');state.started=Date.now();if(state.mode==='multi'&&state.matchRef){const order=Object.keys(state.roomData?.members||{});const turnOrder=order.length?order:[state.uid];state.matchRef.update({level:state.level,board:state.board,moves:0,solved:false,startedAt:Date.now(),turnOrder,turnIndex:0,turnUid:turnOrder[0]}).catch(e=>status('Next chamber sync denied: '+e.message));return}render()}
+function win(synced=false){
+ state.won=true;$('winToast').classList.remove('hidden');
+ const final=state.level>=24,canAdvance=state.mode==='solo'||state.host;
+ $('winToast').innerHTML='✦ CIRCUIT RESTORED! <b>Chamber '+(state.level+1)+' cleared.</b> '+(final?'<b>YOU ESCAPED THE RIFT!</b>':canAdvance?'<span class="muted">Next chamber loading automatically…</span>':'<span class="muted">Waiting for host to load next chamber…</span>');
+ if(state.mode==='solo'){const unlocked=Math.max(Number(localStorage.getItem('riftboundUnlocked')||1),state.level+2);localStorage.setItem('riftboundUnlocked',String(Math.min(25,unlocked)));renderLevelPicker()}
+ if(state.mode==='multi'&&state.matchRef&&!synced)state.matchRef.child('solved').set(true);
+ if(!final&&canAdvance&&!state.advanceTimer)state.advanceTimer=setTimeout(()=>{state.advanceTimer=null;if(state.won)newLevel()},1800);
+}
+function newLevel(){if(state.advanceTimer){clearTimeout(state.advanceTimer);state.advanceTimer=null}if(state.level>=24){$('winToast').textContent='VAULT COMPLETE — YOU ESCAPED THE RIFT!';return}state.level++;state.seed=(Math.random()*0xffffffff)>>>0;state.board=makeBoard(state.level,state.seed);state.moves=0;state.won=false;$('winToast').classList.add('hidden');state.started=Date.now();if(state.mode==='multi'&&state.matchRef){const order=Object.keys(state.roomData?.members||{});const turnOrder=order.length?order:[state.uid];state.matchRef.update({level:state.level,board:state.board,moves:0,solved:false,startedAt:Date.now(),turnOrder,turnIndex:0,turnUid:turnOrder[0]}).catch(e=>status('Next chamber sync denied: '+e.message));return}render()}
 function renderLevelPicker(){const box=$('levelPicker');if(!box)return;const unlocked=Math.max(1,Math.min(25,Number(localStorage.getItem('riftboundUnlocked')||1)));box.innerHTML=Array.from({length:25},(_,i)=>'<button class="btn '+(i+1<=unlocked?'primary':'')+'" style="padding:9px 4px;font-size:11px" '+(i+1>unlocked?'disabled':'data-level="'+i+'"')+'>'+String(i+1).padStart(2,'0')+(i+1>unlocked?' 🔒':'')+'</button>').join('');box.querySelectorAll('[data-level]').forEach(b=>b.onclick=()=>{startSolo(Number(b.dataset.level));timer()})}
 function startSolo(level=0){cleanupMatch();state.mode='solo';state.level=Math.max(0,Math.min(24,Number(level)||0));state.seed=Date.now()>>>0;state.board=makeBoard(state.level,state.seed);state.moves=0;state.won=false;state.started=Date.now();$('modeLabel').innerHTML='SOLO RUN<br><span class="muted">Practice at your own pace.</span>';$('players').innerHTML='<div class="player"><b>You</b><span>Solo explorer</span></div>';$('winToast').classList.add('hidden');screen('game');render()}
 function timer(){clearInterval(state.timer);state.timer=setInterval(()=>{if(!state.started)return;let n=Math.floor((Date.now()-state.started)/1000);$('timer').textContent=String(n/60|0).padStart(2,'0')+':'+String(n%60).padStart(2,'0')},500)}
@@ -92,7 +117,7 @@ function partyRoot(){return window.PlayoviaMultiplayer.rooms(state.db)}
 async function createRoom(){await firebaseReady();const made=await PlayoviaMultiplayer.createRoom({db:state.db,uid:state.uid,name:state.name,gameId:'riftbound',mode:'coop',gameTitle:'Riftbound',maxPlayers:4});await watchRoom(made.roomId);status('Room created! Share the code with your squad.')}
 async function joinRoom(c){await firebaseReady();const joined=await PlayoviaMultiplayer.joinRoom({db:state.db,uid:state.uid,name:state.name,gameId:'riftbound',code:c});await watchRoom(joined.roomId);status('Joined room '+joined.roomId+'. Wait for the host to start.')}
 async function watchRoom(c){cleanupRoom();state.room=c;state.roomRef=PlayoviaMultiplayer.room(state.db,c);state.roomOff=state.roomRef.on('value',snap=>{let d=snap.val();if(!d){status('Room closed.');cleanupRoom();return}state.roomData=d;state.host=d.hostUid===state.uid;$('roomCode').textContent=c;$('startMatch').classList.toggle('hidden',!state.host);$('hostNote').textContent=state.host?'You are host · choose when everyone is ready.':'Waiting for host to start the puzzle…';$('roomMembers').innerHTML=Object.values(d.members||{}).map(m=>'<span class="member">'+esc(m.name)+(m.uid===d.hostUid?' ★':'')+'</span>').join('');if(d.status==='playing'&&d.matchId){hidePartyUI();connectMatch(d.matchId)}else if(d.status==='waiting'){$('lobby').classList.remove('hidden');refreshRooms()}})}
-async function startMatch(){if(!state.host||!state.roomRef)throw Error('Only the room host can start the puzzle.');const seed=Date.now()>>>0,board=makeBoard(0,seed),turnOrder=Object.keys(state.roomData?.members||{});if(!turnOrder.length)turnOrder.push(state.uid);try{await PlayoviaMultiplayer.startMatch({db:state.db,roomRef:state.roomRef,uid:state.uid,gameId:'riftbound',state:{level:0,board,moves:0,solved:false,seed,startedAt:Date.now(),turnOrder,turnIndex:0,turnUid:turnOrder[0]}});status('Vault opened! Turns will alternate between players.')}catch(e){throw Error('Start failed ('+(e.code||'error')+'): '+e.message)}}
+async function startMatch(){if(!state.host||!state.roomRef)throw Error('Only the room host can start the puzzle.');const seed=(Math.random()*0xffffffff)>>>0,board=makeBoard(0,seed),turnOrder=Object.keys(state.roomData?.members||{});if(!turnOrder.length)turnOrder.push(state.uid);try{await PlayoviaMultiplayer.startMatch({db:state.db,roomRef:state.roomRef,uid:state.uid,gameId:'riftbound',state:{level:0,board,moves:0,solved:false,seed,startedAt:Date.now(),turnOrder,turnIndex:0,turnUid:turnOrder[0]}});status('Vault opened! Turns will alternate between players.')}catch(e){throw Error('Start failed ('+(e.code||'error')+'): '+e.message)}}
 function connectMatch(id){if(state.matchId===id)return;state.matchId=id;hidePartyUI();if(state.matchOff&&state.matchRootRef)state.matchRootRef.off('value',state.matchOff);state.matchRootRef=PlayoviaMultiplayer.match(state.db,id);state.matchRef=state.matchRootRef.child('state');state.matchOff=state.matchRootRef.on('value',snap=>{let d=snap.val()?.state;if(!d)return;hidePartyUI();state.mode='multi';state.level=Number(d.level)||0;state.board=d.board||[];state.moves=Number(d.moves)||0;state.won=!!d.solved;state.seed=d.seed||0;state.started=d.startedAt||Date.now();state.turnOrder=Array.isArray(d.turnOrder)&&d.turnOrder.length?d.turnOrder:Object.keys(state.roomData?.members||{});state.turnUid=d.turnUid||state.turnOrder[Number(d.turnIndex)||0]||state.uid;$('modeLabel').innerHTML='MULTIPLAYER CO-OP<br><span class="muted">One shared board · all moves sync live.</span>';setPlayers(state.roomData||{});screen('game');if(state.won)$('winToast').classList.remove('hidden');else $('winToast').classList.add('hidden');render();if(d.solved)win(true)})}
 async function refreshRooms(){if(!state.db)return;let box=$('publicRooms');try{const arr=await PlayoviaMultiplayer.listRooms({db:state.db,gameId:'riftbound'});box.innerHTML=arr.length?arr.map(d=>'<div class="room"><strong>'+esc(d.roomId)+'</strong><small>'+esc(d.hostName)+' · '+Object.keys(d.members||{}).length+'/'+(d.maxPlayers||4)+' players</small><button data-join="'+esc(d.roomId)+'">JOIN ROOM</button></div>').join(''):'<div class="muted">No public rooms yet. Create one and invite your squad.</div>';box.querySelectorAll('[data-join]').forEach(b=>b.onclick=()=>joinRoom(b.dataset.join).catch(e=>status(e.message)))}catch(e){box.innerHTML='<div class="muted">Could not load public rooms: '+esc(e.message)+'</div>'}}
 function cleanupRoom(){if(state.roomRef&&state.roomOff)state.roomRef.off('value',state.roomOff);state.roomRef=null;state.roomOff=null;state.room=null;state.roomData=null;state.matchId=null;$('lobby').classList.add('hidden')}
