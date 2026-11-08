@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675">
+<defs>
+ <linearGradient id="night" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#080914"/><stop offset=".52" stop-color="#241333"/><stop offset="1" stop-color="#05070e"/></linearGradient>
+ <radialGradient id="moon"><stop stop-color="#fff0bd" stop-opacity=".95"/><stop offset="1" stop-color="#e4a94b" stop-opacity="0"/></radialGradient>
+ <linearGradient id="coat" x2="0" y2="1"><stop stop-color="#ffd45b"/><stop offset="1" stop-color="#a85b12"/></linearGradient>
+ <linearGradient id="fog" x2="0" y2="1"><stop stop-color="#9d6ab8" stop-opacity="0"/><stop offset="1" stop-color="#9d6ab8" stop-opacity=".35"/></linearGradient>
+ <filter id="soft"><feGaussianBlur stdDeviation="28"/></filter>
+ <filter id="shadow"><feGaussianBlur stdDeviation="12"/></filter>
+</defs>
+<rect width="1200" height="675" fill="url(#night)"/>
+<circle cx="890" cy="235" r="240" fill="url(#moon)"/>
+<circle cx="890" cy="235" r="115" fill="#f8dca0" opacity=".1"/>
+<path d="M0 360L110 280 190 350 290 245 390 350 490 265 600 360 710 250 820 355 930 255 1040 355 1140 280 1200 330V675H0Z" fill="#0b0a15"/>
+<path d="M0 470L120 420 220 460 330 390 455 460 570 400 690 465 820 390 930 460 1060 410 1200 465V675H0Z" fill="#11101c"/>
+<g fill="#090a12" stroke="#493353" stroke-width="8">
+ <path d="M65 475V185H300V475Z"/><path d="M40 190L180 90 325 190Z"/><path d="M100 240h55v95h-55zm105 0h55v95h-55z"/>
+ <path d="M920 470V165h205V470Z"/><path d="M895 170L1020 75 1150 170Z"/><path d="M960 220h48v100h-48zm85 0h48v100h-48z"/>
+</g>
+<g stroke="#c18bdf" stroke-width="5" opacity=".35"><path d="M180 90V30M1020 75V15M0 530H1200"/></g>
+<path d="M0 510Q250 455 430 515T820 510T1200 495V675H0Z" fill="url(#fog)"/>
+<g transform="translate(330 405)" opacity=".9"><path d="M0 130Q-75 35 -35 -45Q0 -130 55 -45Q95 35 35 130L18 105 0 130Z" fill="#d9d9e8"/><ellipse cx="0" cy="15" rx="29" ry="39" fill="#090711"/><ellipse cx="-12" cy="10" rx="7" ry="11" fill="#ff263d"/><ellipse cx="13" cy="10" rx="7" ry="11" fill="#ff263d"/></g>
+<g transform="translate(475 440) scale(.58)" opacity=".75"><path d="M0 130Q-75 35 -35 -45Q0 -130 55 -45Q95 35 35 130L18 105 0 130Z" fill="#b7b6cb"/><ellipse cx="0" cy="15" rx="29" ry="39" fill="#090711"/><circle cx="-12" cy="10" r="8" fill="#ff263d"/><circle cx="13" cy="10" r="8" fill="#ff263d"/></g>
+<ellipse cx="740" cy="620" rx="145" ry="25" fill="#000" opacity=".7" filter="url(#shadow)"/>
+<!-- lone survivor in the yellow coat -->
+<path d="M655 385Q675 310 755 315Q835 320 855 395L885 590Q765 645 625 590Z" fill="url(#coat)" stroke="#5b350e" stroke-width="9"/>
+<path d="M660 392Q755 355 850 395L840 435Q750 410 650 438Z" fill="#9e1730"/>
+<path d="M690 325Q680 255 760 250Q835 255 825 335L800 375H705Z" fill="#d9a783"/>
+<path d="M675 330Q660 245 760 215Q860 235 840 335L812 320Q755 275 695 335Z" fill="#e8ad27" stroke="#75470d" stroke-width="9"/>
+<ellipse cx="730" cy="330" rx="8" ry="12" fill="#171018"/><ellipse cx="785" cy="330" rx="8" ry="12" fill="#171018"/>
+<path d="M825 430Q880 420 900 455L965 478L948 510L860 485Z" fill="#d6a078" stroke="#271b19" stroke-width="13"/>
+<rect x="930" y="464" width="75" height="35" rx="10" fill="#282833" stroke="#080910" stroke-width="7"/>
+<path d="M1000 480L1170 430L1170 540L1000 492Z" fill="#ffe7a0" opacity=".32"/>
+<path d="M690 580L675 650H735L760 590M800 590L815 650H870L845 580" fill="#17131b"/>
+<g fill="#ff263d"><circle cx="1080" cy="235" r="7"/><circle cx="1110" cy="235" r="7"/><circle cx="130" cy="290" r="6"/><circle cx="155" cy="290" r="6"/></g>
+<text x="62" y="112" fill="#fff" font-family="Impact,Arial Black,sans-serif" font-size="94" letter-spacing="6">ASH<tspan fill="#ed263d">GRAVE</tspan></text>
+<text x="70" y="157" fill="#e5d9eb" font-family="Arial,sans-serif" font-size="22" font-weight="bold" letter-spacing="7">THE ASYLUM IS STILL AWAKE</text>
+<text x="70" y="635" fill="#cbb9d9" font-family="monospace" font-size="17" letter-spacing="4">1962 · NO WAY OUT</text>
+</svg>
