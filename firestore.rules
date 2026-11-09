@@ -21,7 +21,6 @@ service cloud.firestore {
         (isAdmin() && request.resource.data.diff(resource.data).affectedKeys()
           .hasOnly(['banned', 'banReason', 'bannedAt', 'bannedBy', 'currencyBalance', 'updatedAt']));
       allow delete: if isAdmin();
-      allow delete: if false;
     }
 
     match /usernames/{username} {
