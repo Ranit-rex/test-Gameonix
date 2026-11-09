@@ -34,4 +34,4 @@ jobs:
         run: npm install --global firebase-tools
 
       - name: Deploy Firebase Cloud Functions
-        run: firebase deploy --only functions --project play-hub-688e --non-interactive
+        run: firebase deploy --only functions --project play-hub-688e8 --non-interactive
