@@ -91,7 +91,10 @@
   function heartbeat(roomRef, uid) {
     if (!roomRef || !uid) return Promise.resolve();
     const now = Date.now();
-    return roomRef.update({ ['members/' + uid + '/lastSeen']: now, updatedAt: now });
+    return Promise.all([
+      roomRef.child('members/' + uid + '/lastSeen').set(now),
+      roomRef.child('updatedAt').set(now)
+    ]);
   }
 
   global.PlayoviaMultiplayer = Object.freeze({
