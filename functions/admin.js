@@ -82,6 +82,25 @@ exports.adminAdjustCurrency = onCall({ region: "asia-south1" }, async req => {
   });
   return { success:true, ...balances };
 });
+exports.adminSaveGame = onCall({ region: "asia-south1" }, async req => {
+  const a = admin(req), slug = String(req.data?.slug || "").trim();
+  const title = String(req.data?.title || "").trim().slice(0,120);
+  const description = String(req.data?.description || "").trim().slice(0,500);
+  const category = String(req.data?.category || "Games").trim().slice(0,60);
+  const enabled = req.data?.enabled !== false;
+  if (!/^[a-zA-Z0-9_-]{1,80}$/.test(slug) || !title)
+    throw new HttpsError("invalid-argument", "Choose a valid existing game and provide a title.");
+  await db.collection("games").doc(slug).set({ slug, title, description, category, enabled,
+    updatedAt:FieldValue.serverTimestamp(), updatedBy:a.uid }, { merge:true });
+  return { success:true };
+});
+exports.adminDeleteGameOverride = onCall({ region: "asia-south1" }, async req => {
+  admin(req);
+  const slug = String(req.data?.slug || "");
+  if (!/^[a-zA-Z0-9_-]{1,80}$/.test(slug)) throw new HttpsError("invalid-argument", "Invalid game slug.");
+  await db.collection("games").doc(slug).delete();
+  return { success:true };
+});
 exports.adminListReports = onCall({ region: "asia-south1" }, async req => {
   admin(req);
   const s = await db.collection("reports").orderBy("createdAt","desc").limit(100).get().catch(() => null);
