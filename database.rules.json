@@ -161,7 +161,7 @@
         ],
         "$roomCode": {
           ".read": "auth != null",
-          ".write": "auth != null && ((!data.exists() && newData.child('hostUid').val() === auth.uid && newData.child('roomId').val() === $roomCode) || (data.exists() && data.child('hostUid').val() === auth.uid))",
+          ".write": "auth != null && ((!data.exists() && newData.child('hostUid').val() === auth.uid && newData.child('roomId').val() === $roomCode) || (data.exists() && data.child('hostUid').val() === auth.uid) || (!newData.exists() && data.exists() && data.child('updatedAt').isNumber() && data.child('updatedAt').val() < now - 3600000))",
           ".validate": "newData.hasChildren(['roomId','gameId','mode','hostUid','hostName','members','status','visibility','maxPlayers','createdAt','updatedAt']) && newData.child('roomId').val() === $roomCode && newData.child('gameId').isString() && newData.child('gameId').val().length <= 48 && newData.child('mode').isString() && newData.child('mode').val().length <= 32 && newData.child('hostUid').isString() && newData.child('hostName').isString() && newData.child('hostName').val().length <= 32 && (newData.child('status').val() === 'waiting' || newData.child('status').val() === 'playing' || newData.child('status').val() === 'closed') && (newData.child('visibility').val() === 'public' || newData.child('visibility').val() === 'private') && newData.child('maxPlayers').isNumber() && newData.child('maxPlayers').val() >= 2 && newData.child('maxPlayers').val() <= 16 && newData.child('createdAt').isNumber() && newData.child('updatedAt').isNumber() && newData.child('members').child(newData.child('hostUid').val()).exists()",
           "members": {
             ".read": "auth != null",
@@ -182,7 +182,7 @@
       "matches": {
         "$matchId": {
           ".read": "auth != null && root.child('multiplayer/rooms').child(data.child('roomCode').val()).child('members').child(auth.uid).exists()",
-          ".write": "auth != null && ((!data.exists() && newData.child('hostUid').val() === auth.uid && root.child('multiplayer/rooms').child(newData.child('roomCode').val()).child('hostUid').val() === auth.uid) || (data.exists() && data.child('hostUid').val() === auth.uid))",
+          ".write": "auth != null && ((!data.exists() && newData.child('hostUid').val() === auth.uid && root.child('multiplayer/rooms').child(newData.child('roomCode').val()).child('hostUid').val() === auth.uid) || (data.exists() && data.child('hostUid').val() === auth.uid) || (!newData.exists() && data.exists() && (!root.child('multiplayer/rooms').child(data.child('roomCode').val()).exists() || (root.child('multiplayer/rooms').child(data.child('roomCode').val()).child('updatedAt').isNumber() && root.child('multiplayer/rooms').child(data.child('roomCode').val()).child('updatedAt').val() < now - 3600000))))",
           ".validate": "newData.hasChildren(['gameId','hostUid','roomCode','createdAt','state']) && newData.child('gameId').isString() && newData.child('gameId').val().length <= 48 && newData.child('hostUid').isString() && newData.child('roomCode').isString() && newData.child('createdAt').isNumber()",
           "state": {
             ".read": "auth != null && root.child('multiplayer/rooms').child(root.child('multiplayer/matches').child($matchId).child('roomCode').val()).child('members').child(auth.uid).exists()",
