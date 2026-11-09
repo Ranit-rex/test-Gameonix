@@ -14,6 +14,11 @@ function admin(req) {
     throw new HttpsError("permission-denied", "Admin access required.");
   return a;
 }
+exports.checkAccountStatus = onCall({ region: "asia-south1" }, async req => {
+  const auth = signedIn(req);
+  const snap = await db.collection("users").doc(auth.uid).get();
+  return { banned: snap.exists && snap.data().banned === true };
+});
 exports.bootstrapAdmin = onCall({ region: "asia-south1" }, async req => {
   const a = signedIn(req), email = String(a.token.email || "").toLowerCase();
   if (!approved.has(email) || a.token.email_verified !== true)
