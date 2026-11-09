@@ -4,8 +4,8 @@
   const el=id=>document.getElementById(id);
   const safe=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   function call(name,data={}){if(!functionsApi)throw new Error("Admin functions are still connecting.");return functionsApi.httpsCallable(name)(data).then(x=>x.data)}
-  function showAdmin(){currentAdmin=true;window.playHubAdminEnabled=true;el("adminNav")?.classList.remove("hidden");}
-  function hideAdmin(){currentAdmin=false;window.playHubAdminEnabled=false;el("adminNav")?.classList.add("hidden");if(location.hash==="#admin")location.hash="";}
+  function showAdmin(){currentAdmin=true;window.playHubAdminEnabled=true;el("adminNav")?.classList.remove("hidden");el("adminHomeCard")?.classList.remove("hidden");}
+  function hideAdmin(){currentAdmin=false;window.playHubAdminEnabled=false;el("adminNav")?.classList.add("hidden");el("adminHomeCard")?.classList.add("hidden");if(location.hash==="#admin")location.hash="";}
   async function init(user){
     hideAdmin();
     if(!user)return;
