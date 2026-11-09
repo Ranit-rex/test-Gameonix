@@ -3,7 +3,7 @@ const { getDatabase } = require("firebase-admin/database");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
 
 initializeApp({
-  databaseURL: "https://play-hub-688e-default-rtdb.asia-southeast1.firebasedatabase.app"
+  databaseURL: "https://play-hub-688e8-default-rtdb.asia-southeast1.firebasedatabase.app"
 });
 
 Object.assign(exports, require("./admin"));
