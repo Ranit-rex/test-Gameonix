@@ -8,9 +8,10 @@
   function hideAdmin(){currentAdmin=false;window.playHubAdminEnabled=false;el("adminNav")?.classList.add("hidden");if(location.hash==="#admin")location.hash="";}
   async function init(user){
     hideAdmin();
-    if(!user||!approved.includes(String(user.email||"").toLowerCase()))return;
+    if(!user)return;
     try{
       functionsApi=firebase.app().functions("asia-south1");
+      if(!approved.includes(String(user.email||"").toLowerCase()))return;
       try{await call("bootstrapAdmin");await user.getIdToken(true)}catch(e){console.warn("Admin claim bootstrap:",e.message);return}
       const token=await user.getIdTokenResult(true);
       if(token.claims.admin===true){showAdmin();if(window.setPage&&document.getElementById("adminPage")?.classList.contains("active"))load()}
@@ -55,4 +56,5 @@
   });
   el("adminAnnouncementForm")?.addEventListener("submit",async e=>{e.preventDefault();try{await call("adminManageAnnouncement",{title:el("announcementTitle").value,body:el("announcementBody").value,active:true});el("adminAnnouncementForm").reset();await announcements();panelMessage("Announcement published.")}catch(x){panelMessage(x.message,true)}});
   window.initializePlayHubAdmin=init;window.loadPlayHubAdmin=load;
+  window.checkPlayHubAccount=async user=>{functionsApi=firebase.app().functions('asia-south1');return call('checkAccountStatus')};
 })();
