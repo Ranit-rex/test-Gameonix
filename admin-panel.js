@@ -12,9 +12,16 @@
     try{
       functionsApi=firebase.app().functions("asia-south1");
       if(!approved.includes(String(user.email||"").toLowerCase()))return;
-      try{await call("bootstrapAdmin");await user.getIdToken(true)}catch(e){console.warn("Admin claim bootstrap:",e.message);return}
-      const token=await user.getIdTokenResult(true);
-      if(token.claims.admin===true){showAdmin();if(window.setPage&&document.getElementById("adminPage")?.classList.contains("active"))load()}
+      // Reveal the entry point only for the two allow-listed Google accounts.
+      // Backend callable functions still enforce the verified admin custom claim.
+      showAdmin();
+      try{
+        await call("bootstrapAdmin");
+        await user.getIdToken(true);
+        const token=await user.getIdTokenResult(true);
+        if(token.claims.admin!==true)throw new Error("Admin claim was not issued.");
+        if(window.setPage&&document.getElementById("adminPage")?.classList.contains("active"))load();
+      }catch(e){console.warn("Admin claim bootstrap:",e.message);panelMessage("Admin button is enabled, but admin services need deployment/claim setup: "+e.message,true)}
     }catch(e){console.warn("Admin initialization:",e.message)}
   }
   function panelMessage(msg,error=false){const n=el("adminStatus");if(n){n.textContent=msg;n.className="status "+(error?"error":"ok")}}
