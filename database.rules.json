@@ -172,6 +172,10 @@
           },
           "$field": {
             ".write": "auth != null && auth.uid === root.child('multiplayer/rooms').child($roomCode).child('hostUid').val()"
+          },
+          "updatedAt": {
+            ".write": "auth != null && root.child('multiplayer/rooms').child($roomCode).child('members').child(auth.uid).exists()",
+            ".validate": "newData.isNumber()"
           }
         }
       },
