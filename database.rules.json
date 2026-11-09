@@ -155,7 +155,10 @@
     "multiplayer": {
       "rooms": {
         ".read": "auth != null",
-        ".indexOn": ["gameId"],
+        ".indexOn": [
+          "gameId",
+          "updatedAt"
+        ],
         "$roomCode": {
           ".read": "auth != null",
           ".write": "auth != null && ((!data.exists() && newData.child('hostUid').val() === auth.uid && newData.child('roomId').val() === $roomCode) || (data.exists() && data.child('hostUid').val() === auth.uid))",
