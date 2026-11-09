@@ -65,7 +65,7 @@ exports.adminSetUserBan = onCall({ region: "asia-south1" }, async req => {
 exports.adminAdjustCurrency = onCall({ region: "asia-south1" }, async req => {
   const a = admin(req), uid = String(req.data?.uid || ""), amount = Number(req.data?.amount);
   const operation = req.data?.operation, reason = String(req.data?.reason || "").trim().slice(0,500);
-  if (!uid || !Number.isSafeInteger(amount) || amount <= 0 ||
+  if (!uid || !Number.isSafeInteger(amount) || amount < 0 || (operation !== "set" && amount === 0) ||
       !["add","remove","set"].includes(operation) || !reason)
     throw new HttpsError("invalid-argument", "User, positive whole amount, operation and reason required.");
   const userRef = db.collection("users").doc(uid), logRef = db.collection("currencyTransactions").doc();
