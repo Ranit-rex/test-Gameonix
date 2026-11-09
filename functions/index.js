@@ -2,11 +2,11 @@ const { initializeApp } = require("firebase-admin/app");
 const { getDatabase } = require("firebase-admin/database");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
 
-Object.assign(exports, require("./admin"));
-
 initializeApp({
   databaseURL: "https://play-hub-688e-default-rtdb.asia-southeast1.firebasedatabase.app"
 });
+
+Object.assign(exports, require("./admin"));
 
 // Runs every 15 minutes. A room is considered inactive after 30 minutes
 // without any member heartbeat. Active players refresh room.updatedAt.
