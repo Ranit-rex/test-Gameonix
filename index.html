@@ -225,8 +225,34 @@ async function refreshPublicParties(){if(!currentUser||!db)return;const box=$('p
 function watchFriendPresence(uid){if(presenceUnsubs[uid])presenceUnsubs[uid]();presenceUnsubs[uid]=db.collection('presence').doc(uid).onSnapshot(s=>{const el=$('playing-'+uid);if(!el)return;const d=s.exists?s.data():{},fresh=d.playingGame&&d.playingAt&&Date.now()-((d.playingAt.toMillis&&d.playingAt.toMillis())||0)<10*60*1000;el.textContent=fresh?'▶ Playing '+(d.playingGame||'a game'):''},()=>{})}
 async function setPlayingPresence(title,slug){if(!currentUser||!db)return;try{await db.collection('presence').doc(currentUser.uid).set({uid:currentUser.uid,playingGame:title||slug||'a game',playingAt:stamp(),updatedAt:stamp()},{merge:true})}catch(e){console.warn('Presence update:',e)}}
 async function clearPlayingPresence(){if(!currentUser||!db)return;try{await db.collection('presence').doc(currentUser.uid).set({uid:currentUser.uid,playingGame:null,playingAt:null,updatedAt:stamp()},{merge:true})}catch(e){console.warn('Presence clear:',e)}}
-let gameHistoryPushed=false;
-function launchGame(url,title,slug){try{history.pushState({playoviaGameOpen:true},'',location.href);gameHistoryPushed=true}catch(_){}setPlayingPresence(title,slug);if(slug){rememberGame(slug);const plays=readPlays();plays[slug]=(plays[slug]||0)+1;try{localStorage.setItem(userStoreKey('plays'),JSON.stringify(plays))}catch(_){}renderGames(allGames)}$('playingTitle').textContent=title;$('gameFrame').src=url;$('gameOverlay').classList.remove('hidden');document.body.style.overflow='hidden'}function closeGame(fromHistory=false){if($('gameOverlay').classList.contains('hidden'))return;clearPlayingPresence();$('gameOverlay').classList.add('hidden');document.body.style.overflow='';$('playingTitle').textContent='Playing';const frame=$('gameFrame');frame.src='about:blank';if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});if(gameHistoryPushed){gameHistoryPushed=false;if(!fromHistory){try{history.back()}catch(_){}}}}
+let gameHistoryPushed=false,activeGameSessionRef=null,activeGameSessionStartedAt=0,activeGameSessionWrite=Promise.resolve(),gameSessionHeartbeatTimer=null;
+function startGameSession(title,slug){
+  finishGameSession();
+  if(!currentUser||!db||!slug)return;
+  const ref=db.collection('gameSessions').doc(),started=Date.now();
+  activeGameSessionRef=ref;activeGameSessionStartedAt=started;
+  activeGameSessionWrite=ref.set({uid:currentUser.uid,gameSlug:String(slug),gameTitle:String(title||slug),startedAt:stamp(),lastHeartbeat:stamp(),updatedAt:stamp(),durationSeconds:0,status:'playing'});
+  activeGameSessionWrite.catch(e=>console.warn('Game analytics start failed:',e));
+  setPlayingPresence(title,slug);
+  if(gameSessionHeartbeatTimer)clearInterval(gameSessionHeartbeatTimer);
+  gameSessionHeartbeatTimer=setInterval(()=>{
+    if(activeGameSessionRef!==ref)return;
+    const elapsed=Math.max(0,Math.floor((Date.now()-started)/1000));
+    ref.update({lastHeartbeat:stamp(),updatedAt:stamp(),durationSeconds:elapsed}).catch(e=>console.warn('Game analytics heartbeat failed:',e));
+    setPlayingPresence(title,slug);
+  },30000);
+}
+function finishGameSession(){
+  const ref=activeGameSessionRef,started=activeGameSessionStartedAt,ready=activeGameSessionWrite;
+  activeGameSessionRef=null;activeGameSessionStartedAt=0;
+  if(gameSessionHeartbeatTimer){clearInterval(gameSessionHeartbeatTimer);gameSessionHeartbeatTimer=null}
+  if(!ref)return;
+  const elapsed=Math.max(0,Math.floor((Date.now()-started)/1000));
+  ready.then(()=>ref.update({lastHeartbeat:stamp(),updatedAt:stamp(),endedAt:stamp(),durationSeconds:elapsed,status:'completed'})).catch(e=>console.warn('Game analytics finish failed:',e));
+}
+function launchGame(url,title,slug){try{history.pushState({playoviaGameOpen:true},'',location.href);gameHistoryPushed=true}catch(_){}if(slug){startGameSession(title,slug);rememberGame(slug);const plays=readPlays();plays[slug]=(plays[slug]||0)+1;try{localStorage.setItem(userStoreKey('plays'),JSON.stringify(plays))}catch(_){}renderGames(allGames)}else setPlayingPresence(title,slug);$('playingTitle').textContent=title;$('gameFrame').src=url;$('gameOverlay').classList.remove('hidden');document.body.style.overflow='hidden'}
+function closeGame(fromHistory=false){if($('gameOverlay').classList.contains('hidden'))return;finishGameSession();clearPlayingPresence();$('gameOverlay').classList.add('hidden');document.body.style.overflow='';$('playingTitle').textContent='Playing';const frame=$('gameFrame');frame.src='about:blank';if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});if(gameHistoryPushed){gameHistoryPushed=false;if(!fromHistory){try{history.back()}catch(_){}}}}
+window.addEventListener('pagehide',()=>{if(!$('gameOverlay').classList.contains('hidden')){finishGameSession();clearPlayingPresence()}});
 $('gameFrame').addEventListener('load',()=>{if($('gameOverlay').classList.contains('hidden'))return;try{const frameUrl=new URL($('gameFrame').contentWindow.location.href),hubUrl=new URL('./',location.href);if(frameUrl.origin===location.origin){const frameDoc=$('gameFrame').contentDocument;const isHubPath=frameUrl.pathname===hubUrl.pathname||frameUrl.pathname===hubUrl.pathname+'index.html'||frameUrl.pathname.endsWith('/index.html')&&!!frameDoc?.querySelector('#playhubApp');if(isHubPath)closeGame()}}catch(_){}});window.addEventListener('popstate',()=>{if(!$('gameOverlay').classList.contains('hidden'))closeGame(true);else gameHistoryPushed=false});$('closeGameBtn').addEventListener('click',closeGame);$('fullscreenBtn').addEventListener('click',async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await $('gameFrame').requestFullscreen()}catch(e){status('Fullscreen unavailable: '+e.message,'error')}});document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('gameOverlay').classList.contains('hidden'))closeGame()});
 firebaseInitPromise=initFirebase();
 </script>
