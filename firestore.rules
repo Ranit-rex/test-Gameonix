@@ -18,7 +18,7 @@ service cloud.firestore {
       allow read: if signedIn();
       allow create: if owner(uid) && !('currencyBalance' in request.resource.data) && !('banned' in request.resource.data);
       allow update: if (owner(uid) && request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['displayName', 'photoURL', 'email', 'username', 'playerId', 'bio', 'updatedAt'])) ||
+          .hasOnly(['displayName', 'photoURL', 'username', 'playerId', 'bio', 'updatedAt'])) ||
         (isAdmin() && request.resource.data.diff(resource.data).affectedKeys()
           .hasOnly(['banned', 'banReason', 'bannedAt', 'bannedBy', 'currencyBalance', 'updatedAt']));
       allow delete: if isAdmin();
