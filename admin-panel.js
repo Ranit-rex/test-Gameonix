@@ -34,6 +34,22 @@
     const snap=await firebase.firestore().collection("announcements").orderBy("createdAt","desc").limit(50).get();
     el("adminAnnouncements").innerHTML=snap.empty?'<div class="empty">No announcements yet.</div>':snap.docs.map(d=>{const a=d.data();return '<div class="row"><div style="flex:1"><strong>'+safe(a.title)+'</strong><p class="muted">'+safe(a.body)+'</p></div><button class="logout" data-delete-announcement="'+safe(d.id)+'">Delete</button></div>'}).join("");
   }
+  async function games(){
+    const base=window.getPlayHubGames?.()||[];
+    const snap=await firebase.firestore().collection("games").get();
+    const overrides={};snap.forEach(d=>overrides[d.id]=d.data());
+    const select=el("adminGameSlug");
+    select.innerHTML=base.length?base.map(g=>'<option value="'+safe(g.slug)+'">'+safe(g.title)+' ('+safe(g.slug)+')</option>').join(""):'<option value="">No game folders found</option>';
+    function fill(){
+      const slug=select.value,g=base.find(x=>x.slug===slug)||{},o=overrides[slug]||{};
+      el("adminGameTitle").value=o.title||g.title||"";
+      el("adminGameCategory").value=o.category||g.category||"Games";
+      el("adminGameDescription").value=o.description||g.description||"";
+      el("adminGameEnabled").checked=o.enabled!==false;
+    }
+    select.onchange=fill;fill();
+    el("adminGameList").innerHTML=base.map(g=>'<div class="row"><span>'+safe(g.title)+'</span><span class="muted">'+(overrides[g.slug]?.enabled===false?'Hidden':'Visible')+'</span></div>').join("");
+  }
   async function load(){
     if(!currentAdmin)return;
     panelMessage("Loading admin data…");
@@ -47,6 +63,7 @@
     if(tab==="users")users().catch(e=>panelMessage(e.message,true));
     if(tab==="reports")reports().catch(e=>panelMessage(e.message,true));
     if(tab==="announcements")announcements().catch(e=>panelMessage(e.message,true));
+    if(tab==="games")games().catch(e=>panelMessage(e.message,true));
   }
   document.addEventListener("click",async e=>{
     const tab=e.target.closest("[data-admin-tab]");if(tab){switchTab(tab.dataset.adminTab);return}
@@ -54,6 +71,8 @@
     const cur=e.target.closest("[data-currency]");if(cur){const op=prompt("Action: add, remove, or set","add");if(!["add","remove","set"].includes(op))return;const amount=Number(prompt("Whole-number amount"));const reason=prompt("Reason for this adjustment");if(!Number.isSafeInteger(amount)||amount<=0||!reason)return;try{const result=await call("adminAdjustCurrency",{uid:cur.dataset.currency,operation:op,amount,reason});panelMessage("Balance updated: "+result.previousBalance+" → "+result.newBalance);await users()}catch(x){panelMessage(x.message,true)}return}
     const del=e.target.closest("[data-delete-announcement]");if(del){if(!confirm("Delete this announcement?"))return;try{await call("adminDeleteAnnouncement",{id:del.dataset.deleteAnnouncement});await announcements();panelMessage("Announcement deleted.")}catch(x){panelMessage(x.message,true)}}
   });
+  el("adminGameForm")?.addEventListener("submit",async e=>{e.preventDefault();try{await call("adminSaveGame",{slug:el("adminGameSlug").value,title:el("adminGameTitle").value,category:el("adminGameCategory").value,description:el("adminGameDescription").value,enabled:el("adminGameEnabled").checked});panelMessage("Game settings saved. Refresh the public catalogue to see the changes.");await games()}catch(x){panelMessage(x.message,true)}});
+  el("adminGameReset")?.addEventListener("click",async()=>{const slug=el("adminGameSlug").value;if(!slug)return;try{await call("adminDeleteGameOverride",{slug});panelMessage("Game override reset.");await games()}catch(x){panelMessage(x.message,true)}});
   el("adminAnnouncementForm")?.addEventListener("submit",async e=>{e.preventDefault();try{await call("adminManageAnnouncement",{title:el("announcementTitle").value,body:el("announcementBody").value,active:true});el("adminAnnouncementForm").reset();await announcements();panelMessage("Announcement published.")}catch(x){panelMessage(x.message,true)}});
   window.initializePlayHubAdmin=init;window.loadPlayHubAdmin=load;
   window.checkPlayHubAccount=async user=>{functionsApi=firebase.app().functions('asia-south1');return call('checkAccountStatus')};
