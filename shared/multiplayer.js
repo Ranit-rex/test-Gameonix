@@ -52,7 +52,7 @@
 
   async function listRooms({ db, gameId, maxAgeMs = 1800000 }) {
     if (!db || !gameId) return [];
-    const snap = await rooms(db).once('value'), found = [], now = Date.now();
+    const snap = await rooms(db).orderByChild('gameId').equalTo(String(gameId)).once('value'), found = [], now = Date.now();
     snap.forEach(child => {
       const data = child.val() || {}, members = data.members || {};
       const count = Object.keys(members).length;
