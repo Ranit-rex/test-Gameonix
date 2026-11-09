@@ -181,6 +181,34 @@ service cloud.firestore {
       allow delete: if owner(uid);
     }
 
+    match /gameSessions/{sessionId} {
+      allow read: if isAdmin() || (signedIn() && resource.data.uid == request.auth.uid);
+      allow create: if signedIn() &&
+        request.resource.data.uid == request.auth.uid &&
+        request.resource.data.gameSlug is string &&
+        request.resource.data.gameTitle is string &&
+        request.resource.data.startedAt == request.time &&
+        request.resource.data.lastHeartbeat == request.time &&
+        request.resource.data.updatedAt == request.time &&
+        request.resource.data.durationSeconds == 0 &&
+        request.resource.data.status == 'playing' &&
+        request.resource.data.keys().hasOnly(['uid', 'gameSlug', 'gameTitle', 'startedAt', 'lastHeartbeat', 'updatedAt', 'durationSeconds', 'status']);
+      allow update: if signedIn() &&
+        resource.data.uid == request.auth.uid &&
+        request.resource.data.uid == resource.data.uid &&
+        request.resource.data.gameSlug == resource.data.gameSlug &&
+        request.resource.data.gameTitle == resource.data.gameTitle &&
+        request.resource.data.startedAt == resource.data.startedAt &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastHeartbeat', 'updatedAt', 'endedAt', 'durationSeconds', 'status']) &&
+        request.resource.data.durationSeconds is number &&
+        request.resource.data.durationSeconds >= resource.data.durationSeconds &&
+        request.resource.data.lastHeartbeat == request.time &&
+        request.resource.data.updatedAt == request.time &&
+        request.resource.data.status in ['playing', 'completed'] &&
+        (request.resource.data.status != 'completed' || request.resource.data.endedAt == request.time);
+      allow delete: if false;
+    }
+
     match /gameStats/{uid} {
       allow read, write: if owner(uid);
     }
