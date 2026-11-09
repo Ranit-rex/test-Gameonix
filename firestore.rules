@@ -174,7 +174,7 @@ service cloud.firestore {
     }
 
     match /presence/{uid} {
-      allow read: if owner(uid) || isFriend(uid);
+      allow read: if owner(uid) || isFriend(uid) || isAdmin();
       allow create, update: if owner(uid) &&
         request.resource.data.uid == request.auth.uid &&
         request.resource.data.keys().hasOnly(['uid', 'playingGame', 'playingAt', 'updatedAt']);
