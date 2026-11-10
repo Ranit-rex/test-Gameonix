@@ -1,7 +1,6 @@
 {
   "title": "Extreme Parkour",
-  "description": "Conquer 30 challenging levels across five chapters, from Easy to Nightmare. Jump, dodge deadly traps, collect coins and reach the finish.",
-  "category": "Adventure",
-  "thumbnail": "thumbnail.svg",
-  "status": "published"
+  "description": "Conquer thirty challenging levels, dodge deadly traps, collect coins, and master every parkour chapter.",
+  "category": "Platformer",
+  "thumbnail": "thumbnail.svg"
 }
