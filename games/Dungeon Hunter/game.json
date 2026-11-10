@@ -1,0 +1,8 @@
+{
+  "title": "Dungeon Hunter",
+  "description": "Explore 15 dangerous worlds, defeat elite monsters and bosses, upgrade your hero, and hunt together in real-time rooms.",
+  "category": "Action",
+  "thumbnail": "cover.svg",
+  "status": "published",
+  "multiplayer": true
+}
