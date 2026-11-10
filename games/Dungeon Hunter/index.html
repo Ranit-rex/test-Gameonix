@@ -56,10 +56,10 @@ let mi=0;const SCL=[0,2,3,5,7,8,10,12];
 setInterval(()=>{if(!AC||!S.snd||!S.cfg.mus||document.hidden)return;mi++;const w=state=='play'&&LV?LV.w%5:1,r=[110,98,123,87,82][w];if(mi%8==0)tone(r/2,3.2,'sine',.09);if(mi%2==0)tone(r*2*Math.pow(2,SCL[(mi*3+(mi>>3)*5)%8]/12),.9,'triangle',.035);if(state=='play'&&LV&&LV.lock&&mi%2)tone(r,.2,'square',.03)},420);
 /* ---------- state ---------- */
 let state='menu',LV=null,P=null,E=[],PR=[],FX=[],TX=[],CAM=0,CY=0,HS=0,RG=[],LOD=0,BL=[],WV=[],ZN=[],FA=[],CLN=[],T=0,SHK=0,LF=0,FID=0,Q={};const K={},WP=Array.from({length:80},()=>({x:rnd(W),y:rnd(H),v:rnd(.5,1)}));
-/* ---------- PlayHub room multiplayer (Realtime Database) ---------- */
+/* ---------- PlayHub shared multiplayer rooms (Realtime Database) ---------- */
 const DH_FIREBASE_CONFIG={apiKey:"AIzaSyB_pZ9WfVSx2XHuDeSZ7VrwEr-Pz_m_2QM",authDomain:"play-hub-688e8.firebaseapp.com",projectId:"play-hub-688e8",storageBucket:"play-hub-688e8.firebasestorage.app",messagingSenderId:"195222206861",appId:"1:195222206861:web:828a8cf16991f982a925c4",databaseURL:"https://play-hub-688e8-default-rtdb.firebaseio.com"};
-let dhAuth=null,dhDb=null,dhUser=null,dhProfile={},dhRoomsListener=null,dhRoomRef=null,dhMetaRef=null,dhPlayersRef=null,dhEventsRef=null,dhEventsQuery=null,dhMetaListener=null,dhPlayersListener=null,dhEventsListener=null,dhRoomId='',dhRoomMeta=null,dhRoomHost=false,dhGameStarted=false,dhRemotePlayers={},dhLastPublish=0,dhSeenEvents=new Set(),dhFirebaseReady=false;
-const dhRoot=()=>dhDb&&dhDb.ref('dungeonHunterRooms');
+let dhAuth=null,dhDb=null,dhUser=null,dhProfile={},dhRoomsListener=null,dhRoomRef=null,dhMetaRef=null,dhPlayersRef=null,dhMetaListener=null,dhPlayersListener=null,dhRoomId='',dhRoomMeta=null,dhRoomHost=false,dhGameStarted=false,dhRemotePlayers={},dhLastPublish=0,dhSeenEvents=new Set(),dhMemberEventQueries={};
+const dhRoot=()=>dhDb&&dhDb.ref('multiplayer/rooms');
 function dhSay(t){const e=$('#dhStatus');if(e)e.textContent=t}
 function dhEsc(t){return String(t??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function dhCode(){const a='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';return Array.from({length:6},()=>a[Math.floor(Math.random()*a.length)]).join('')}
@@ -73,77 +73,94 @@ async function dhBoot(){
   dhAuth.onAuthStateChanged(async u=>{
    dhUser=u;
    if(u){try{const fs=await dhLoadScript(base+'firebase-firestore-compat.js').then(()=>firebase.firestore());const snap=await fs.collection('users').doc(u.uid).get();dhProfile=snap.exists?snap.data():{}}catch(_){dhProfile={}}}
-   dhFirebaseReady=true;dhSay(u?'Signed in · rooms ready':'Sign in on PlayHub to create or join online rooms');dhWatchRooms();if(state==='menu')menu();
+   dhWatchRooms();dhSay(u?'Signed in · rooms ready':'Sign in on PlayHub to create or join online rooms');if(state==='menu')menu();
   });
  }catch(e){dhSay('Online multiplayer unavailable: '+e.message)}
 }
 function dhWatchRooms(){
  if(!dhDb)return;const ref=dhRoot();if(dhRoomsListener)ref.off('value',dhRoomsListener);
- dhRoomsListener=s=>{const data=s.val()||{},rooms=Object.entries(data).filter(([id,r])=>r&&r.meta&&r.meta.status==='waiting'&&r.meta.visibility==='public'&&Object.keys(r.players||{}).length<(r.meta.maxPlayers||4)).slice(0,8);
+ dhRoomsListener=s=>{const data=s.val()||{},rooms=Object.entries(data).filter(([id,r])=>r&&r.roomId===id&&r.gameId==='dungeon-hunter'&&r.status==='waiting'&&r.visibility==='public'&&Object.keys(r.members||{}).length<(r.maxPlayers||4)).slice(0,8);
   const box=$('#dhRoomList');if(!box)return;
-  box.innerHTML=rooms.length?rooms.map(([id,r])=>'<div class="dh-room-item"><span><b>'+dhEsc(r.meta.hostName||'Hunter')+'</b><small>'+Object.keys(r.players||{}).length+'/'+(r.meta.maxPlayers||4)+' players · '+dhEsc(r.meta.mode||'Normal')+'</small></span><button class="b" onclick="dhJoinRoom(\''+id+'\')">Join</button></div>').join(''):'<small>No public rooms yet. Create one!</small>';
+  box.innerHTML=rooms.length?rooms.map(([id,r])=>'<div class="dh-room-item"><span><b>'+dhEsc(r.hostName||'Hunter')+'</b><small>'+Object.keys(r.members||{}).length+'/'+(r.maxPlayers||4)+' players · '+dhEsc(r.mode||'Normal')+'</small></span><button class="b" onclick="dhJoinRoom(\''+id+'\')">Join</button></div>').join(''):'<small>No public rooms yet. Create one!</small>';
  };
  ref.on('value',dhRoomsListener,e=>dhSay('Room list error: '+e.message));
 }
 async function dhCreateRoom(){
  if(!dhUser||!dhDb){dhSay('Please sign in on PlayHub first.');return}
- try{if(dhRoomRef)await dhLeaveRoom(false);const root=dhRoot(),ref=root.push(),code=dhCode(),name=dhProfile.username||dhUser.displayName||'Hunter';
-  await ref.set({meta:{code,hostUid:dhUser.uid,hostName:name,createdAt:Date.now(),status:'waiting',visibility:$('#dhVisibility')?.value||'public',maxPlayers:4,mode:$('#dhMode')?.value||'Normal',world:0},players:{}});
-  await dhEnterRoom(ref.key);
+ try{
+  if(dhRoomRef)await dhLeaveRoom(false);
+  const code=dhCode(),ref=dhRoot().child(code),old=await ref.once('value');if(old.exists())throw Error('Please try creating the room again.');
+  const now=Date.now(),name=dhProfile.username||dhUser.displayName||'Hunter',mode=$('#dhMode')?.value||'Normal';
+  const member={uid:dhUser.uid,name,joinedAt:now,lastSeen:now,cls:S.cls,x:60,y:450,hp:mhp(),mhp:mhp(),world:0,updatedAt:now};
+  await ref.set({roomId:code,gameId:'dungeon-hunter',mode,hostUid:dhUser.uid,hostName:name,members:{[dhUser.uid]:member},status:'waiting',visibility:$('#dhVisibility')?.value||'public',maxPlayers:4,createdAt:now,updatedAt:now});
+  await dhEnterRoom(code);
  }catch(e){dhSay('Could not create room: '+e.message)}
 }
-async function dhJoinRoom(id){return dhEnterRoom(id)}
-async function dhJoinByCode(){const code=String($('#dhJoinCode')?.value||'').trim().toUpperCase();if(code.length!==6){dhSay('Enter the 6-character room code.');return}
+async function dhJoinByCode(){
+ const code=String($('#dhJoinCode')?.value||'').trim().toUpperCase();if(code.length!==6){dhSay('Enter the 6-character room code.');return}
  if(!dhDb){dhSay('Multiplayer is still connecting.');return}
- try{const all=(await dhRoot().once('value')).val()||{},hit=Object.entries(all).find(([id,r])=>r?.meta?.code===code&&r.meta.status==='waiting');if(!hit)throw Error('Room not found or already started.');await dhEnterRoom(hit[0])}catch(e){dhSay(e.message)}
+ try{const all=(await dhRoot().once('value')).val()||{},hit=Object.entries(all).find(([id,r])=>r?.roomId===code&&r.gameId==='dungeon-hunter'&&r.status==='waiting');if(!hit)throw Error('Room not found or already started.');await dhEnterRoom(hit[0])}catch(e){dhSay(e.message)}
+}
+async function dhJoinRoom(id){return dhEnterRoom(id)}
+function dhWatchMemberEvents(members){
+ for(const [uid,entry] of Object.entries(dhMemberEventQueries)){if(!members[uid]){entry.ref.off('child_added',entry.fn);delete dhMemberEventQueries[uid]}}
+ for(const uid of Object.keys(members||{})){
+  if(uid===dhUser?.uid||dhMemberEventQueries[uid])continue;
+  const ref=dhPlayersRef.child(uid).child('events');
+  const fn=s=>{const v=s.val();if(!v||dhSeenEvents.has(s.key))return;dhSeenEvents.add(s.key);if(dhSeenEvents.size>400)dhSeenEvents.delete(dhSeenEvents.values().next().value);if(v.type==='damage'&&state==='play'){const enemy=E.find(e=>e.uid===v.enemyUid);if(enemy&&!enemy.dead){enemy.hp-=Math.max(0,+v.amount||0);enemy.agg=1;if(enemy.hp<=0)kill(enemy)}}};
+  ref.on('child_added',fn);dhMemberEventQueries[uid]={ref,fn};
+ }
 }
 async function dhEnterRoom(id){
  if(!dhUser||!dhDb)throw Error('Sign in on PlayHub first.');
+ if(dhRoomRef)await dhLeaveRoom(false);
  const ref=dhRoot().child(id),snap=await ref.once('value');if(!snap.exists())throw Error('Room no longer exists.');
- const data=snap.val(),members=data.players||{};if(!members[dhUser.uid]&&Object.keys(members).length>=(data.meta.maxPlayers||4))throw Error('Room is full.');
- dhRoomId=id;dhRoomRef=ref;dhMetaRef=ref.child('meta');dhPlayersRef=ref.child('players');dhEventsRef=ref.child('events');dhRoomMeta=data.meta;dhRoomHost=data.meta.hostUid===dhUser.uid;dhGameStarted=false;dhSeenEvents.clear();
- const name=dhProfile.username||dhUser.displayName||'Hunter';
- await dhPlayersRef.child(dhUser.uid).set({uid:dhUser.uid,name,cls:S.cls,x:60,y:450,hp:mhp(),joinedAt:Date.now(),updatedAt:Date.now()});
- await dhPlayersRef.child(dhUser.uid).onDisconnect().remove();if(dhRoomHost)await ref.onDisconnect().remove();
- if(dhMetaListener)dhMetaRef.off('value',dhMetaListener);if(dhPlayersListener)dhPlayersRef.off('value',dhPlayersListener);if(dhEventsListener)dhEventsRef.off('child_added',dhEventsListener);
- dhMetaListener=s=>{if(!s.exists()){dhLeaveRoom(false).then(()=>{menu();dhSay('Room closed by host.')});return}dhRoomMeta=s.val();if(dhRoomMeta.status==='started'&&!dhGameStarted)dhStartClientGame(dhRoomMeta)};
- dhPlayersListener=s=>{dhRemotePlayers=s.val()||{};if(state==='menu'||state==='room')dhShowRoomLobby()};
- dhEventsListener=s=>{const v=s.val();if(!v||v.fromUid===dhUser.uid||dhSeenEvents.has(s.key))return;dhSeenEvents.add(s.key);if(dhSeenEvents.size>400)dhSeenEvents.delete(dhSeenEvents.values().next().value);if(v.type==='damage'&&state==='play'&&Array.isArray(E)){const enemy=E.find(e=>e.uid===v.enemyUid);if(enemy&&!enemy.dead){enemy.hp-=Math.max(0,+v.amount||0);enemy.agg=1;if(enemy.hp<=0)kill(enemy)}}};
- dhMetaRef.on('value',dhMetaListener);dhPlayersRef.on('value',dhPlayersListener);dhEventsQuery=dhEventsRef.limitToLast(100);dhEventsQuery.on('child_added',dhEventsListener);
- dhShowRoomLobby();dhSay('Room joined · share the code with friends.');
+ const data=snap.val(),members=data.members||{};if(data.gameId!=='dungeon-hunter'||data.status!=='waiting')throw Error('This room is no longer waiting.');
+ if(!members[dhUser.uid]&&Object.keys(members).length>=(data.maxPlayers||4))throw Error('Room is full.');
+ dhRoomId=id;dhRoomRef=ref;dhMetaRef=ref;dhPlayersRef=ref.child('members');dhRoomMeta=data;dhRoomHost=data.hostUid===dhUser.uid;dhGameStarted=false;dhSeenEvents.clear();
+ const now=Date.now(),name=dhProfile.username||dhUser.displayName||'Hunter';
+ await dhPlayersRef.child(dhUser.uid).update({uid:dhUser.uid,name,joinedAt:members[dhUser.uid]?.joinedAt||now,lastSeen:now,cls:S.cls,x:members[dhUser.uid]?.x??60,y:members[dhUser.uid]?.y??450,hp:members[dhUser.uid]?.hp??mhp(),mhp:mhp(),world:0,updatedAt:now});
+ const ownPlayerRef=dhPlayersRef.child(dhUser.uid);await ownPlayerRef.onDisconnect().remove();if(dhRoomHost)await ref.onDisconnect().remove();
+ if(dhMetaListener)dhMetaRef.off('value',dhMetaListener);if(dhPlayersListener)dhPlayersRef.off('value',dhPlayersListener);
+ dhMetaListener=s=>{const status=s.val();if(!status){dhLeaveRoom(false).then(()=>{menu();dhSay('Room closed by host.')});return}if(status==='playing'&&!dhGameStarted)dhMetaRef.once('value').then(roomSnap=>{if(roomSnap.exists())dhStartClientGame(roomSnap.val())});else if(status==='closed')dhLeaveRoom(true)};
+ dhPlayersListener=s=>{dhRemotePlayers=s.val()||{};dhWatchMemberEvents(dhRemotePlayers);if(state==='menu'||state==='room')dhShowRoomLobby()};
+ dhMetaRef.child('status').on('value',dhMetaListener);dhPlayersRef.on('value',dhPlayersListener);
+ dhPlayersRef.once('value').then(s=>{dhRemotePlayers=s.val()||{};dhWatchMemberEvents(dhRemotePlayers);dhShowRoomLobby()});
+ dhSay('Room joined · share the code with friends.');
 }
 function dhShowRoomLobby(){
  if(!dhRoomMeta||!dhRoomRef)return;setS('room');$('#hud').style.display='none';
  const players=Object.values(dhRemotePlayers||{}),host=dhRoomHost;
- pn('<h1>⚔ DUNGEON HUNTER</h1><h2>👥 Multiplayer Room</h2><p>Share this code with your friends. Up to 4 hunters can play together.</p><div class="dh-room-tools"><div>ROOM CODE</div><div class="dh-room-code">'+dhEsc(dhRoomMeta.code)+'</div><button class="b" onclick="navigator.clipboard?.writeText(\''+dhEsc(dhRoomMeta.code)+'\').then(()=>dhSay(\'Room code copied!\')).catch(()=>dhSay(\'Code: '+dhEsc(dhRoomMeta.code)+'\'))">📋 Copy Code</button><h3>Players ('+players.length+'/4)</h3><div class="dh-players">'+players.map(p=>'⚔ '+dhEsc(p.name||'Hunter')+(p.uid===dhUser.uid?' (You)':'')+' · '+dhEsc(CL[p.cls]?.n||'Warrior')).join('<br>')+'</div><div class="dh-status" id="dhStatus">'+(host?'You are the host. Start when everyone is ready.':'Waiting for the host to start…')+'</div><div class="dh-row">'+(host?'<button class="b" onclick="dhStartRoom()">▶ START HUNT</button>':'<button class="b" disabled>WAITING FOR HOST</button>')+'<button class="b" onclick="dhLeaveRoom(true)">← Leave Room</button></div></div>');
+ pn('<h1>⚔ DUNGEON HUNTER</h1><h2>👥 Multiplayer Room</h2><p>Share this code with your friends. Up to 4 hunters can play together.</p><div class="dh-room-tools"><div>ROOM CODE</div><div class="dh-room-code">'+dhEsc(dhRoomMeta.roomId)+'</div><button class="b" onclick="navigator.clipboard?.writeText(\''+dhEsc(dhRoomMeta.roomId)+'\').then(()=>dhSay(\'Room code copied!\')).catch(()=>dhSay(\'Code: '+dhEsc(dhRoomMeta.roomId)+'\'))">📋 Copy Code</button><h3>Players ('+players.length+'/4)</h3><div class="dh-players">'+players.map(p=>'⚔ '+dhEsc(p.name||'Hunter')+(p.uid===dhUser.uid?' (You)':'')+' · '+dhEsc(CL[p.cls]?.n||'Warrior')).join('<br>')+'</div><div class="dh-status" id="dhStatus">'+(host?'You are the host. Start when everyone is ready.':'Waiting for the host to start…')+'</div><div class="dh-row">'+(host?'<button class="b" onclick="dhStartRoom()">▶ START HUNT</button>':'<button class="b" disabled>WAITING FOR HOST</button>')+'<button class="b" onclick="dhLeaveRoom(true)">← Leave Room</button></div></div>');
 }
 async function dhStartRoom(){
  if(!dhRoomHost||!dhMetaRef)return;const seed=(Math.random()*2147483647)|0;
- try{const mode=$('#dhMode')?.value||dhRoomMeta?.mode||'Normal',difficulty=mode==='Hard'?2:1;await dhMetaRef.update({status:'started',world:0,seed,difficulty,mode,startedAt:Date.now()})}catch(e){dhSay('Could not start: '+e.message)}
+ try{const mode=dhRoomMeta?.mode||'Normal',difficulty=mode==='Hard'?2:1;await dhMetaRef.update({status:'playing',world:0,seed,difficulty,startedAt:Date.now(),updatedAt:Date.now()})}catch(e){dhSay('Could not start: '+e.message)}
 }
 function dhStartClientGame(meta){
  if(dhGameStarted)return;dhGameStarted=true;S.diff=Number.isInteger(meta.difficulty)?meta.difficulty:S.diff;
  const run={seed:meta.seed,dd:[],ch:[],x:60,y:450,hp:mhp(),mp:mmp(),ck:0};
- play(meta.world||0,run);dhSay('Hunt started · Room '+meta.code);
+ play(meta.world||0,run);dhSay('Hunt started · Room '+meta.roomId);
 }
 function dhSendEvent(type,data){
- if(!dhEventsRef||!dhUser||state!=='play')return;
- dhEventsRef.push({fromUid:dhUser.uid,type,...data,at:Date.now()}).catch(e=>console.warn('Room event:',e));
+ if(!dhPlayersRef||!dhUser||state!=='play')return;
+ dhPlayersRef.child(dhUser.uid).child('events').push({type,...data,at:Date.now()}).catch(e=>console.warn('Room event:',e));
 }
 async function dhLeaveRoom(show=true){
  const ref=dhRoomRef,uid=dhUser?.uid,host=dhRoomHost;
  if(!ref){if(show)menu();return}
- if(dhMetaRef&&dhMetaListener)dhMetaRef.off('value',dhMetaListener);if(dhPlayersRef&&dhPlayersListener)dhPlayersRef.off('value',dhPlayersListener);if(dhEventsQuery&&dhEventsListener)dhEventsQuery.off('child_added',dhEventsListener);
- try{if(uid)await ref.child('players/'+uid).remove();if(host)await ref.remove()}catch(e){console.warn('Leave room:',e)}
- dhRoomRef=dhMetaRef=dhPlayersRef=dhEventsRef=dhEventsQuery=null;dhRoomId='';dhRoomMeta=null;dhRoomHost=false;dhGameStarted=false;dhRemotePlayers={};dhMetaListener=dhPlayersListener=dhEventsListener=null;dhSeenEvents.clear();
+ if(dhMetaRef&&dhMetaListener)dhMetaRef.child('status').off('value',dhMetaListener);if(dhPlayersRef&&dhPlayersListener)dhPlayersRef.off('value',dhPlayersListener);
+ for(const entry of Object.values(dhMemberEventQueries))entry.ref.off('child_added',entry.fn);dhMemberEventQueries={};
+ try{if(host)await ref.remove();else if(uid)await ref.child('members/'+uid).remove()}catch(e){console.warn('Leave room:',e)}
+ dhRoomRef=dhMetaRef=dhPlayersRef=null;dhRoomId='';dhRoomMeta=null;dhRoomHost=false;dhGameStarted=false;dhRemotePlayers={};dhMetaListener=dhPlayersListener=null;dhSeenEvents.clear();
  if(show){menu();dhSay('You left the room.')}
 }
 function dhPublishPlayer(){
  if(!dhPlayersRef||!dhUser||!P||state!=='play')return;const now=Date.now();if(now-dhLastPublish<120)return;dhLastPublish=now;
- dhPlayersRef.child(dhUser.uid).update({uid:dhUser.uid,name:dhProfile.username||dhUser.displayName||'Hunter',cls:S.cls,x:P.x,y:P.y,hp:P.hp,mhp:P.mh,world:LV?.w||0,updatedAt:now}).catch(()=>{});
+ dhPlayersRef.child(dhUser.uid).update({uid:dhUser.uid,name:dhProfile.username||dhUser.displayName||'Hunter',lastSeen:now,cls:S.cls,x:P.x,y:P.y,hp:P.hp,mhp:P.mh,world:LV?.w||0,updatedAt:now}).catch(()=>{});
 }
 function dhDrawRemotePlayers(add){
- for(const [uid,p] of Object.entries(dhRemotePlayers||{})){if(uid===dhUser?.uid||Date.now()-(p.updatedAt||0)>12000)continue;
+ for(const [uid,p] of Object.entries(dhRemotePlayers||{})){if(uid===dhUser?.uid||Date.now()-(p.lastSeen||p.updatedAt||0)>12000)continue;
   const cls=CL[p.cls]||CL.w,wp=VZ[p.cls]||VZ.w;
   add(p.y||450,()=>{shd(p.x||0,p.y||450);hum(p.x||0,(p.y||450)-28,1,{c:cls.col,cl:cls.cl,cp:sh(cls.cl,.85),pl:1,s:1,hd:wp[0],wt:wp[1],wc:'#ccd',ey:'#8cf',a:T*2,mv:false,ang:.6});tt(String(p.name||'Hunter').slice(0,16),p.x||0,(p.y||450)-88,'#8cf',12,'center')});
  }
