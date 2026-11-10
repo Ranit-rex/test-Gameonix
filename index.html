@@ -88,6 +88,73 @@
 .admin-console .empty{padding:20px;color:#94a2bd;text-align:center}
 @media(max-width:600px){.admin-topline{align-items:flex-start;flex-direction:column;padding-top:5px}.admin-refresh{align-self:stretch;justify-content:center}.admin-commandbar{align-items:flex-start;flex-direction:column}.admin-command-meta{justify-content:flex-start}.admin-tabs-wrap{padding:9px}.admin-tabs .settings-tab{padding:9px 11px;font-size:10px}.admin-section-heading{align-items:flex-start;flex-direction:column}.admin-metric-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.admin-metric-grid .panel{padding:12px;min-height:83px}.admin-metric-grid .panel h2{font-size:23px}.admin-content-panel{padding:12px}}
 
+
+/* Discord-inspired party voice lounge */
+.party-discord{max-width:1180px;margin:0 auto}
+.party-page-head{display:flex;justify-content:space-between;align-items:center;gap:15px;margin:4px 0 20px}
+.party-kicker,.party-panel-kicker{font-size:9px;letter-spacing:2px;font-weight:900;color:#a98aff}
+.party-page-head .welcome{margin:6px 0 4px;font-size:clamp(29px,4vw,42px);letter-spacing:-1.2px}
+.party-page-head .welcome span{background:linear-gradient(90deg,#b38cff,#6db9ff);background-clip:text;-webkit-background-clip:text;color:transparent}
+.party-page-head .sub{margin:0;color:#9ba9c4;font-size:12px}
+.party-head-live{padding:8px 11px;border:1px solid #34455d;border-radius:20px;background:#101c2d;color:#a9bdd7;font-size:9px;font-weight:850;letter-spacing:.7px;white-space:nowrap}
+.party-discover-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.party-create-card,.party-join-card{min-width:0;display:flex;align-items:center;gap:11px;padding:15px;border-radius:16px;border:1px solid #34415d;background:radial-gradient(ellipse at 0 0,#8457d52b,transparent 55%),linear-gradient(140deg,#19233a,#111a2b)}
+.party-join-card{background:radial-gradient(ellipse at 0 0,#328fd22a,transparent 55%),linear-gradient(140deg,#19233a,#111a2b)}
+.party-card-icon{width:39px;height:39px;flex:0 0 39px;border-radius:12px;display:grid;place-items:center;font-size:22px;color:#e8dcff;background:#7750c62c;border:1px solid #8f6de34d}
+.party-join-card .party-card-icon{color:#9bd7ff;background:#318ec52b;border-color:#4a9dd74d}
+.party-card-copy{min-width:0;flex:1}.party-card-copy strong,.party-card-copy small{display:block}.party-card-copy strong{font-size:12px}.party-card-copy small{font-size:9px;line-height:1.45;color:#96a5bf;margin-top:4px}
+.party-create-card .party-select{width:auto;max-width:120px;min-width:100px;font-size:10px;padding:9px}
+.party-create-button{white-space:nowrap;font-size:10px!important;padding:10px 12px!important}
+.party-join-controls{display:flex;gap:6px;min-width:0}.party-join-controls .field{width:115px;min-width:0;padding:9px 8px;font-size:10px;letter-spacing:1px;text-transform:uppercase;background:#0b1425;border:1px solid #35435e;border-radius:9px;color:#fff}.party-join-controls button{padding:9px 12px;font-size:10px}
+.party-lower-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+.party-directory-card{min-width:0;border:1px solid #2d3954;border-radius:15px;background:#111a2b;padding:13px}
+.party-panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}
+.party-panel-head h2{font-size:14px;margin:4px 0 0}
+.party-count-pill,.party-invite-icon{font-size:9px;color:#a7e8cb;background:#16372f;border:1px solid #285b4c;padding:6px 9px;border-radius:20px}
+.party-invite-icon{font-size:15px;color:#c4a8ff;background:#2a2142;border-color:#504071}
+.party-directory-toggle{width:100%;display:flex;justify-content:space-between;border:0;border-top:1px solid #28344b;padding:10px 2px 4px;background:none;color:#aebbd3;font-size:10px;text-align:left}
+.party-directory-toggle span{color:#b79aff}
+.party-directory-list{display:flex;flex-direction:column;gap:7px;padding:7px 0 0;max-height:190px;overflow:auto}
+.party-directory-list:empty{display:none}
+.party-directory-list .public-room-chip{width:100%;justify-content:space-between;box-sizing:border-box}
+.party-invites-list{font-size:10px;max-height:190px;overflow:auto}
+.party-status{font-size:11px;padding:9px 12px;border-radius:10px}
+.party-discord-room{margin-top:13px;min-height:180px;padding:0!important;overflow:hidden;border:1px solid #394663!important;border-radius:17px!important;background:#111a2b!important}
+.party-empty-state{text-align:center;padding:28px 18px 30px}
+.party-empty-orb{width:58px;height:58px;border-radius:20px;display:grid;place-items:center;margin:0 auto 12px;background:linear-gradient(145deg,#7752d8,#328ed8);font-size:27px;box-shadow:0 10px 35px #714de455}
+.party-empty-state h2{font-size:16px;margin:0 0 7px}.party-empty-state p{max-width:420px;margin:0 auto;color:#93a2bd;font-size:10px;line-height:1.65}
+.party-active-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:15px 16px;border-bottom:1px solid #2b3852;background:linear-gradient(100deg,#1c2740,#151d31)}
+.party-active-title{display:flex;align-items:center;gap:10px}.party-active-icon{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;background:#7752d833;color:#c9adff;font-size:18px}
+.party-active-title strong{display:block;font-size:13px}.party-active-title small{display:block;color:#93a2bd;font-size:9px;margin-top:3px}
+.party-room-badges{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.party-room-badge{padding:6px 8px;border-radius:20px;background:#1b3b33;color:#7ee1b6;font-size:9px;font-weight:850}.party-room-badge.private{background:#2c3042;color:#c3c9d8}
+.party-room-content{display:grid;grid-template-columns:minmax(0,1fr) 245px;min-height:240px}
+.party-room-main{padding:14px;min-width:0}
+.party-roster-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}.party-roster-head strong{font-size:11px}.party-roster-head small{font-size:9px;color:#8798b5}
+.party-roster{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:8px;margin:0 0 13px}
+.party-player{display:flex;align-items:center;gap:8px;padding:9px;border:1px solid #303c56;border-radius:11px;background:#0d1627;min-width:0}
+.party-avatar{width:31px;height:31px;flex:0 0 31px;border-radius:10px;display:grid;place-items:center;background:linear-gradient(135deg,#8659e8,#338edb);font-weight:900;color:white}
+.party-player strong{display:block;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.party-player small{display:block;color:#91a1bc;font-size:8px;margin-top:3px}
+.party-player .party-speaking{margin-left:auto;color:#61e3ae;font-size:12px}
+.party-voice-console{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:11px;border:1px solid #34435e;border-radius:13px;background:#0a1424}
+.party-voice-info strong{display:block;font-size:10px}.party-voice-info small{display:block;color:#8fa1bd;font-size:9px;margin-top:4px}
+.party-voice-actions{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.party-voice-button{border:1px solid #394764;border-radius:10px;padding:9px 12px;background:#1a263b;color:#eaf0ff;font-size:10px;font-weight:850}
+.party-voice-button.primary{background:linear-gradient(110deg,#7650d1,#456ed4);border-color:#8e73e1;color:white}
+.party-voice-button.off{background:#48252e;border-color:#82404b;color:#ffbdc4}
+.party-voice-button:disabled{opacity:.55}
+.party-room-sidebar{border-left:1px solid #2c3852;background:#0d1627;padding:13px}
+.party-room-sidebar h3{font-size:10px;letter-spacing:1px;color:#9eacc6;margin:0 0 9px}
+.party-code-share{display:flex;align-items:center;justify-content:space-between;gap:7px;padding:9px;border:1px dashed #67549d;border-radius:10px;background:#18172c}
+.party-code-share strong{font-size:15px;letter-spacing:2px;color:#d2baff}
+.party-code-share button{border:0;border-radius:7px;padding:6px 8px;background:#7652d7;color:#fff;font-size:9px}
+.party-host-tools{margin-top:13px}.party-host-tools .party-select{margin:6px 0}
+.party-host-tools .party-actions{margin-top:7px}
+.party-host-tools .party-actions button{flex:1}
+.party-sidebar-hint{font-size:9px;color:#8292ae;line-height:1.5;margin:11px 0 0}
+.party-invite-row{padding:9px 0;font-size:10px}
+@media(max-width:760px){.party-discover-grid,.party-lower-grid{grid-template-columns:1fr}.party-room-content{grid-template-columns:1fr}.party-room-sidebar{border-left:0;border-top:1px solid #2c3852}.party-create-card,.party-join-card{flex-wrap:wrap}.party-card-copy{min-width:calc(100% - 60px)}.party-create-card .party-select{margin-left:49px}.party-room-sidebar{padding:12px}}
+@media(max-width:430px){.party-page-head{align-items:flex-start;flex-direction:column}.party-create-card .party-select{margin-left:0;flex:1}.party-create-button{flex:1}.party-join-controls{width:100%}.party-join-controls .field{flex:1;width:auto}.party-roster{grid-template-columns:1fr 1fr}.party-active-head{align-items:flex-start;flex-direction:column}.party-voice-console{align-items:flex-start;flex-direction:column}.party-voice-actions{width:100%}.party-voice-button{flex:1}}
+
 </style>
 </head>
 <body>
@@ -148,7 +215,19 @@
  <div id="friendsSuggestionsView" class="friends-view hidden"><div class="friends-content-head"><div><div class="friends-section-kicker">PEOPLE TO MEET</div><h2>Suggested players</h2><p>Discover more players and send a friend request.</p></div></div><div id="suggestionsFull" class="friends-list"><div class="empty">Loading suggestions…</div></div></div>
  <div id="friendsIncomingView" class="friends-view hidden"><div class="friends-content-head"><div><div class="friends-section-kicker">NEW CONNECTIONS</div><h2>Incoming requests</h2><p>Players who want to add you to their circle.</p></div></div><div id="requestsList" class="friends-list"><div class="empty">Loading requests…</div></div></div>
  <div id="friendsOutgoingView" class="friends-view hidden"><div class="friends-content-head"><div><div class="friends-section-kicker">PENDING CONNECTIONS</div><h2>Sent requests</h2><p>Requests you've sent that are waiting for a reply.</p></div></div><div id="outgoingList" class="friends-list"><div class="empty">Loading requests…</div></div></div></div></div></section>
- <section id="partyPage" class="page"><div class="eyebrow">PLAY TOGETHER</div><h1 class="welcome">Party Lobby</h1><p class="sub">Squad up, talk live and jump into games together.</p><div class="public-party-strip"><button id="publicPartyToggle" class="public-party-head" type="button"><span><i class="live-dot"></i> LIVE PUBLIC ROOMS</span><span id="publicPartyCount">Loading…</span><b>⌄</b></button><div id="publicPartyList" class="public-party-list hidden"><span class="muted">Finding public parties…</span></div></div><div class="party-hero"><div><strong>🎮 Your squad, one room</strong><p>Up to 6 players · Voice chat · Invite friends</p></div><div class="party-create-tools"><select id="partyPrivacy" class="party-select" aria-label="Party visibility"><option value="private">🔒 Private</option><option value="public">🌐 Public</option></select><button id="createPartyBtn" class="login" type="button">＋ Create Party</button></div></div><div class="party-grid"><div class="party-card"><h3>Join with room code</h3><p class="muted" style="font-size:11px">Private rooms can be joined with their code.</p><div class="formrow"><input id="partyCodeInput" class="field" maxlength="8" placeholder="8-character code" autocomplete="off"><button id="joinPartyBtn" class="login" type="button">Join</button></div></div><div class="party-card"><h3>Party Invites</h3><div id="partyInvites" class="muted">Loading invites…</div></div></div><div id="partyStatus" class="status" style="margin-top:12px" role="status">Create a party or join with a code.</div><div id="partyRoom" class="party-room-shell"><div class="empty">You're not in a party yet.</div></div></section>
+ <section id="partyPage" class="page party-discord">
+ <div class="party-page-head"><div><div class="party-kicker">PLAYHUB SOCIAL</div><h1 class="welcome">Party <span>Voice Lounge</span></h1><p class="sub">Your squad, your room. Talk and play together.</p></div><div class="party-head-live"><i class="live-dot"></i> PARTY NETWORK</div></div>
+ <div class="party-discover-grid">
+  <div class="party-create-card"><div class="party-card-icon">＋</div><div class="party-card-copy"><strong>Create your party</strong><small>Start a voice room and invite your friends</small></div><select id="partyPrivacy" class="party-select" aria-label="Party visibility"><option value="private">🔒 Private</option><option value="public">🌐 Public</option></select><button id="createPartyBtn" class="login party-create-button" type="button">Create Party</button></div>
+  <div class="party-join-card"><div class="party-card-icon">⌁</div><div class="party-card-copy"><strong>Join a party</strong><small>Enter an invite code to join your squad</small></div><div class="party-join-controls"><input id="partyCodeInput" class="field" maxlength="8" placeholder="8-CHAR CODE" autocomplete="off" aria-label="Party invite code"><button id="joinPartyBtn" class="login" type="button">Join</button></div></div>
+ </div>
+ <div class="party-lower-grid">
+  <div class="party-directory-card"><div class="party-panel-head"><div><span class="party-panel-kicker">DISCOVER</span><h2>Public parties</h2></div><span id="publicPartyCount" class="party-count-pill">Loading…</span></div><button id="publicPartyToggle" class="party-directory-toggle" type="button">Browse open rooms <span>⌄</span></button><div id="publicPartyList" class="public-party-list party-directory-list"><span class="muted">Finding public parties…</span></div></div>
+  <div class="party-directory-card"><div class="party-panel-head"><div><span class="party-panel-kicker">YOUR INBOX</span><h2>Party invites</h2></div><span class="party-invite-icon">✉</span></div><div id="partyInvites" class="party-invites-list muted">Loading invites…</div></div>
+ </div>
+ <div id="partyStatus" class="status party-status" style="margin-top:13px" role="status">Create a party or join with an invite code.</div>
+ <div id="partyRoom" class="party-room-shell party-discord-room"><div class="party-empty-state"><div class="party-empty-orb">🎧</div><h2>Your voice lounge is waiting</h2><p>Create a party or join your friends with an invite code. Your speakers will connect automatically; your mic stays off until you turn it on.</p></div></div>
+</section>
  <section id="globalChatPage" class="page"><div class="eyebrow">PLAYOVIA COMMUNITY</div><h1 class="welcome">Chat</h1><p class="sub">Global conversations and your friend messages.</p><div class="chat-switcher"><button class="chat-tab active" data-chat-view="global">Global Chat</button><button class="chat-tab" data-chat-view="friends">Friend Chats</button></div><div id="globalChatView" class="chat-view"><div class="panel"><div id="globalMessages" class="chat-messages"><div class="empty">Loading global chat…</div></div><form id="globalChatForm" class="chat-compose"><input id="globalChatInput" class="field" maxlength="500" placeholder="Message everyone…" autocomplete="off"><button class="login" type="submit">Send</button></form></div></div><div id="friendChatsView" class="chat-view hidden"><div class="chat-layout"><div class="panel friend-chat-list-panel"><h2>Your Friends</h2><div id="friendChatList" class="friend-chat-list">Loading friends…</div></div><div class="panel friend-chat-room" id="friendChatPanel"><div class="empty">Select a friend to start chatting.</div></div></div></div></section>
  <section id="savedPage" class="page"><div class="eyebrow">YOUR COLLECTION</div><h1 class="welcome">Saved Games</h1><p class="sub">Your personal game library.</p><div id="savedGames" class="grid"><div class="empty">Save games with the ★ button.</div></div></section>
  <section id="studioPage" class="page"><div class="eyebrow">CREATE YOUR OWN WORLDS</div><h1 class="welcome">Studio</h1><p class="sub">Create and publish your own games on Playovia.</p><div class="panel"><h2>Game creator</h2><p class="muted">The creator workspace is coming soon.</p></div></section>
