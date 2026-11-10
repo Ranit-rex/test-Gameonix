@@ -512,13 +512,14 @@ document.addEventListener('click',async e=>{
   button.disabled=true;
   try{
    if(!voiceSessionActive)await joinPartyVoice();
-   if(!voiceLocalStream||voiceMuted)await enablePartyMic();
+   if(!voiceLocalStream)await enablePartyMic();
+   else if(voiceMuted){voiceMuted=false;voiceLocalStream.getAudioTracks().forEach(t=>t.enabled=true);await voiceMemberPath().doc(currentUser.uid).set({muted:false,updatedAt:stamp()},{merge:true});button.textContent='🎙 MIC ON';button.classList.remove('off');button.title='Mute microphone';voiceStatus('Connected · microphone on');updateVoicePeers()}
    else{voiceMuted=true;voiceLocalStream.getAudioTracks().forEach(t=>t.enabled=false);await voiceMemberPath().doc(currentUser.uid).set({muted:true,updatedAt:stamp()},{merge:true});button.textContent='🎙 MIC OFF';button.classList.add('off');button.title='Turn microphone on';voiceStatus('Connected · microphone off');updateVoicePeers()}
   }catch(err){voiceStatus('Microphone unavailable: '+err.message);partyMsg('Microphone permission was not granted. Your speakers remain connected.','error')}
   finally{button.disabled=false}
  }
  else if(button.id==='deafenVoiceBtn'){
-  voiceDeafened=!voiceDeafened;document.querySelectorAll('audio[id^="voice-audio-"]').forEach(a=>a.muted=voiceDeafened);
+  voiceDeafened=!voiceDeafened;document.querySelectorAll('audio[id^="voice-audio-"]').forEach(a=>{a.muted=voiceDeafened;if(!voiceDeafened)a.play().catch(()=>voiceStatus('Tap again to enable party speaker audio.'))});
   button.textContent=voiceDeafened?'🔇 SPEAKER OFF':'🔊 SPEAKER ON';button.classList.toggle('off',voiceDeafened);voiceStatus(voiceDeafened?'Speaker off · mic '+(voiceMuted?'off':'on'):'Speaker on · mic '+(voiceMuted?'off':'on'));
  }
  else if(button.id==='leaveVoiceBtn')await leavePartyVoice();
