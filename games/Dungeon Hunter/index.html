@@ -104,9 +104,9 @@ async function dhEnterRoom(id){
  dhRoomId=id;dhRoomRef=ref;dhMetaRef=ref.child('meta');dhPlayersRef=ref.child('players');dhEventsRef=ref.child('events');dhRoomMeta=data.meta;dhRoomHost=data.meta.hostUid===dhUser.uid;dhGameStarted=false;dhSeenEvents.clear();
  const name=dhProfile.username||dhUser.displayName||'Hunter';
  await dhPlayersRef.child(dhUser.uid).set({uid:dhUser.uid,name,cls:S.cls,x:60,y:450,hp:mhp(),joinedAt:Date.now(),updatedAt:Date.now()});
- await dhPlayersRef.child(dhUser.uid).onDisconnect().remove();
+ await dhPlayersRef.child(dhUser.uid).onDisconnect().remove();if(dhRoomHost)await ref.onDisconnect().remove();
  if(dhMetaListener)dhMetaRef.off('value',dhMetaListener);if(dhPlayersListener)dhPlayersRef.off('value',dhPlayersListener);if(dhEventsListener)dhEventsRef.off('child_added',dhEventsListener);
- dhMetaListener=s=>{if(!s.exists()){dhSay('Room closed by host.');dhLeaveRoom(false);return}dhRoomMeta=s.val();if(dhRoomMeta.status==='started'&&!dhGameStarted)dhStartClientGame(dhRoomMeta)};
+ dhMetaListener=s=>{if(!s.exists()){dhLeaveRoom(false).then(()=>{menu();dhSay('Room closed by host.')});return}dhRoomMeta=s.val();if(dhRoomMeta.status==='started'&&!dhGameStarted)dhStartClientGame(dhRoomMeta)};
  dhPlayersListener=s=>{dhRemotePlayers=s.val()||{};if(state==='menu'||state==='room')dhShowRoomLobby()};
  dhEventsListener=s=>{const v=s.val();if(!v||v.fromUid===dhUser.uid||dhSeenEvents.has(s.key))return;dhSeenEvents.add(s.key);if(dhSeenEvents.size>400)dhSeenEvents.delete(dhSeenEvents.values().next().value);if(v.type==='damage'&&state==='play'&&Array.isArray(E)){const enemy=E.find(e=>e.uid===v.enemyUid);if(enemy&&!enemy.dead){enemy.hp-=Math.max(0,+v.amount||0);enemy.agg=1;if(enemy.hp<=0)kill(enemy)}}};
  dhMetaRef.on('value',dhMetaListener);dhPlayersRef.on('value',dhPlayersListener);dhEventsQuery=dhEventsRef.limitToLast(100);dhEventsQuery.on('child_added',dhEventsListener);
