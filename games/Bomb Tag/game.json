@@ -1,7 +1,7 @@
 {
   "title": "Bomb Tag",
-  "description": "A chaotic bomb-passing survival party game. Play solo against AI bots or battle 2–8 real players in room-code multiplayer.",
-  "category": "Action",
+  "description": "Pass the ticking bomb, outlast rivals, and win chaotic rounds against friends or clever bots.",
+  "category": "Party",
   "thumbnail": "cover.svg",
   "status": "published"
 }
