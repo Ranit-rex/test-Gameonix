@@ -1,20 +1,16 @@
-# Playovia chat expiry setup
+# Playovia chat expiry (Spark-compatible)
 
-New chat messages carry an `expiresAt` timestamp:
-- `globalChat/main/messages`: one hour after sending
-- `conversations/{conversationId}/messages`: twelve hours after sending
+New global messages carry a one-hour expiry timestamp. New private messages and game-invite DM cards carry a twelve-hour expiry timestamp. The interface hides expired messages immediately.
 
-The app hides expired messages immediately. Firestore needs a TTL policy to physically delete the same documents from Firebase.
+## Firebase cleanup without Blaze
 
-## One-time Firestore TTL setup
+Firestore TTL deletes require billing to be enabled, so this project does **not** use TTL or Cloud Functions. Instead, the app performs small client-side cleanup queries:
+- Global chat: at most once per hour per browser when the global chat is opened.
+- Private chat: when a friend conversation is opened.
+- Each cleanup reads at most 400 expired messages and deletes them in one batch. Firestore Rules only permit deleting a global message after one hour or a private message after twelve hours.
 
-1. Open the [Firestore TTL policies page](https://console.cloud.google.com/firestore/databases/-default-/ttl?project=play-hub-688e8).
-2. Create a TTL policy for collection group **messages**.
-3. Set the timestamp field to **expiresAt**.
-4. Save and wait for the policy to become active.
-
-One policy works for both global and private chat because each message has its own expiry timestamp. Firestore TTL deletion is asynchronous; the app hides messages at the expiry time, but physical deletion can happen later (often within 24 hours). This does not require Cloud Functions or a Blaze upgrade.
+This keeps the project on Spark. Cleanup is not server-scheduled: if nobody opens Playovia, deletion waits until the next active session. The UI still hides expired messages by age. Firestore delete operations count toward the free quota (20,000 document deletes/day); monitor usage if chat volume grows.
 
 ## Existing messages
 
-TTL only acts on documents that have an `expiresAt` field. Messages created before this update do not have that field. Clear those old documents once in Firestore Console if you want the old chat history removed too. Delete only `globalChat/main/messages` and the `messages` subcollections under `conversations`; keep the parent conversation documents.
+Old messages without `expiresAt` are still found by their `createdAt` timestamp and cleaned by the client after the retention period.
