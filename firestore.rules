@@ -231,29 +231,57 @@ service cloud.firestore {
     match /announcements/{id} { allow read: if signedIn(); allow write: if isAdmin(); }
     match /games/{id} { allow read: if signedIn(); allow write: if isAdmin(); }
 
-    match /gameRatings/{gameSlug}/reviews/{uid} {
+    match /gameStarRatings/{gameSlug} {
+      function myRatingPath() {
+        return /databases/$(database)/documents/gameStarRatings/$(gameSlug)/users/$(request.auth.uid);
+      }
       allow read: if signedIn();
-      allow create: if owner(uid) &&
-        request.resource.data.keys().hasOnly(['uid', 'rating', 'review', 'displayName', 'photoURL', 'createdAt', 'updatedAt']) &&
-        request.resource.data.uid == request.auth.uid &&
-        request.resource.data.rating is int &&
-        request.resource.data.rating >= 1 && request.resource.data.rating <= 5 &&
-        request.resource.data.review is string && request.resource.data.review.size() <= 500 &&
-        request.resource.data.displayName is string && request.resource.data.displayName.size() <= 40 &&
-        request.resource.data.photoURL is string && request.resource.data.photoURL.size() <= 1000 &&
-        request.resource.data.createdAt == request.time &&
+      allow create: if signedIn() &&
+        request.resource.data.keys().hasOnly(['count', 'total', 'updatedAt']) &&
+        request.resource.data.count == 1 &&
+        request.resource.data.total is number &&
+        request.resource.data.total >= 1 && request.resource.data.total <= 5 &&
+        request.resource.data.updatedAt == request.time &&
+        getAfter(myRatingPath()).data.rating == request.resource.data.total;
+      allow update: if signedIn() &&
+        request.resource.data.keys().hasOnly(['count', 'total', 'updatedAt']) &&
+        request.resource.data.count is int &&
+        request.resource.data.total is number &&
+        request.resource.data.count == resource.data.count &&
+        request.resource.data.total == resource.data.total -
+          get(myRatingPath()).data.rating + getAfter(myRatingPath()).data.rating &&
         request.resource.data.updatedAt == request.time;
-      allow update: if owner(uid) &&
-        request.resource.data.uid == resource.data.uid &&
-        request.resource.data.createdAt == resource.data.createdAt &&
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rating', 'review', 'displayName', 'photoURL', 'updatedAt']) &&
-        request.resource.data.rating is int &&
-        request.resource.data.rating >= 1 && request.resource.data.rating <= 5 &&
-        request.resource.data.review is string && request.resource.data.review.size() <= 500 &&
-        request.resource.data.displayName is string && request.resource.data.displayName.size() <= 40 &&
-        request.resource.data.photoURL is string && request.resource.data.photoURL.size() <= 1000 &&
-        request.resource.data.updatedAt == request.time;
-      allow delete: if owner(uid);
+      allow delete: if false;
+
+      match /users/{uid} {
+        function summaryPath() {
+          return /databases/$(database)/documents/gameStarRatings/$(gameSlug);
+        }
+        allow read: if signedIn();
+        allow create: if owner(uid) &&
+          request.resource.data.keys().hasOnly(['uid', 'rating', 'createdAt', 'updatedAt']) &&
+          request.resource.data.uid == request.auth.uid &&
+          request.resource.data.rating is int &&
+          request.resource.data.rating >= 1 && request.resource.data.rating <= 5 &&
+          request.resource.data.createdAt == request.time &&
+          request.resource.data.updatedAt == request.time &&
+          getAfter(summaryPath()).data.count ==
+            (exists(summaryPath()) ? get(summaryPath()).data.count + 1 : 1) &&
+          getAfter(summaryPath()).data.total ==
+            (exists(summaryPath()) ? get(summaryPath()).data.total : 0) + request.resource.data.rating;
+        allow update: if owner(uid) &&
+          request.resource.data.keys().hasOnly(['uid', 'rating', 'createdAt', 'updatedAt']) &&
+          request.resource.data.uid == resource.data.uid &&
+          request.resource.data.createdAt == resource.data.createdAt &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rating', 'updatedAt']) &&
+          request.resource.data.rating is int &&
+          request.resource.data.rating >= 1 && request.resource.data.rating <= 5 &&
+          request.resource.data.updatedAt == request.time &&
+          getAfter(summaryPath()).data.count == get(summaryPath()).data.count &&
+          getAfter(summaryPath()).data.total ==
+            get(summaryPath()).data.total - resource.data.rating + request.resource.data.rating;
+        allow delete: if false;
+      }
     }
 
     match /reports/{id} {
