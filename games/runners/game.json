@@ -1,7 +1,6 @@
 {
   "title": "City Rush",
-  "description": "Sprint through the city and jungle, dodge obstacles and collect coins.",
+  "description": "Sprint through vibrant city streets and jungles, dodge obstacles, collect coins, and chase high scores.",
   "category": "Runner",
-  "thumbnail": "thumbnail.svg",
-  "status": "published"
+  "thumbnail": "thumbnail.svg"
 }
