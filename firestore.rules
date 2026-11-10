@@ -97,7 +97,9 @@ service cloud.firestore {
           request.resource.data.text.size() > 0 &&
           request.resource.data.text.size() <= 500 &&
           request.resource.data.createdAt == request.time;
-        allow update, delete: if false;
+        allow update: if false;
+        // Participants may delete private messages only after twelve hours.
+        allow delete: if participant() && resource.data.createdAt < request.time - duration.value(12, 'h');
       }
     }
 
@@ -110,7 +112,9 @@ service cloud.firestore {
         request.resource.data.text.size() > 0 &&
         request.resource.data.text.size() <= 500 &&
         request.resource.data.createdAt == request.time;
-      allow update, delete: if false;
+      allow update: if false;
+      // Signed-in clients may delete global messages only after one hour.
+      allow delete: if signedIn() && resource.data.createdAt < request.time - duration.value(1, 'h');
     }
 
     match /partyRooms/{roomId} {
