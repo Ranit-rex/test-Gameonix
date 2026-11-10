@@ -1,7 +1,6 @@
 {
   "title": "MOBA Legends",
-  "description": "A dark fantasy 2D 5v5 MOBA. Battle across three lanes with spectral heroes, abilities, minions, towers and AI-filled multiplayer matches.",
-  "category": "Action",
-  "thumbnail": "cover.svg",
-  "status": "published"
+  "description": "Lead spectral heroes across three lanes, unleash abilities, destroy towers, and win intense five-versus-five battles.",
+  "category": "Strategy",
+  "thumbnail": "cover.svg"
 }
