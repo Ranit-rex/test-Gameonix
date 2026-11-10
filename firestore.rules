@@ -247,9 +247,9 @@ service cloud.firestore {
         request.resource.data.keys().hasOnly(['count', 'total', 'updatedAt']) &&
         request.resource.data.count is int &&
         request.resource.data.total is number &&
-        request.resource.data.count == resource.data.count &&
+        request.resource.data.count == resource.data.count + (exists(myRatingPath()) ? 0 : 1) &&
         request.resource.data.total == resource.data.total -
-          get(myRatingPath()).data.rating + getAfter(myRatingPath()).data.rating &&
+          (exists(myRatingPath()) ? get(myRatingPath()).data.rating : 0) + getAfter(myRatingPath()).data.rating &&
         request.resource.data.updatedAt == request.time;
       allow delete: if false;
 
