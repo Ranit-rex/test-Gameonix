@@ -90,7 +90,7 @@ async function dhCreateRoom(){
  try{
   if(dhRoomRef)await dhLeaveRoom(false);
   const code=dhCode(),ref=dhRoot().child(code),old=await ref.once('value');if(old.exists())throw Error('Please try creating the room again.');
-  const now=Date.now(),name=dhProfile.username||dhUser.displayName||'Hunter',mode=$('#dhMode')?.value||'Normal';
+  const now=Date.now(),name=String(dhProfile.username||dhUser.displayName||'Hunter').slice(0,32),mode=$('#dhMode')?.value||'Normal';
   const member={uid:dhUser.uid,name,joinedAt:now,lastSeen:now,cls:S.cls,x:60,y:450,hp:mhp(),mhp:mhp(),world:0,updatedAt:now};
   await ref.set({roomId:code,gameId:'dungeon-hunter',mode,hostUid:dhUser.uid,hostName:name,members:{[dhUser.uid]:member},status:'waiting',visibility:$('#dhVisibility')?.value||'public',maxPlayers:4,createdAt:now,updatedAt:now});
   await dhEnterRoom(code);
@@ -118,7 +118,7 @@ async function dhEnterRoom(id){
  const data=snap.val(),members=data.members||{};if(data.gameId!=='dungeon-hunter'||data.status!=='waiting')throw Error('This room is no longer waiting.');
  if(!members[dhUser.uid]&&Object.keys(members).length>=(data.maxPlayers||4))throw Error('Room is full.');
  dhRoomId=id;dhRoomRef=ref;dhMetaRef=ref;dhPlayersRef=ref.child('members');dhRoomMeta=data;dhRoomHost=data.hostUid===dhUser.uid;dhGameStarted=false;dhSeenEvents.clear();
- const now=Date.now(),name=dhProfile.username||dhUser.displayName||'Hunter';
+ const now=Date.now(),name=String(dhProfile.username||dhUser.displayName||'Hunter').slice(0,32);
  await dhPlayersRef.child(dhUser.uid).update({uid:dhUser.uid,name,joinedAt:members[dhUser.uid]?.joinedAt||now,lastSeen:now,cls:S.cls,x:members[dhUser.uid]?.x??60,y:members[dhUser.uid]?.y??450,hp:members[dhUser.uid]?.hp??mhp(),mhp:mhp(),world:0,updatedAt:now});
  const ownPlayerRef=dhPlayersRef.child(dhUser.uid);await ownPlayerRef.onDisconnect().remove();if(dhRoomHost)await ref.onDisconnect().remove();
  if(dhMetaListener)dhMetaRef.off('value',dhMetaListener);if(dhPlayersListener)dhPlayersRef.off('value',dhPlayersListener);
@@ -157,7 +157,7 @@ async function dhLeaveRoom(show=true){
 }
 function dhPublishPlayer(){
  if(!dhPlayersRef||!dhUser||!P||state!=='play')return;const now=Date.now();if(now-dhLastPublish<120)return;dhLastPublish=now;
- dhPlayersRef.child(dhUser.uid).update({uid:dhUser.uid,name:dhProfile.username||dhUser.displayName||'Hunter',lastSeen:now,cls:S.cls,x:P.x,y:P.y,hp:P.hp,mhp:P.mh,world:LV?.w||0,updatedAt:now}).catch(()=>{});
+ dhPlayersRef.child(dhUser.uid).update({uid:dhUser.uid,name:String(dhProfile.username||dhUser.displayName||'Hunter').slice(0,32),lastSeen:now,cls:S.cls,x:P.x,y:P.y,hp:P.hp,mhp:P.mh,world:LV?.w||0,updatedAt:now}).catch(()=>{});
 }
 function dhDrawRemotePlayers(add){
  for(const [uid,p] of Object.entries(dhRemotePlayers||{})){if(uid===dhUser?.uid||Date.now()-(p.lastSeen||p.updatedAt||0)>12000)continue;
