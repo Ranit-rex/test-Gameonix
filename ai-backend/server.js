@@ -2,7 +2,7 @@ const http = require('node:http');
 
 const PORT = Number(process.env.PORT || 3000);
 const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
-const GROQ_MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
+const GROQ_MODEL = process.env.GROQ_MODEL || 'openai/gpt-oss-120b';
 const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL || 'openrouter/free';
 const ALLOWED_ORIGINS = new Set(['https://ranit-rex.github.io']);
 const MAX_BODY_BYTES = 32 * 1024;
