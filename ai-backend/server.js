@@ -31,12 +31,27 @@ function rateLimited(ip) {
 // Keys stay on Render. Numbered slots make future key replacement/addition easy.
 // Only the configured active slot is used; same-provider accounts are not rotated
 // to evade provider quotas. Real failover happens across different providers.
-function getProviderKey(provider) {
+function getProviderKey(provider, slot = 1) {
   const prefix = provider.toUpperCase();
-  const active = Math.max(1, Number(process.env[prefix + '_ACTIVE_KEY'] || 1));
-  const numbered = process.env[prefix + '_API_KEY_' + active];
+  const numbered = process.env[prefix + '_API_KEY_' + slot];
   const legacy = process.env[prefix + '_API_KEY'];
-  return String(numbered || (active === 1 ? legacy : '') || '').trim();
+  return String(numbered || (slot === 1 ? legacy : '') || '').trim();
+}
+
+async function verifyAdminToken(token) {
+  const apiKey = process.env.FIREBASE_WEB_API_KEY;
+  if (!apiKey || !token) return false;
+  try {
+    const response = await fetch('https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=' + encodeURIComponent(apiKey), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ idToken: token }),
+      signal: AbortSignal.timeout(10000)
+    });
+    const data = await response.json().catch(() => ({}));
+    const email = String(data?.users?.[0]?.email || '').toLowerCase();
+    return response.ok && ['firegamingugw@gmail.com', 'mranit66@gmail.com'].includes(email);
+  } catch (_) { return false; }
 }
 
 function buildMessages(system, history, message) {
@@ -112,8 +127,8 @@ async function requestOpenAICompatible(provider, key, system, history, message) 
   return reply;
 }
 
-async function callProvider(provider, system, history, message) {
-  const key = getProviderKey(provider);
+async function callProvider(provider, system, history, message, slot = 1) {
+  const key = getProviderKey(provider, slot);
   if (!key) throw new Error(provider + ' is not configured on the backend.');
   if (provider === 'gemini') return requestGemini(key, system, history, message);
   return requestOpenAICompatible(provider, key, system, history, message);
@@ -161,13 +176,18 @@ const server = http.createServer(async (req, res) => {
     const requested = String(input.provider || 'auto').toLowerCase();
     const allowed = ['auto', 'gemini', 'groq', 'openrouter'];
     if (!allowed.includes(requested)) return send(res, 400, { error: 'Unknown AI provider selection.' }, origin);
+    const keySlot = Number(input.keySlot || 1);
+    if (!Number.isInteger(keySlot) || keySlot < 1 || keySlot > 3) return send(res, 400, { error: 'Invalid key slot.' }, origin);
+    if (keySlot !== 1 && !(await verifyAdminToken(String(input.idToken || '')))) {
+      return send(res, 403, { error: 'Sign in with an authorized Playovia admin account to test additional keys.' }, origin);
+    }
 
     const order = requested === 'auto' ? ['gemini', 'groq', 'openrouter'] : [requested];
     const errors = [];
     for (const provider of order) {
       try {
-        const reply = await callProvider(provider, system, history, message);
-        return send(res, 200, { reply, provider }, origin);
+        const reply = await callProvider(provider, system, history, message, requested === 'auto' ? 1 : keySlot);
+        return send(res, 200, { reply, provider, keySlot: requested === 'auto' ? 1 : keySlot }, origin);
       } catch (error) {
         const detail = String(error?.message || 'Provider unavailable').slice(0, 240);
         errors.push(provider + ': ' + detail);
