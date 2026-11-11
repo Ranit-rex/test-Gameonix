@@ -8,7 +8,7 @@ const ALLOWED_ORIGINS = new Set(['https://ranit-rex.github.io']);
 const MAX_BODY_BYTES = 32 * 1024;
 const MAX_MESSAGE_CHARS = 1200;
 const rateBuckets = new Map();
-const aiUsage = { total: 0, success: 0, failed: 0, byProvider: { gemini: 0, groq: 0, openrouter: 0 }, byKey: {}, recent: [], lastQuota: {} };
+const aiUsage = { total: 0, success: 0, failed: 0, byProvider: { gemini: 0, groq: 0, openrouter: 0 }, byKey: {}, recent: [], lastQuota: {}, lastQuotaByKey: {} };
 
 function send(res, status, data, origin) {
   res.writeHead(status, {
@@ -117,7 +117,7 @@ async function requestGemini(key, system, history, message) {
   return reply;
 }
 
-async function requestOpenAICompatible(provider, key, system, history, message) {
+async function requestOpenAICompatible(provider, key, system, history, message, slot = 1) {
   const isGroq = provider === 'groq';
   const endpoint = isGroq
     ? 'https://api.groq.com/openai/v1/chat/completions'
@@ -141,6 +141,7 @@ async function requestOpenAICompatible(provider, key, system, history, message) 
   });
   const body = await response.json().catch(() => ({}));
   aiUsage.lastQuota[provider] = { requests: response.headers.get('x-ratelimit-remaining-requests'), tokens: response.headers.get('x-ratelimit-remaining-tokens'), requestLimit: response.headers.get('x-ratelimit-limit-requests'), tokenLimit: response.headers.get('x-ratelimit-limit-tokens'), resetRequests: response.headers.get('x-ratelimit-reset-requests'), resetTokens: response.headers.get('x-ratelimit-reset-tokens') };
+  aiUsage.lastQuotaByKey[provider + ':' + slot] = aiUsage.lastQuota[provider];
   if (!response.ok) throw new Error((isGroq ? 'Groq' : 'OpenRouter') + ' request failed (' + response.status + '): ' + (body?.error?.message || 'Provider error'));
   const reply = String(body?.choices?.[0]?.message?.content || '').trim();
   if (!reply) throw new Error((isGroq ? 'Groq' : 'OpenRouter') + ' returned an empty response.');
@@ -151,7 +152,7 @@ async function callProvider(provider, system, history, message, slot = 1) {
   const key = getProviderKey(provider, slot);
   if (!key) throw new Error(provider + ' is not configured on the backend.');
   if (provider === 'gemini') return requestGemini(key, system, history, message);
-  return requestOpenAICompatible(provider, key, system, history, message);
+  return requestOpenAICompatible(provider, key, system, history, message, slot);
 }
 
 const server = http.createServer(async (req, res) => {
@@ -241,12 +242,12 @@ const server = http.createServer(async (req, res) => {
         signal: AbortSignal.timeout(9000)
       });
       const body = await response.json().catch(() => ({}));
-      if (!response.ok) return send(res, 200, { provider, slot, status: response.status === 401 || response.status === 403 ? 'invalid_key' : response.status === 429 ? 'rate_limited' : 'check_failed', message: provider.toUpperCase() + ' returned HTTP ' + response.status, quota: { exactRemaining: null } }, origin);
+      if (!response.ok) return send(res, 200, { provider, slot, status: response.status === 401 || response.status === 403 ? 'invalid_key' : response.status === 429 ? 'rate_limited' : 'check_failed', message: provider.toUpperCase() + ' returned HTTP ' + response.status, quota: { exactRemaining: null, requests: aiUsage.lastQuotaByKey[provider + ':' + slot]?.requests ?? null, tokens: aiUsage.lastQuotaByKey[provider + ':' + slot]?.tokens ?? null, requestLimit: aiUsage.lastQuotaByKey[provider + ':' + slot]?.requestLimit ?? null, tokenLimit: aiUsage.lastQuotaByKey[provider + ':' + slot]?.tokenLimit ?? null, note: 'Groq reports organization/model rate limits in response headers, not an individual API-key credit balance.' } }, origin);
       const models = body.models || body.data || [];
       const expected = provider === 'gemini' ? GEMINI_MODEL : GROQ_MODEL;
       const available = models.some(m => String(m.name || m.id || '').replace(/^models\\//, '') === expected);
       return send(res, 200, { provider, slot, status: 'ready', message: available ? 'Key valid · selected model listed' : 'Key valid · selected model not confirmed', modelAvailable: available,
-        quota: { exactRemaining: null, note: provider === 'gemini' ? 'Gemini quota is project-level, not individually exposed per API key.' : 'Groq remaining RPM/RPD/TPM is returned in inference response headers; model-list checks do not expose a per-key credit balance.' } }, origin);
+        quota: provider === 'gemini' ? { exactRemaining: null, note: 'Gemini quota is project-level, not individually exposed per API key.' } : { exactRemaining: null, requests: aiUsage.lastQuotaByKey[provider + ':' + slot]?.requests ?? null, tokens: aiUsage.lastQuotaByKey[provider + ':' + slot]?.tokens ?? null, requestLimit: aiUsage.lastQuotaByKey[provider + ':' + slot]?.requestLimit ?? null, tokenLimit: aiUsage.lastQuotaByKey[provider + ':' + slot]?.tokenLimit ?? null, note: 'Groq remaining requests/tokens below are last-observed response headers; limits are organization/model scoped, not API-key credit balances.' } }, origin);
     } catch (error) {
       return send(res, 200, { provider, slot, status: 'check_failed', message: error?.name === 'TimeoutError' ? 'Provider check timed out.' : 'Provider check failed.' }, origin);
     }
