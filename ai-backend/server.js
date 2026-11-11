@@ -45,8 +45,8 @@ function rateLimited(ip) {
 }
 
 // Keys stay on Render. Numbered slots make future key replacement/addition easy.
-// Only the configured active slot is used; same-provider accounts are not rotated
-// to evade provider quotas. Real failover happens across different providers.
+// Configured keys are load-balanced across concurrent requests and pinned per chat session.
+// A failed/exhausted key is skipped for that request before provider-level failover.
 function getProviderKey(provider, slot = 1) {
   const prefix = provider.toUpperCase();
   const numbered = process.env[prefix + '_API_KEY_' + slot];
