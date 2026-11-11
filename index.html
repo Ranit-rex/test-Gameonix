@@ -539,6 +539,12 @@ html.low-performance #playhubApp .hero{animation:siteHeroIn .2s ease-out both}
 #playhubApp #novaPage.active #playoviaAiPanel{display:flex!important;position:relative!important;width:100%!important;height:100%!important;min-height:0!important;max-height:none!important;flex:1 1 0!important;margin:0!important;overflow:hidden!important;flex-direction:column!important;}
 #playhubApp #novaPage.active #aiMessages{display:flex!important;flex:1 1 0!important;min-height:0!important;overflow-y:auto!important;}
 @media(max-width:420px){#playhubApp #novaPage.active{left:8px!important;right:8px!important;}}
+
+/* Final AI presentation: normal in-flow app page, never a modal or overlay. */
+#playhubApp .main:has(#novaPage.active){display:flex!important;flex-direction:column!important;position:relative!important;height:100dvh!important;min-height:0!important;max-height:100dvh!important;overflow:hidden!important;}
+#playhubApp #novaPage.active{display:flex!important;position:relative!important;inset:auto!important;top:auto!important;left:auto!important;right:auto!important;bottom:auto!important;z-index:1!important;box-sizing:border-box!important;flex:1 1 0!important;width:100%!important;height:auto!important;min-height:0!important;max-height:none!important;margin:0!important;padding:0!important;overflow:hidden!important;}
+#playhubApp #novaPage.active #playoviaAiPanel{display:flex!important;position:relative!important;inset:auto!important;box-sizing:border-box!important;flex:1 1 0!important;width:100%!important;height:100%!important;min-height:0!important;max-height:none!important;margin:0!important;border-radius:12px!important;overflow:hidden!important;flex-direction:column!important;}
+#playhubApp #novaPage.active #aiMessages{display:flex!important;flex:1 1 0!important;min-height:0!important;overflow-y:auto!important;}
 </style>
 </head>
 <body>
@@ -1117,10 +1123,9 @@ function aiOpen(){
  document.querySelectorAll('#playhubApp .page').forEach(p=>p.classList.toggle('active',p===page));
  document.querySelectorAll('#playhubApp .navbtn[data-page]').forEach(b=>b.classList.toggle('active',b.dataset.page==='nova'));
  page.classList.remove('hidden');panel.classList.remove('hidden');
- main.style.setProperty('position','relative','important');main.style.setProperty('height','100dvh','important');main.style.setProperty('min-height','0','important');main.style.setProperty('max-height','100dvh','important');main.style.setProperty('overflow','hidden','important');main.style.setProperty('padding','10px 12px 8px','important');
- page.style.cssText='display:flex!important;position:absolute!important;top:110px!important;left:12px!important;right:12px!important;bottom:8px!important;width:auto!important;height:auto!important;min-height:0!important;max-height:none!important;margin:0!important;padding:0!important;overflow:hidden!important;z-index:5!important;';
- if(window.matchMedia('(max-width:420px)').matches)page.style.setProperty('left','8px','important');
- panel.style.cssText='display:flex!important;position:relative!important;inset:auto!important;box-sizing:border-box!important;width:100%!important;height:100%!important;min-height:0!important;max-height:none!important;flex:1 1 0!important;margin:0!important;border-radius:12px!important;overflow:hidden!important;flex-direction:column!important;';
+ main.style.setProperty('display','flex','important');main.style.setProperty('flex-direction','column','important');main.style.setProperty('position','relative','important');main.style.setProperty('height','100dvh','important');main.style.setProperty('min-height','0','important');main.style.setProperty('overflow','hidden','important');
+ page.style.cssText='display:flex!important;position:relative!important;inset:auto!important;flex:1 1 0!important;width:100%!important;height:auto!important;min-height:0!important;max-height:none!important;margin:0!important;padding:0!important;overflow:hidden!important;z-index:1!important;';
+ panel.style.cssText='display:flex!important;position:relative!important;inset:auto!important;box-sizing:border-box!important;flex:1 1 0!important;width:100%!important;height:100%!important;min-height:0!important;max-height:none!important;margin:0!important;border-radius:12px!important;overflow:hidden!important;flex-direction:column!important;';
  const messages=$('aiMessages');if(messages){messages.style.setProperty('display','flex','important');messages.style.setProperty('flex','1 1 0','important');messages.style.setProperty('min-height','0','important');messages.style.setProperty('overflow-y','auto','important');}
  const statusEl=$('appStatus');if(statusEl)statusEl.style.setProperty('display','none','important');
  $('aiProviderSelect')?.closest('.ai-provider-row')?.classList.remove('hidden');
