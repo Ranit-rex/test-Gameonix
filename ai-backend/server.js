@@ -9,6 +9,21 @@ const MAX_BODY_BYTES = 32 * 1024;
 const MAX_MESSAGE_CHARS = 1200;
 const rateBuckets = new Map();
 const aiUsage = { total: 0, success: 0, failed: 0, byProvider: { gemini: 0, groq: 0, openrouter: 0 }, byKey: {}, recent: [], lastQuota: {}, lastQuotaByKey: {} };
+const activeKeyLoads = new Map();
+const chatKeyRoutes = new Map();
+const ASSISTANT_NAMES = { gemini: 'Playovia GO', groq: 'Playovia Pro', openrouter: 'MTO v2' };
+function availableSlots(provider) {
+  const max = provider === 'groq' ? 10 : 3;
+  return Array.from({ length: max }, (_, i) => i + 1).filter(slot => !!getProviderKey(provider, slot));
+}
+function orderSlotsByLoad(provider, slots) {
+  return slots.map(slot => ({ slot, load: activeKeyLoads.get(provider + ':' + slot) || 0, tie: Math.random() }))
+    .sort((a, b) => a.load - b.load || a.tie - b.tie).map(x => x.slot);
+}
+function cleanExpiredChatRoutes() {
+  const cutoff = Date.now() - 6 * 60 * 60 * 1000;
+  for (const [id, route] of chatKeyRoutes) if (route.updatedAt < cutoff) chatKeyRoutes.delete(id);
+}
 
 function send(res, status, data, origin) {
   res.writeHead(status, {
@@ -310,41 +325,72 @@ const server = http.createServer(async (req, res) => {
 
     const requested = String(input.provider || 'auto').toLowerCase();
     const allowed = ['auto', 'gemini', 'groq', 'openrouter'];
-    if (!allowed.includes(requested)) return send(res, 400, { error: 'Unknown AI provider selection.' }, origin);
-    const keySlot = Number(input.keySlot || 1);
-    const providerAuto = requested !== 'auto' && String(input.keySlot || '') === 'auto';
-    const groqAuto = requested === 'groq' && providerAuto;
-    if (!providerAuto && (!Number.isInteger(keySlot) || keySlot < 1 || keySlot > (requested === 'groq' ? 10 : 3))) return send(res, 400, { error: 'Invalid key slot.' }, origin);
-    
-    const order = requested === 'auto' ? ['gemini', 'groq', 'openrouter'] : [requested];
-    const errors = [];
-    for (const provider of order) {
-      const slots = requested === 'auto' || providerAuto ? (provider === 'groq' ? Array.from({ length: 10 }, (_, i) => i + 1) : [1,2,3]) : [keySlot];
+    if (!allowed.includes(requested)) return send(res, 400, { error: 'Please choose a valid Playovia AI mode.' }, origin);
+    const keySlotRaw = String(input.keySlot ?? 'auto');
+    const providerAuto = requested !== 'auto' && keySlotRaw === 'auto';
+    const fixedSlot = providerAuto ? null : Number(keySlotRaw || 1);
+    if (!providerAuto && (!Number.isInteger(fixedSlot) || fixedSlot < 1 || fixedSlot > (requested === 'groq' ? 10 : 3))) {
+      return send(res, 400, { error: 'Playovia could not use that key selection. Please choose another mode.' }, origin);
+    }
+
+    const chatId = String(input.chatId || '').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 100);
+    cleanExpiredChatRoutes();
+    const smartOrder = ['groq', 'openrouter', 'gemini'];
+    const providerOrder = requested === 'auto' ? smartOrder : [requested];
+    const pinned = chatId ? chatKeyRoutes.get(chatId) : null;
+    const routes = [];
+    if (pinned && providerOrder.includes(pinned.provider) && getProviderKey(pinned.provider, pinned.slot)) {
+      routes.push({ provider: pinned.provider, slot: pinned.slot });
+    }
+    for (const provider of providerOrder) {
+      let slots;
+      if (!providerAuto && requested !== 'auto') slots = [fixedSlot];
+      else slots = orderSlotsByLoad(provider, availableSlots(provider));
       for (const slot of slots) {
-        try {
-          const reply = await callProvider(provider, system, history, message, slot);
-          aiUsage.total++; aiUsage.success++; aiUsage.byProvider[provider] = (aiUsage.byProvider[provider] || 0) + 1;
-          const usageKey = provider + ':' + slot; aiUsage.byKey[usageKey] = (aiUsage.byKey[usageKey] || 0) + 1;
-          aiUsage.recent.unshift({ at: new Date().toISOString(), provider, slot, status: 'success' }); aiUsage.recent = aiUsage.recent.slice(0,100);
-          return send(res, 200, { reply, provider, keySlot: slot, quota: aiUsage.lastQuota[provider] || null }, origin);
-        } catch (error) {
-          const detail = String(error?.message || 'Provider unavailable').slice(0, 240);
-          errors.push(provider + ' Key ' + slot + ': ' + detail);
-          aiUsage.total++; aiUsage.failed++; aiUsage.recent.unshift({ at: new Date().toISOString(), provider, slot, status: 'failed', error: detail.slice(0,120) }); aiUsage.recent = aiUsage.recent.slice(0,100);
-          console.warn('[Playovia AI] ' + provider + ' Key ' + slot + ' failed: ' + detail);
-          if (!providerAuto && requested !== 'auto') break;
-        }
+        if (!routes.some(route => route.provider === provider && route.slot === slot)) routes.push({ provider, slot });
       }
     }
-    return send(res, 502, {
-      error: requested === 'auto'
-        ? 'All configured AI providers are currently unavailable. Please try again shortly.'
-        : (groqAuto ? 'All configured Groq keys were tried, but none is currently available. ' + errors.join(' | ').slice(0, 900) : (errors[0] || 'Selected AI provider is unavailable.'))
+
+    const errors = [];
+    for (const route of routes) {
+      const { provider, slot } = route;
+      const loadKey = provider + ':' + slot;
+      activeKeyLoads.set(loadKey, (activeKeyLoads.get(loadKey) || 0) + 1);
+      try {
+        const reply = await callProvider(provider, system, history, message, slot);
+        aiUsage.total++; aiUsage.success++; aiUsage.byProvider[provider] = (aiUsage.byProvider[provider] || 0) + 1;
+        aiUsage.byKey[loadKey] = (aiUsage.byKey[loadKey] || 0) + 1;
+        aiUsage.recent.unshift({ at: new Date().toISOString(), provider, slot, status: 'success' }); aiUsage.recent = aiUsage.recent.slice(0,100);
+        if (chatId) chatKeyRoutes.set(chatId, { provider, slot, updatedAt: Date.now() });
+        return send(res, 200, { reply, provider, keySlot: slot, assistantName: ASSISTANT_NAMES[provider], quota: aiUsage.lastQuota[provider] || null }, origin);
+      } catch (error) {
+        const detail = String(error?.message || 'Provider unavailable').slice(0, 240);
+        errors.push({ provider, slot, detail });
+        aiUsage.total++; aiUsage.failed++; aiUsage.recent.unshift({ at: new Date().toISOString(), provider, slot, status: 'failed', error: detail.slice(0,120) }); aiUsage.recent = aiUsage.recent.slice(0,100);
+        console.warn('[Playovia AI] ' + provider + ' Key ' + slot + ' failed: ' + detail);
+        if (chatId) {
+          const current = chatKeyRoutes.get(chatId);
+          if (current && current.provider === provider && current.slot === slot) chatKeyRoutes.delete(chatId);
+        }
+      } finally {
+        const remaining = Math.max(0, (activeKeyLoads.get(loadKey) || 1) - 1);
+        if (remaining) activeKeyLoads.set(loadKey, remaining); else activeKeyLoads.delete(loadKey);
+      }
+    }
+
+    const hasConfiguredKeys = providerOrder.some(provider => availableSlots(provider).length > 0);
+    const failureCode = errors.some(x => /429|rate.?limit|quota|resource_exhausted|insufficient/i.test(x.detail)) ? 'busy' : 'unavailable';
+    return send(res, hasConfiguredKeys ? 502 : 503, {
+      error: !hasConfiguredKeys
+        ? 'Playovia AI is not ready yet. Please try again later.'
+        : failureCode === 'busy'
+          ? 'Playovia is receiving too many requests right now. Please try again in a moment.'
+          : 'Playovia could not complete your message right now. Please try again shortly.'
     }, origin);
   } catch (error) {
     const message = error && error.name === 'TimeoutError'
-      ? 'AI request timed out. Please try again.'
-      : 'AI request failed. Please try again.';
+      ? 'Playovia is taking longer than expected. Please try again.'
+      : 'Playovia could not process that message. Please try again.';
     return send(res, 500, { error: message }, origin);
   }
 });
