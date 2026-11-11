@@ -310,17 +310,28 @@ const server = http.createServer(async (req, res) => {
       const available = models.some(m => { const name = String(m.name || m.id || ''); return (name.startsWith('models/') ? name.slice(7) : name) === expected; });
       if (provider === 'gemini') return send(res, 200, { provider, slot, status: 'ready', message: available ? 'Key valid · selected model listed' : 'Key valid · selected model not confirmed', modelAvailable: available, quota: { exactRemaining: null, note: 'Gemini quota is project-level and exact remaining quota is not exposed by this API check.' } }, origin);
       const h = response.headers;
+      const groqFreePlanLimits = {
+        'openai/gpt-oss-120b': { rpm: 30, rpd: 1000, tpm: 8000, tpd: 200000 },
+        'openai/gpt-oss-20b': { rpm: 30, rpd: 1000, tpm: 8000, tpd: 200000 },
+        'openai/gpt-oss-safeguard-20b': { rpm: 3, rpd: 1000, tpm: 2000, tpd: 200000 },
+        'qwen/qwen3.8-27b': { rpm: 30, rpd: 1000, tpm: 8000, tpd: 200000 }
+      };
+      const freePlan = groqFreePlanLimits[GROQ_MODEL] || null;
       const quota = {
+        model: GROQ_MODEL,
+        freePlanLimits: freePlan,
+        requestsMinuteRemaining: h.get('x-ratelimit-remaining-requests-minute'),
+        requestsMinuteLimit: h.get('x-ratelimit-limit-requests-minute'),
         requestsDayRemaining: h.get('x-ratelimit-remaining-requests'),
-        requestsDayLimit: h.get('x-ratelimit-limit-requests'),
+        requestsDayLimit: h.get('x-ratelimit-limit-requests') || (freePlan ? String(freePlan.rpd) : null),
         requestsDayReset: h.get('x-ratelimit-reset-requests'),
         tokensMinuteRemaining: h.get('x-ratelimit-remaining-tokens'),
-        tokensMinuteLimit: h.get('x-ratelimit-limit-tokens'),
+        tokensMinuteLimit: h.get('x-ratelimit-limit-tokens') || (freePlan ? String(freePlan.tpm) : null),
         tokensMinuteReset: h.get('x-ratelimit-reset-tokens'),
         tokensDayRemaining: h.get('x-ratelimit-remaining-tokens-day') || h.get('x-ratelimit-remaining-tokens-daily'),
-        tokensDayLimit: h.get('x-ratelimit-limit-tokens-day') || h.get('x-ratelimit-limit-tokens-daily'),
+        tokensDayLimit: h.get('x-ratelimit-limit-tokens-day') || h.get('x-ratelimit-limit-tokens-daily') || (freePlan ? String(freePlan.tpd) : null),
         tokensDayReset: h.get('x-ratelimit-reset-tokens-day') || h.get('x-ratelimit-reset-tokens-daily'),
-        note: 'Groq RPD/TPM/TPD limits are organization-level (and model/project scoped where configured), not individual API-key balances. Daily token values appear only if Groq exposes TPD headers for this account/model.'
+        note: 'Official Groq Free Plan limits are model-specific and organization/project scoped, not per API-key credits. Your organization Limits page is authoritative if its custom limits differ.'
       };
       aiUsage.lastQuotaByKey['groq:' + slot] = quota;
       return send(res, 200, { provider, slot, status: 'ready', message: available ? 'Key valid · selected model listed' : 'Key valid · selected model not confirmed', modelAvailable: available, quota }, origin);
