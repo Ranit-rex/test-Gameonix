@@ -469,10 +469,10 @@ html.low-performance #playhubApp .hero{animation:siteHeroIn .2s ease-out both}
 
 /* Compact live typing pad docked directly above the Android keyboard */
 #playhubApp .nova-page.active .ai-typing-pad{display:none}
-#playhubApp.keyboard-open .nova-page.active .ai-typing-pad{display:flex!important;position:fixed!important;left:12px!important;right:12px!important;bottom:calc(var(--playovia-keyboard-height,0px) + 65px + env(safe-area-inset-bottom))!important;z-index:131!important;min-height:34px!important;max-height:58px!important;align-items:center!important;gap:9px!important;padding:7px 11px!important;border:1px solid #39445e!important;border-radius:12px 12px 8px 8px!important;background:linear-gradient(110deg,#171f34,#101827)!important;box-shadow:0 5px 18px #0007!important;overflow:hidden!important}
+#playhubApp.keyboard-open .nova-page.active .ai-typing-pad{display:flex!important;position:fixed!important;left:12px!important;right:12px!important;bottom:calc(var(--playovia-keyboard-height,0px) + 76px + env(safe-area-inset-bottom))!important;z-index:131!important;min-height:34px!important;max-height:58px!important;align-items:center!important;gap:9px!important;padding:7px 11px!important;border:1px solid #39445e!important;border-radius:12px 12px 8px 8px!important;background:linear-gradient(110deg,#171f34,#101827)!important;box-shadow:0 5px 18px #0007!important;overflow:hidden!important}
 #playhubApp .nova-page.active .ai-typing-label{flex:0 0 auto!important;color:#a78bfa!important;font-size:8px!important;font-weight:900!important;letter-spacing:1px!important}
 #playhubApp .nova-page.active #aiTypingPreview{min-width:0!important;overflow:hidden!important;color:#e7edff!important;font-size:11px!important;line-height:1.35!important;white-space:nowrap!important;text-overflow:ellipsis!important}
-#playhubApp.keyboard-open .nova-page.active .ai-compose{bottom:calc(var(--playovia-keyboard-height,0px) + 8px + env(safe-area-inset-bottom))!important;left:12px!important;right:12px!important;z-index:132!important}
+#playhubApp.keyboard-open .nova-page.active .ai-compose{position:fixed!important;bottom:calc(var(--playovia-keyboard-height,0px) + 8px + env(safe-area-inset-bottom))!important;left:12px!important;right:12px!important;z-index:132!important}
 #playhubApp.keyboard-open .nova-page.active .ai-messages{padding-bottom:190px!important}
 </style>
 </head>
@@ -1072,7 +1072,7 @@ firebaseInitPromise=initFirebase();
    const keyboardHeight=vv?Math.max(0,window.innerHeight-vv.height-vv.offsetTop):0;
    root.style.setProperty('--playovia-keyboard-height',keyboardHeight+'px');
    const focused=!!(input&&document.activeElement===input);
-   root.classList.toggle('keyboard-open',focused&&keyboardHeight>100);
+   root.classList.toggle('keyboard-open',focused);
  }
  window.addEventListener('resize',syncKeyboardDock,{passive:true});
  if(vv){vv.addEventListener('resize',syncKeyboardDock,{passive:true});vv.addEventListener('scroll',syncKeyboardDock,{passive:true});}
