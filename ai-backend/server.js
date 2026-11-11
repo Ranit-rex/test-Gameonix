@@ -162,7 +162,7 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(204, {
       'Access-Control-Allow-Origin': origin || 'https://ranit-rex.github.io',
       'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
       'Access-Control-Max-Age': '86400',
       'Vary': 'Origin'
     });
@@ -174,6 +174,8 @@ const server = http.createServer(async (req, res) => {
     return send(res, 200, { ok: true, service: 'Playovia AI', providers: ['gemini', 'groq', 'openrouter'] }, origin);
   }
   if (req.method === 'GET' && url.pathname === '/api/keys/check') {
+    const checkIp = String(req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
+    if (rateLimited(checkIp)) return send(res, 429, { error: 'Too many key checks. Please wait a minute.' }, origin);
     const provider = String(url.searchParams.get('provider') || '').toLowerCase();
     if (!['gemini','groq','openrouter'].includes(provider)) return send(res, 400, { error: 'Unknown provider.' }, origin);
     const max = provider === 'groq' ? 10 : 3;
