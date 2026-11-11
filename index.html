@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#080b15">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,interactive-widget=resizes-content"><meta name="theme-color" content="#080b15">
 <title>Playovia — Your Gaming Universe</title>
 <style>
 :root{--bg:#080b15;--surface:#111729;--surface2:#1a2036;--line:#252d45;--text:#f5f6ff;--muted:#9aa4bd;--purple:#a45cff;--blue:#258bff;--green:#51e0a0;--red:#ff687d}
@@ -415,6 +415,22 @@ html.low-performance #playhubApp .hero{animation:siteHeroIn .2s ease-out both}
   #playhubApp .sidebar{padding-top:8px!important;padding-bottom:10px!important;gap:4px!important}
   #playhubApp .sidebar .brand{width:42px!important;height:42px!important;min-height:42px!important;flex-basis:42px!important;font-size:25px!important;margin-bottom:3px!important}
   #playhubApp .sidebar .navbtn{height:56px!important;min-height:56px!important;flex-basis:56px!important}
+}
+
+
+/* Android keyboard / visual viewport handling for Playovia AI */
+@media(max-width:700px){
+  html,body{height:100%;min-height:0;overflow:hidden}
+  #playhubApp{height:var(--playovia-visual-height,100dvh)!important;min-height:0!important}
+  #playhubApp .main{height:var(--playovia-visual-height,100dvh)!important;min-height:0!important}
+  #playhubApp .sidebar{height:var(--playovia-visual-height,100dvh)!important;bottom:auto!important}
+  #playhubApp .nova-page{height:auto!important;min-height:0!important;max-height:100%!important;flex:1 1 auto!important;overflow:hidden!important}
+  #playhubApp .nova-page.active{display:flex!important;flex-direction:column!important;min-height:0!important}
+  #playhubApp .nova-page .ai-panel{height:100%!important;max-height:100%!important;min-height:0!important;flex:1 1 auto!important;display:flex!important;flex-direction:column!important}
+  #playhubApp .nova-page .ai-head,#playhubApp .nova-page .ai-top-controls,#playhubApp .nova-page .ai-suggestions,#playhubApp .nova-page .ai-compose,#playhubApp .nova-page .ai-footnote{flex-shrink:0!important}
+  #playhubApp .nova-page .ai-messages{flex:1 1 0!important;min-height:0!important;overflow-y:auto!important}
+  #playhubApp.keyboard-open .topline{display:none!important}
+  #playhubApp.keyboard-open .nova-page{height:auto!important}
 }
 
 </style>
@@ -1003,4 +1019,25 @@ $('playoviaAiLaunch')?.addEventListener('click',()=>{if($('playoviaAiPanel').cla
 
 firebaseInitPromise=initFirebase();
 </script>
+
+<script>
+(function(){
+  const root=document.getElementById('playhubApp');
+  if(!root)return;
+  const vv=window.visualViewport;
+  function syncPlayoviaViewport(){
+    const height=vv?vv.height:window.innerHeight;
+    root.style.setProperty('--playovia-visual-height',Math.max(240,height)+'px');
+    const input=document.getElementById('aiInput');
+    const keyboardOpen=!!(input&&document.activeElement===input&&vv&&vv.height<window.innerHeight-120);
+    root.classList.toggle('keyboard-open',keyboardOpen);
+  }
+  syncPlayoviaViewport();
+  window.addEventListener('resize',syncPlayoviaViewport,{passive:true});
+  if(vv){vv.addEventListener('resize',syncPlayoviaViewport,{passive:true});vv.addEventListener('scroll',syncPlayoviaViewport,{passive:true});}
+  document.addEventListener('focusin',function(e){if(e.target&&e.target.id==='aiInput'){root.classList.add('keyboard-open');requestAnimationFrame(syncPlayoviaViewport)}});
+  document.addEventListener('focusout',function(e){if(e.target&&e.target.id==='aiInput'){setTimeout(syncPlayoviaViewport,180)}});
+})();
+</script>
+
 </body></html>
