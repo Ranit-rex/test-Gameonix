@@ -417,6 +417,38 @@ html.low-performance #playhubApp .hero{animation:siteHeroIn .2s ease-out both}
   #playhubApp .sidebar .navbtn{height:56px!important;min-height:56px!important;flex-basis:56px!important}
 }
 
+
+/* Rebuild 1: make the AI page consume the actual remaining main-column height */
+@media(max-width:700px){
+ #playhubApp .main:has(.nova-page.active){
+  display:flex!important;flex-direction:column!important;
+  height:100dvh!important;min-height:0!important;
+  box-sizing:border-box!important;overflow:hidden!important;
+  padding:18px 10px 2px!important;
+ }
+ #playhubApp .main:has(.nova-page.active)>.topline{
+  display:flex!important;flex:0 0 62px!important;
+  height:62px!important;min-height:62px!important;
+  margin:0 0 10px!important;
+ }
+ #playhubApp .nova-page.active{
+  display:flex!important;flex:1 1 0!important;
+  width:100%!important;height:auto!important;min-height:0!important;
+  max-height:none!important;margin:0!important;padding:0!important;
+  overflow:hidden!important;box-sizing:border-box!important;
+ }
+ #playhubApp .nova-page.active #playoviaAiPanel{
+  position:relative!important;inset:auto!important;
+  display:flex!important;flex:1 1 0!important;
+  width:100%!important;height:100%!important;
+  min-height:0!important;max-height:none!important;
+  max-width:none!important;margin:0!important;
+  border-radius:12px!important;transform:none!important;
+ }
+ #playhubApp .nova-page.active #aiMessages{
+  flex:1 1 0!important;min-height:0!important;overflow-y:auto!important;
+ }
+}
 </style>
 </head>
 <body>
