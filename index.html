@@ -254,6 +254,50 @@ html.low-performance .game-art img{transition:none!important}
  button:active,.game:active,.recent-card:active{transform:none!important}
 }
 
+
+/* Fixed Playovia shell: only the active page content scrolls */
+html,body{height:100%;overflow:hidden;overscroll-behavior:none}
+#playhubApp{height:100vh;height:100dvh;min-height:0;overflow:hidden}
+#playhubApp .sidebar{position:fixed;left:0;top:0;bottom:0;height:100vh;height:100dvh;overflow:hidden;overscroll-behavior:contain;z-index:30}
+#playhubApp .main{height:100vh;height:100dvh;min-height:0;overflow:hidden;display:flex;flex-direction:column;overscroll-behavior:none}
+#playhubApp .topline{position:relative;z-index:25;flex:0 0 auto;margin-top:0}
+#playhubApp #appStatus{flex:0 0 auto}
+#playhubApp .page{display:none!important}
+#playhubApp .page.active{display:block!important;flex:1 1 auto;min-height:0;max-height:100%;overflow-x:hidden;overflow-y:auto;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:#57417e transparent;padding-bottom:max(24px,env(safe-area-inset-bottom))}
+#playhubApp .page.active::-webkit-scrollbar{width:4px}
+#playhubApp .page.active::-webkit-scrollbar-thumb{background:#57417e;border-radius:8px}
+#playhubApp .topline{background:linear-gradient(180deg,#080b15 75%,#080b15ee);border-bottom:1px solid #252d45}
+#playhubApp .sidebar{background:#0d101c;border-right:1px solid #293047}
+#playhubApp .navbtn{flex:0 0 auto}
+#playhubApp .navspacer{flex:1 1 auto;min-height:8px}
+#playhubApp .page.active>*{animation:pageChildEnter .32s cubic-bezier(.2,.75,.25,1) both}
+#playhubApp .page.active>*:nth-child(2){animation-delay:.025s}
+#playhubApp .page.active>*:nth-child(3){animation-delay:.05s}
+#playhubApp .page.active>*:nth-child(4){animation-delay:.075s}
+#playhubApp .page.active>*:nth-child(5){animation-delay:.1s}
+#playhubApp .page.active>*:nth-child(6){animation-delay:.125s}
+#playhubApp .page.active>*:nth-child(n+7){animation-delay:.14s}
+#playhubApp .game{will-change:transform}
+#playhubApp .game-art{transition:filter .25s ease}
+#playhubApp .game:hover{box-shadow:0 12px 28px #0005}
+#playhubApp .panel,.challenge-card,.game,.friends-stat,.party-card,.profile-card,.saved-card{transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease}
+#playhubApp .panel:active,.challenge-card:active{transform:scale(.995)}
+#playhubApp .primary,.login,.logout,.friends-primary,.friends-secondary,.game-details-actions button{position:relative;overflow:hidden;isolation:isolate}
+#playhubApp .primary:after,#playhubApp .login:after,.friends-primary:after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(110deg,transparent 20%,#ffffff24 48%,transparent 75%);transform:translateX(-120%);transition:transform .5s ease}
+@media(hover:hover){#playhubApp .primary:hover:after,#playhubApp .login:hover:after,.friends-primary:hover:after{transform:translateX(120%)}}
+@keyframes pageChildEnter{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:700px){
+ #playhubApp .main{padding-top:9px}
+ #playhubApp .topline{position:relative;top:auto}
+ #playhubApp .page.active{padding-bottom:max(30px,env(safe-area-inset-bottom))}
+}
+html.low-performance #playhubApp .page.active>*{animation-duration:.16s;animation-delay:0s!important}
+html.low-performance #playhubApp .game:hover{box-shadow:none}
+@media(prefers-reduced-motion:reduce){
+ #playhubApp .page.active>*{animation:none!important}
+ #playhubApp .panel,.challenge-card,.game,.friends-stat,.party-card,.profile-card,.saved-card,#playhubApp .primary:after,#playhubApp .login:after,.friends-primary:after{transition:none!important}
+}
+
 </style>
 </head>
 <body>
