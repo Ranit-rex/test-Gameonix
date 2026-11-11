@@ -259,13 +259,14 @@ const server = http.createServer(async (req, res) => {
     const allowed = ['auto', 'gemini', 'groq', 'openrouter'];
     if (!allowed.includes(requested)) return send(res, 400, { error: 'Unknown AI provider selection.' }, origin);
     const keySlot = Number(input.keySlot || 1);
-    const groqAuto = requested === 'groq' && String(input.keySlot || '') === 'auto';
-    if (!groqAuto && (!Number.isInteger(keySlot) || keySlot < 1 || keySlot > (requested === 'groq' ? 10 : 3))) return send(res, 400, { error: 'Invalid key slot.' }, origin);
+    const providerAuto = requested !== 'auto' && String(input.keySlot || '') === 'auto';
+    const groqAuto = requested === 'groq' && providerAuto;
+    if (!providerAuto && (!Number.isInteger(keySlot) || keySlot < 1 || keySlot > (requested === 'groq' ? 10 : 3))) return send(res, 400, { error: 'Invalid key slot.' }, origin);
     
     const order = requested === 'auto' ? ['gemini', 'groq', 'openrouter'] : [requested];
     const errors = [];
     for (const provider of order) {
-      const slots = requested === 'auto' ? (provider === 'groq' ? Array.from({ length: 10 }, (_, i) => i + 1) : [1,2,3]) : (groqAuto ? Array.from({ length: 10 }, (_, i) => i + 1) : [keySlot]);
+      const slots = requested === 'auto' || providerAuto ? (provider === 'groq' ? Array.from({ length: 10 }, (_, i) => i + 1) : [1,2,3]) : [keySlot];
       for (const slot of slots) {
         try {
           const reply = await callProvider(provider, system, history, message, slot);
@@ -278,7 +279,7 @@ const server = http.createServer(async (req, res) => {
           errors.push(provider + ' Key ' + slot + ': ' + detail);
           aiUsage.total++; aiUsage.failed++; aiUsage.recent.unshift({ at: new Date().toISOString(), provider, slot, status: 'failed', error: detail.slice(0,120) }); aiUsage.recent = aiUsage.recent.slice(0,100);
           console.warn('[Playovia AI] ' + provider + ' Key ' + slot + ' failed: ' + detail);
-          if (provider !== 'groq' || (!groqAuto && requested !== 'auto')) break;
+          if (!providerAuto && requested !== 'auto') break;
         }
       }
     }
