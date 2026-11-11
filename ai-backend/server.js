@@ -87,7 +87,7 @@ async function requestGemini(key, system, history, message) {
         contents,
         generationConfig: { temperature: 0.7, maxOutputTokens: 700 }
       }),
-      signal: AbortSignal.timeout(25000)
+      signal: AbortSignal.timeout(60000)
     }
   );
   const body = await response.json().catch(() => ({}));
