@@ -525,6 +525,13 @@ html.low-performance #playhubApp .hero{animation:siteHeroIn .2s ease-out both}
   #playhubApp.keyboard-open .nova-page.active .ai-compose{left:87px!important;right:8px!important;}
   #playhubApp.keyboard-open .nova-page.active .ai-typing-pad{left:87px!important;right:8px!important;}
 }
+
+/* Playovia AI: enforce a visible, correctly sized page inside the app's main column. */
+#playhubApp .main:has(#novaPage.active){display:flex!important;flex-direction:column!important;box-sizing:border-box!important;height:100dvh!important;min-height:0!important;max-height:100dvh!important;overflow:hidden!important;}
+#playhubApp #novaPage.active{display:flex!important;position:relative!important;flex:1 1 0!important;width:100%!important;height:auto!important;min-height:0!important;max-height:none!important;margin:0!important;padding:0!important;overflow:hidden!important;}
+#playhubApp #novaPage.active #playoviaAiPanel{display:flex!important;position:relative!important;flex:1 1 0!important;width:100%!important;height:100%!important;min-height:0!important;max-height:none!important;margin:0!important;overflow:hidden!important;flex-direction:column!important;}
+#playhubApp #novaPage.active #aiMessages{display:flex!important;flex:1 1 0!important;min-height:0!important;overflow-y:auto!important;}
+@media(max-width:420px){#playhubApp .main:has(#novaPage.active){margin-left:78px!important;width:calc(100% - 78px)!important;padding:8px!important;}}
 </style>
 </head>
 <body>
@@ -1097,7 +1104,25 @@ const PLAYOVIA_AI_ENDPOINT='https://test-gameonix.onrender.com';
 let playoviaAiHistory=[];let playoviaAiBusy=false;
 function aiAddBubble(text,who='assistant',extra=''){const box=$('aiMessages');if(!box)return;const el=document.createElement('div');el.className='ai-bubble '+who+(extra?' '+extra:'');el.textContent=text;box.appendChild(el);box.scrollTop=box.scrollHeight;return el}
 function aiSetBusy(on){playoviaAiBusy=on;$('aiSendBtn').disabled=on;$('aiInput').disabled=on;if(on){const t=document.createElement('div');t.id='aiTyping';t.className='ai-bubble ai-typing';t.innerHTML='<i></i><i></i><i></i>';$('aiMessages').appendChild(t);$('aiMessages').scrollTop=$('aiMessages').scrollHeight}else $('aiTyping')?.remove()}
-function aiOpen(){const root=$('playhubApp'),main=root?.querySelector('.main'),page=$('novaPage'),panel=$('playoviaAiPanel');page?.classList.add('active');panel?.classList.remove('hidden');if(main){main.style.setProperty('display','flex','important');main.style.setProperty('flex-direction','column','important');main.style.setProperty('height','100dvh','important');main.style.setProperty('min-height','0','important');main.style.setProperty('overflow','hidden','important');main.style.setProperty('padding-bottom','0','important')}if(page){page.style.setProperty('display','flex','important');page.style.setProperty('position','relative','important');page.style.setProperty('inset','auto','important');page.style.setProperty('z-index','1','important');page.style.setProperty('width','100%','important');page.style.setProperty('height','auto','important');page.style.setProperty('min-height','0','important');page.style.setProperty('max-height','none','important');page.style.setProperty('flex','1 1 auto','important');page.style.setProperty('margin','0','important');page.style.setProperty('padding','0','important');page.style.setProperty('overflow','hidden','important')}if(panel){panel.style.setProperty('display','flex','important');panel.style.setProperty('position','relative','important');panel.style.setProperty('inset','auto','important');panel.style.setProperty('width','100%','important');panel.style.setProperty('height','100%','important');panel.style.setProperty('min-height','0','important');panel.style.setProperty('max-height','none','important');panel.style.setProperty('flex','1 1 auto','important');panel.style.setProperty('margin','0','important');panel.style.setProperty('border-radius','12px','important')}document.querySelectorAll('#playhubApp .page').forEach(p=>{if(p!==page)p.classList.remove('active')});$('aiProviderSelect')?.closest('.ai-provider-row')?.classList.remove('hidden')}
+function aiOpen(){
+  const root=$('playhubApp'),main=root?.querySelector('.main'),page=$('novaPage'),panel=$('playoviaAiPanel');
+  if(!root||!main||!page||!panel)return;
+  document.querySelectorAll('#playhubApp .page').forEach(p=>p.classList.toggle('active',p===page));
+  document.querySelectorAll('#playhubApp .navbtn[data-page]').forEach(b=>b.classList.toggle('active',b.dataset.page==='nova'));
+  page.classList.remove('hidden');panel.classList.remove('hidden');
+  main.style.setProperty('display','flex','important');
+  main.style.setProperty('flex-direction','column','important');
+  main.style.setProperty('box-sizing','border-box','important');
+  main.style.setProperty('height','100dvh','important');
+  main.style.setProperty('min-height','0','important');
+  main.style.setProperty('max-height','100dvh','important');
+  main.style.setProperty('overflow','hidden','important');
+  main.style.setProperty('padding','10px 12px 8px','important');
+  page.style.cssText='display:flex!important;position:relative!important;inset:auto!important;width:100%!important;height:auto!important;min-height:0!important;max-height:none!important;flex:1 1 0!important;margin:0!important;padding:0!important;overflow:hidden!important;';
+  panel.style.cssText='display:flex!important;position:relative!important;inset:auto!important;box-sizing:border-box!important;width:100%!important;height:100%!important;min-height:0!important;max-height:none!important;flex:1 1 0!important;margin:0!important;border-radius:12px!important;overflow:hidden!important;flex-direction:column!important;';
+  const messages=$('aiMessages');if(messages){messages.style.setProperty('display','flex','important');messages.style.setProperty('flex','1 1 0','important');messages.style.setProperty('min-height','0','important');messages.style.setProperty('overflow-y','auto','important');}
+  $('aiProviderSelect')?.closest('.ai-provider-row')?.classList.remove('hidden');
+}
 function aiClose(){setPage('home')}
 function aiClear(){playoviaAiHistory=[];$('aiMessages').innerHTML='<div class="ai-welcome"><strong>Chat cleared ✨</strong><p>What would you like to explore today?</p></div>'}
 async function aiRequest(payload){if(!PLAYOVIA_AI_ENDPOINT.startsWith('https://'))throw new Error('Playovia AI backend is being connected. Please try again soon.');const response=await fetch(PLAYOVIA_AI_ENDPOINT+'/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||'Could not reach the AI backend. Please try again.');return data}
