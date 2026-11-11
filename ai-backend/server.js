@@ -202,6 +202,55 @@ const server = http.createServer(async (req, res) => {
     }
     return send(res, 200, { provider, model: provider === 'gemini' ? GEMINI_MODEL : provider === 'groq' ? GROQ_MODEL : OPENROUTER_MODEL, results }, origin);
   }
+  if (req.method === 'GET' && url.pathname === '/api/admin/key-status') {
+    if (!process.env.FIREBASE_WEB_API_KEY) return send(res, 503, { error: 'Admin analytics is not configured.' }, origin);
+    const token = String(req.headers.authorization || '').replace(/^Bearer\\s+/i, '');
+    if (!(await verifyAdminToken(token))) return send(res, 403, { error: 'Admin access required.' }, origin);
+    const provider = String(url.searchParams.get('provider') || '').toLowerCase();
+    const slot = Number(url.searchParams.get('slot') || 1);
+    const max = provider === 'groq' ? 10 : 3;
+    if (!['gemini','groq','openrouter'].includes(provider) || !Number.isInteger(slot) || slot < 1 || slot > max) {
+      return send(res, 400, { error: 'Choose a valid provider and key slot.' }, origin);
+    }
+    const key = getProviderKey(provider, slot);
+    if (!key) return send(res, 200, { provider, slot, status: 'not_configured', message: 'This key is not configured on Render.' }, origin);
+    try {
+      if (provider === 'openrouter') {
+        const headers = { Authorization: 'Bearer ' + key };
+        const [keyResponse, creditsResponse] = await Promise.all([
+          fetch('https://openrouter.ai/api/v1/key', { headers, signal: AbortSignal.timeout(9000) }),
+          fetch('https://openrouter.ai/api/v1/credits', { headers, signal: AbortSignal.timeout(9000) })
+        ]);
+        const keyBody = await keyResponse.json().catch(() => ({}));
+        const creditsBody = await creditsResponse.json().catch(() => ({}));
+        if (!keyResponse.ok) return send(res, 200, { provider, slot, status: keyResponse.status === 401 || keyResponse.status === 403 ? 'invalid_key' : 'check_failed', message: 'OpenRouter key check returned HTTP ' + keyResponse.status }, origin);
+        const k = keyBody.data || {};
+        const c = creditsBody.data || {};
+        return send(res, 200, { provider, slot, status: 'ready', message: 'Key authenticated', quota: {
+          usage: k.usage ?? null, limit: k.limit ?? null, limitRemaining: k.limit_remaining ?? null, reset: k.limit_reset ?? null,
+          accountCredits: c.total_credits ?? null, accountUsage: c.total_usage ?? null,
+          accountRemaining: c.total_credits != null && c.total_usage != null ? Math.max(0, Number(c.total_credits) - Number(c.total_usage)) : null,
+          freeTier: k.is_free_tier ?? null
+        } }, origin);
+      }
+      const endpoint = provider === 'gemini'
+        ? 'https://generativelanguage.googleapis.com/v1beta/models'
+        : 'https://api.groq.com/openai/v1/models';
+      const response = await fetch(endpoint, {
+        headers: provider === 'gemini' ? { 'x-goog-api-key': key } : { Authorization: 'Bearer ' + key },
+        signal: AbortSignal.timeout(9000)
+      });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) return send(res, 200, { provider, slot, status: response.status === 401 || response.status === 403 ? 'invalid_key' : response.status === 429 ? 'rate_limited' : 'check_failed', message: provider.toUpperCase() + ' returned HTTP ' + response.status, quota: { exactRemaining: null } }, origin);
+      const models = body.models || body.data || [];
+      const expected = provider === 'gemini' ? GEMINI_MODEL : GROQ_MODEL;
+      const available = models.some(m => String(m.name || m.id || '').replace(/^models\\//, '') === expected);
+      return send(res, 200, { provider, slot, status: 'ready', message: available ? 'Key valid · selected model listed' : 'Key valid · selected model not confirmed', modelAvailable: available,
+        quota: { exactRemaining: null, note: provider === 'gemini' ? 'Gemini quota is project-level, not individually exposed per API key.' : 'Groq remaining RPM/RPD/TPM is returned in inference response headers; model-list checks do not expose a per-key credit balance.' } }, origin);
+    } catch (error) {
+      return send(res, 200, { provider, slot, status: 'check_failed', message: error?.name === 'TimeoutError' ? 'Provider check timed out.' : 'Provider check failed.' }, origin);
+    }
+  }
   if (req.method === 'GET' && url.pathname === '/api/admin/ai-stats') {
     if (!process.env.FIREBASE_WEB_API_KEY) return send(res, 503, { error: 'Admin analytics is not configured: add FIREBASE_WEB_API_KEY to the Render environment.' }, origin);
     const token = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '');
