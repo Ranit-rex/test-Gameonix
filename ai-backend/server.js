@@ -170,6 +170,36 @@ const server = http.createServer(async (req, res) => {
   if (req.method === 'GET' && url.pathname === '/health') {
     return send(res, 200, { ok: true, service: 'Playovia AI', providers: ['gemini', 'groq', 'openrouter'] }, origin);
   }
+  if (req.method === 'GET' && url.pathname === '/api/groq/check') {
+    const ip = String(req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
+    if (rateLimited(ip)) return send(res, 429, { error: 'Too many requests. Please wait a minute.' }, origin);
+    const results = [];
+    for (let slot = 1; slot <= 10; slot++) {
+      const key = getProviderKey('groq', slot);
+      if (!key) { results.push({ slot, status: 'not_configured', message: 'Key not added on Render.' }); continue; }
+      try {
+        const response = await fetch('https://api.groq.com/openai/v1/models', {
+          headers: { 'Authorization': 'Bearer ' + key },
+          signal: AbortSignal.timeout(8000)
+        });
+        const body = await response.json().catch(() => ({}));
+        if (response.ok) {
+          const available = (body.data || []).some(model => model.id === GROQ_MODEL);
+          results.push({ slot, status: available ? 'ready' : 'model_unavailable', message: available ? 'Key valid · model listed' : 'Key valid, but selected model is not listed' });
+        } else if (response.status === 401 || response.status === 403) {
+          results.push({ slot, status: 'invalid_key', message: 'Authentication failed (' + response.status + ')' });
+        } else if (response.status === 429) {
+          results.push({ slot, status: 'rate_limited', message: 'Provider rate limit reached' });
+        } else {
+          results.push({ slot, status: 'error', message: 'Groq returned HTTP ' + response.status });
+        }
+      } catch (error) {
+        results.push({ slot, status: 'error', message: error?.name === 'TimeoutError' ? 'Check timed out' : 'Network error' });
+      }
+    }
+    return send(res, 200, { model: GROQ_MODEL, results }, origin);
+  }
+
   if (req.method !== 'POST' || url.pathname !== '/api/chat') return send(res, 404, { error: 'Not found.' }, origin);
 
   const ip = String(req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
@@ -194,24 +224,29 @@ const server = http.createServer(async (req, res) => {
     const allowed = ['auto', 'gemini', 'groq', 'openrouter'];
     if (!allowed.includes(requested)) return send(res, 400, { error: 'Unknown AI provider selection.' }, origin);
     const keySlot = Number(input.keySlot || 1);
-    if (!Number.isInteger(keySlot) || keySlot < 1 || keySlot > 3) return send(res, 400, { error: 'Invalid key slot.' }, origin);
+    const groqAuto = requested === 'groq' && String(input.keySlot || '') === 'auto';
+    if (!groqAuto && (!Number.isInteger(keySlot) || keySlot < 1 || keySlot > (requested === 'groq' ? 10 : 3))) return send(res, 400, { error: 'Invalid key slot.' }, origin);
     
     const order = requested === 'auto' ? ['gemini', 'groq', 'openrouter'] : [requested];
     const errors = [];
     for (const provider of order) {
-      try {
-        const reply = await callProvider(provider, system, history, message, requested === 'auto' ? 1 : keySlot);
-        return send(res, 200, { reply, provider, keySlot: requested === 'auto' ? 1 : keySlot }, origin);
-      } catch (error) {
-        const detail = String(error?.message || 'Provider unavailable').slice(0, 240);
-        errors.push(provider + ': ' + detail);
-        console.warn('[Playovia AI] ' + provider + ' failed: ' + detail);
+      const slots = provider === 'groq' && (groqAuto || requested === 'auto') ? Array.from({ length: 10 }, (_, i) => i + 1) : [requested === 'auto' ? 1 : keySlot];
+      for (const slot of slots) {
+        try {
+          const reply = await callProvider(provider, system, history, message, slot);
+          return send(res, 200, { reply, provider, keySlot: slot }, origin);
+        } catch (error) {
+          const detail = String(error?.message || 'Provider unavailable').slice(0, 240);
+          errors.push(provider + ' Key ' + slot + ': ' + detail);
+          console.warn('[Playovia AI] ' + provider + ' Key ' + slot + ' failed: ' + detail);
+          if (provider !== 'groq' || (!groqAuto && requested !== 'auto')) break;
+        }
       }
     }
     return send(res, 502, {
       error: requested === 'auto'
         ? 'All configured AI providers are currently unavailable. Please try again shortly.'
-        : (errors[0] || 'Selected AI provider is unavailable.')
+        : (groqAuto ? 'All configured Groq keys were tried, but none is currently available. ' + errors.join(' | ').slice(0, 900) : (errors[0] || 'Selected AI provider is unavailable.'))
     }, origin);
   } catch (error) {
     const message = error && error.name === 'TimeoutError'
