@@ -380,12 +380,13 @@ const server = http.createServer(async (req, res) => {
 
     const hasConfiguredKeys = providerOrder.some(provider => availableSlots(provider).length > 0);
     const failureCode = errors.some(x => /429|rate.?limit|quota|resource_exhausted|insufficient/i.test(x.detail)) ? 'busy' : 'unavailable';
+    const failedAssistant = errors.length ? ASSISTANT_NAMES[errors[errors.length - 1].provider] : 'Playovia AI';
     return send(res, hasConfiguredKeys ? 502 : 503, {
       error: !hasConfiguredKeys
         ? 'Playovia AI is not ready yet. Please try again later.'
         : failureCode === 'busy'
-          ? 'Playovia is receiving too many requests right now. Please try again in a moment.'
-          : 'Playovia could not complete your message right now. Please try again shortly.'
+          ? failedAssistant + ' is busy right now. Please try again in a moment.'
+          : failedAssistant + ' could not complete this reply. Please try again shortly.'
     }, origin);
   } catch (error) {
     const message = error && error.name === 'TimeoutError'
