@@ -7,7 +7,6 @@ const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL || 'openrouter/free';
 const ALLOWED_ORIGINS = new Set(['https://ranit-rex.github.io']);
 const MAX_BODY_BYTES = 32 * 1024;
 const MAX_MESSAGE_CHARS = 1200;
-const PUBLIC_KEY_TEST_END = Date.parse('2026-11-18T11:21:00Z');
 const rateBuckets = new Map();
 
 function send(res, status, data, origin) {
@@ -179,10 +178,7 @@ const server = http.createServer(async (req, res) => {
     if (!allowed.includes(requested)) return send(res, 400, { error: 'Unknown AI provider selection.' }, origin);
     const keySlot = Number(input.keySlot || 1);
     if (!Number.isInteger(keySlot) || keySlot < 1 || keySlot > 3) return send(res, 400, { error: 'Invalid key slot.' }, origin);
-    if (requested !== 'auto' && Date.now() >= PUBLIC_KEY_TEST_END) {
-      return send(res, 403, { error: 'Public AI key testing has ended. Automatic mode is still available.' }, origin);
-    }
-
+    
     const order = requested === 'auto' ? ['gemini', 'groq', 'openrouter'] : [requested];
     const errors = [];
     for (const provider of order) {
