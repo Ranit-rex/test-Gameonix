@@ -1,7 +1,7 @@
 const http = require('node:http');
 
 const PORT = Number(process.env.PORT || 3000);
-const MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+const MODEL = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
 const ALLOWED_ORIGINS = new Set([
   'https://ranit-rex.github.io'
 ]);
