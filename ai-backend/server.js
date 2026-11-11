@@ -8,6 +8,7 @@ const ALLOWED_ORIGINS = new Set(['https://ranit-rex.github.io']);
 const MAX_BODY_BYTES = 32 * 1024;
 const MAX_MESSAGE_CHARS = 1200;
 const rateBuckets = new Map();
+const aiUsage = { total: 0, success: 0, failed: 0, byProvider: { gemini: 0, groq: 0, openrouter: 0 }, byKey: {}, recent: [], lastQuota: {} };
 
 function send(res, status, data, origin) {
   res.writeHead(status, {
@@ -104,6 +105,7 @@ async function requestGemini(key, system, history, message) {
   }
   const body = await response.json().catch(() => ({}));
   const elapsed = Date.now() - startedAt;
+  aiUsage.lastQuota.gemini = { requests: null, tokens: null, note: 'Gemini remaining quota is not exposed by this check.' };
   if (!response.ok) {
     console.warn('[Playovia AI] Gemini HTTP ' + response.status + ' after ' + elapsed + 'ms: ' + (body?.error?.message || 'Provider error'));
     throw new Error('Gemini request failed (' + response.status + '): ' + (body?.error?.message || 'Provider error'));
@@ -138,6 +140,7 @@ async function requestOpenAICompatible(provider, key, system, history, message) 
     signal: AbortSignal.timeout(25000)
   });
   const body = await response.json().catch(() => ({}));
+  aiUsage.lastQuota[provider] = { requests: response.headers.get('x-ratelimit-remaining-requests'), tokens: response.headers.get('x-ratelimit-remaining-tokens'), requestLimit: response.headers.get('x-ratelimit-limit-requests'), tokenLimit: response.headers.get('x-ratelimit-limit-tokens'), resetRequests: response.headers.get('x-ratelimit-reset-requests'), resetTokens: response.headers.get('x-ratelimit-reset-tokens') };
   if (!response.ok) throw new Error((isGroq ? 'Groq' : 'OpenRouter') + ' request failed (' + response.status + '): ' + (body?.error?.message || 'Provider error'));
   const reply = String(body?.choices?.[0]?.message?.content || '').trim();
   if (!reply) throw new Error((isGroq ? 'Groq' : 'OpenRouter') + ' returned an empty response.');
@@ -169,6 +172,38 @@ const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://localhost');
   if (req.method === 'GET' && url.pathname === '/health') {
     return send(res, 200, { ok: true, service: 'Playovia AI', providers: ['gemini', 'groq', 'openrouter'] }, origin);
+  }
+  if (req.method === 'GET' && url.pathname === '/api/keys/check') {
+    const provider = String(url.searchParams.get('provider') || '').toLowerCase();
+    if (!['gemini','groq','openrouter'].includes(provider)) return send(res, 400, { error: 'Unknown provider.' }, origin);
+    const max = provider === 'groq' ? 10 : 3;
+    const results = [];
+    for (let slot = 1; slot <= max; slot++) {
+      const key = getProviderKey(provider, slot);
+      if (!key) { results.push({ slot, status: 'not_configured', message: 'Key not configured' }); continue; }
+      try {
+        let endpoint = provider === 'gemini'
+          ? 'https://generativelanguage.googleapis.com/v1beta/models'
+          : provider === 'groq' ? 'https://api.groq.com/openai/v1/models' : 'https://openrouter.ai/api/v1/models';
+        const response = await fetch(endpoint, {
+          headers: provider === 'gemini' ? { 'x-goog-api-key': key } : { 'Authorization': 'Bearer ' + key },
+          signal: AbortSignal.timeout(9000)
+        });
+        const body = await response.json().catch(() => ({}));
+        if (response.ok) {
+          const list = body.data || body.models || [];
+          const expected = provider === 'gemini' ? GEMINI_MODEL : provider === 'groq' ? GROQ_MODEL : OPENROUTER_MODEL;
+          const exists = list.some(item => String(item.id || item.name || '').replace(/^models\//,'') === expected || String(item.id || '') === expected);
+          results.push({ slot, status: 'ready', modelAvailable: exists, message: exists ? 'Key valid · model listed' : 'Key valid · model availability not confirmed' });
+        } else results.push({ slot, status: response.status === 401 || response.status === 403 ? 'invalid_key' : response.status === 429 ? 'rate_limited' : 'error', message: 'Provider HTTP ' + response.status });
+      } catch (error) { results.push({ slot, status: 'error', message: error?.name === 'TimeoutError' ? 'Check timed out' : 'Network error' }); }
+    }
+    return send(res, 200, { provider, model: provider === 'gemini' ? GEMINI_MODEL : provider === 'groq' ? GROQ_MODEL : OPENROUTER_MODEL, results }, origin);
+  }
+  if (req.method === 'GET' && url.pathname === '/api/admin/ai-stats') {
+    const token = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+    if (!(await verifyAdminToken(token))) return send(res, 403, { error: 'Admin access required.' }, origin);
+    return send(res, 200, { ...aiUsage, keys: { gemini: [1,2,3].map(slot => ({slot,configured:!!getProviderKey('gemini',slot)})), groq: Array.from({length:10},(_,i)=>({slot:i+1,configured:!!getProviderKey('groq',i+1)})), openrouter: [1,2,3].map(slot=>({slot,configured:!!getProviderKey('openrouter',slot)})) } }, origin);
   }
   if (req.method === 'GET' && url.pathname === '/api/groq/check') {
     const ip = String(req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
@@ -230,14 +265,18 @@ const server = http.createServer(async (req, res) => {
     const order = requested === 'auto' ? ['gemini', 'groq', 'openrouter'] : [requested];
     const errors = [];
     for (const provider of order) {
-      const slots = provider === 'groq' && (groqAuto || requested === 'auto') ? Array.from({ length: 10 }, (_, i) => i + 1) : [requested === 'auto' ? 1 : keySlot];
+      const slots = requested === 'auto' ? (provider === 'groq' ? Array.from({ length: 10 }, (_, i) => i + 1) : [1,2,3]) : (groqAuto ? Array.from({ length: 10 }, (_, i) => i + 1) : [keySlot]);
       for (const slot of slots) {
         try {
           const reply = await callProvider(provider, system, history, message, slot);
-          return send(res, 200, { reply, provider, keySlot: slot }, origin);
+          aiUsage.total++; aiUsage.success++; aiUsage.byProvider[provider] = (aiUsage.byProvider[provider] || 0) + 1;
+          const usageKey = provider + ':' + slot; aiUsage.byKey[usageKey] = (aiUsage.byKey[usageKey] || 0) + 1;
+          aiUsage.recent.unshift({ at: new Date().toISOString(), provider, slot, status: 'success' }); aiUsage.recent = aiUsage.recent.slice(0,100);
+          return send(res, 200, { reply, provider, keySlot: slot, quota: aiUsage.lastQuota[provider] || null }, origin);
         } catch (error) {
           const detail = String(error?.message || 'Provider unavailable').slice(0, 240);
           errors.push(provider + ' Key ' + slot + ': ' + detail);
+          aiUsage.total++; aiUsage.failed++; aiUsage.recent.unshift({ at: new Date().toISOString(), provider, slot, status: 'failed', error: detail.slice(0,120) }); aiUsage.recent = aiUsage.recent.slice(0,100);
           console.warn('[Playovia AI] ' + provider + ' Key ' + slot + ' failed: ' + detail);
           if (provider !== 'groq' || (!groqAuto && requested !== 'auto')) break;
         }
