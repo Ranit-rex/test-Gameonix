@@ -434,147 +434,20 @@ html.low-performance #playhubApp .hero{animation:siteHeroIn .2s ease-out both}
 }
 
 
-/* Playovia AI embedded page layout — preserve the app sidebar and toolbar. */
-#playhubApp .nova-page.active{
- display:flex!important;visibility:visible!important;opacity:1!important;
- position:relative!important;inset:auto!important;z-index:1!important;
- width:100%!important;height:auto!important;min-height:0!important;max-height:none!important;
- flex:1 1 0!important;margin:0!important;padding:0!important;overflow:hidden!important;
- background:transparent!important;flex-direction:column!important;
-}
-#playhubApp .nova-page.active #playoviaAiPanel{
- display:flex!important;visibility:visible!important;opacity:1!important;
- position:relative!important;inset:auto!important;z-index:1!important;
- width:100%!important;height:100%!important;max-height:none!important;min-height:0!important;
- flex:1 1 0!important;margin:0!important;border:0!important;border-radius:0!important;
- box-shadow:none!important;backdrop-filter:none!important;transform:none!important;animation:none!important;
- flex-direction:column!important;overflow:hidden!important;
-}
-#playhubApp .nova-page.active #aiMessages{display:flex!important;visibility:visible!important;flex:1 1 0!important;min-height:0!important;overflow-y:auto!important}
-#playhubApp .nova-page.active #aiCompose{display:flex!important;flex:0 0 auto!important}
-#playhubApp .nova-page:not(.active){display:none!important}
+/* Single source of truth for the Playovia AI page layout. */
+#playhubApp main.main.ai-page-open{display:flex!important;flex-direction:column!important;position:relative!important;box-sizing:border-box!important;height:100dvh!important;min-height:0!important;max-height:100dvh!important;overflow:hidden!important;}
+#playhubApp main.main.ai-page-open>.topline{display:flex!important;flex:0 0 48px!important;height:48px!important;min-height:48px!important;margin:0 0 10px!important;}
+#playhubApp main.main.ai-page-open>#appStatus{display:none!important;}
+#playhubApp #novaPage.page.active.ai-page-visible{display:flex!important;position:relative!important;inset:auto!important;flex:1 1 0!important;box-sizing:border-box!important;width:100%!important;height:auto!important;min-height:0!important;max-height:none!important;margin:0!important;padding:0!important;overflow:hidden!important;visibility:visible!important;opacity:1!important;z-index:1!important;}
+#playhubApp #novaPage.ai-page-visible>#playoviaAiPanel{display:flex!important;position:relative!important;inset:auto!important;flex:1 1 0!important;box-sizing:border-box!important;width:100%!important;height:100%!important;min-height:0!important;max-height:none!important;margin:0!important;padding:0!important;border:0!important;border-radius:0!important;box-shadow:none!important;backdrop-filter:none!important;transform:none!important;animation:none!important;overflow:hidden!important;flex-direction:column!important;background:#080b15!important;}
+#playhubApp #novaPage.ai-page-visible .ai-messages{display:flex!important;flex:1 1 0!important;min-height:0!important;overflow-y:auto!important;}
+#playhubApp #novaPage.ai-page-visible .ai-head,#playhubApp #novaPage.ai-page-visible .ai-top-controls,#playhubApp #novaPage.ai-page-visible .ai-suggestions,#playhubApp #novaPage.ai-page-visible .ai-compose,#playhubApp #novaPage.ai-page-visible .ai-footnote{flex-shrink:0!important;}
+#playhubApp #novaPage.ai-page-visible .ai-compose{position:relative!important;left:auto!important;right:auto!important;bottom:auto!important;}
+#playhubApp #novaPage.ai-page-visible .ai-typing-pad{display:none!important;}
 @media(max-width:700px){
- #playhubApp:has(.nova-page.active) .sidebar{display:flex!important}
- #playhubApp:has(.nova-page.active) .topline{display:flex!important}
- #playhubApp:has(.nova-page.active) .main{margin-left:112px!important;width:calc(100% - 112px)!important;padding:9px 10px 0!important;height:100dvh!important;min-height:0!important;max-height:100dvh!important;overflow:hidden!important}
-}
-@media(max-width:420px){
- #playhubApp:has(.nova-page.active) .main{margin-left:78px!important;width:calc(100% - 78px)!important;padding:8px!important}
-}
-/* Compact live typing pad docked directly above the Android keyboard */
-#playhubApp .nova-page.active .ai-typing-pad{display:none}
-#playhubApp.keyboard-open .nova-page.active .ai-typing-pad{display:flex!important;position:fixed!important;left:12px!important;right:12px!important;bottom:calc(var(--playovia-keyboard-height,0px) + 76px + env(safe-area-inset-bottom))!important;z-index:131!important;min-height:34px!important;max-height:58px!important;align-items:center!important;gap:9px!important;padding:7px 11px!important;border:1px solid #39445e!important;border-radius:12px 12px 8px 8px!important;background:linear-gradient(110deg,#171f34,#101827)!important;box-shadow:0 5px 18px #0007!important;overflow:hidden!important}
-#playhubApp .nova-page.active .ai-typing-label{flex:0 0 auto!important;color:#a78bfa!important;font-size:8px!important;font-weight:900!important;letter-spacing:1px!important}
-#playhubApp .nova-page.active #aiTypingPreview{min-width:0!important;overflow:hidden!important;color:#e7edff!important;font-size:11px!important;line-height:1.35!important;white-space:nowrap!important;text-overflow:ellipsis!important}
-#playhubApp.keyboard-open .nova-page.active .ai-compose{position:fixed!important;bottom:calc(var(--playovia-keyboard-height,0px) + 8px + env(safe-area-inset-bottom))!important;left:12px!important;right:12px!important;z-index:132!important}
-#playhubApp.keyboard-open .nova-page.active .ai-messages{padding-bottom:190px!important}
-
-
-/* Restore Playovia AI inside the normal app layout: sidebar stays visible, chat fills only the available main area. */
-#playhubApp .main:has(.nova-page.active){display:flex!important;flex-direction:column!important;height:var(--playovia-visual-height,100dvh)!important;min-height:0!important;overflow:hidden!important;padding-bottom:0!important;}
-#playhubApp .main:has(.nova-page.active)>.topline{display:flex!important;flex:0 0 auto!important;}
-#playhubApp .nova-page.active{display:flex!important;position:relative!important;inset:auto!important;left:auto!important;right:auto!important;top:auto!important;bottom:auto!important;z-index:1!important;width:100%!important;height:auto!important;min-height:0!important;max-height:none!important;flex:1 1 auto!important;margin:0!important;padding:0!important;overflow:hidden!important;background:transparent!important;visibility:visible!important;opacity:1!important;}
-#playhubApp .nova-page.active #playoviaAiPanel{position:relative!important;inset:auto!important;width:100%!important;height:100%!important;max-height:none!important;min-height:0!important;flex:1 1 auto!important;margin:0!important;border:1px solid #586083!important;border-radius:16px!important;overflow:hidden!important;}
-#playhubApp .nova-page.active #aiMessages{min-height:0!important;flex:1 1 0!important;overflow-y:auto!important;}
-@media(max-width:700px){
- #playhubApp:has(.nova-page.active) .sidebar{display:flex!important;}
- #playhubApp:has(.nova-page.active) .topline{display:flex!important;}
- #playhubApp .main:has(.nova-page.active){height:var(--playovia-visual-height,100dvh)!important;padding:9px 10px 0!important;}
- #playhubApp .nova-page.active #playoviaAiPanel{border-radius:12px!important;}
- #playhubApp.keyboard-open .nova-page.active .ai-compose{position:fixed!important;left:calc(var(--playovia-sidebar-width,64px) + 10px)!important;right:10px!important;bottom:calc(var(--playovia-keyboard-height,0px) + 8px + env(safe-area-inset-bottom))!important;z-index:132!important;}
- #playhubApp.keyboard-open .nova-page.active .ai-typing-pad{left:calc(var(--playovia-sidebar-width,64px) + 10px)!important;right:10px!important;}
-}
-@media(min-width:701px){#playhubApp .nova-page.active #playoviaAiPanel{border-radius:16px!important;}}
-
-/* Final AI layout correction: keep the real sidebar width and prevent legacy full-screen rules from covering the chat. */
-#playhubApp .main:has(.nova-page.active){
-  display:flex!important;flex-direction:column!important;box-sizing:border-box!important;
-  margin-left:112px!important;width:calc(100% - 112px)!important;
-  height:100dvh!important;min-height:0!important;max-height:100dvh!important;
-  padding:10px 12px 8px!important;overflow:hidden!important;
-}
-#playhubApp .main:has(.nova-page.active)>.topline{display:flex!important;flex:0 0 62px!important;height:62px!important;margin:0 0 8px!important;}
-#playhubApp .main:has(.nova-page.active) #appStatus{display:none!important;}
-#playhubApp .nova-page.active{
-  display:flex!important;position:relative!important;inset:auto!important;z-index:1!important;
-  box-sizing:border-box!important;width:100%!important;height:auto!important;min-height:0!important;
-  max-height:none!important;flex:1 1 0!important;margin:0!important;padding:0!important;
-  overflow:hidden!important;background:transparent!important;
-}
-#playhubApp .nova-page.active #playoviaAiPanel{
-  display:flex!important;position:relative!important;inset:auto!important;box-sizing:border-box!important;
-  width:100%!important;height:100%!important;min-height:0!important;max-height:none!important;
-  flex:1 1 0!important;margin:0!important;border:1px solid #586083!important;
-  border-radius:12px!important;overflow:hidden!important;flex-direction:column!important;
-}
-#playhubApp .nova-page.active #aiMessages{display:flex!important;flex:1 1 0!important;min-height:0!important;overflow-y:auto!important;}
-@media(max-width:700px){
-  #playhubApp:has(.nova-page.active) .sidebar{display:flex!important;}
-  #playhubApp .main:has(.nova-page.active){margin-left:112px!important;width:calc(100% - 112px)!important;padding:8px 9px 0!important;}
-  #playhubApp.keyboard-open .nova-page.active .ai-compose{left:121px!important;right:9px!important;}
-  #playhubApp.keyboard-open .nova-page.active .ai-typing-pad{left:121px!important;right:9px!important;}
-}
-@media(max-width:420px){
-  #playhubApp .main:has(.nova-page.active){margin-left:78px!important;width:calc(100% - 78px)!important;}
-  #playhubApp.keyboard-open .nova-page.active .ai-compose{left:87px!important;right:8px!important;}
-  #playhubApp.keyboard-open .nova-page.active .ai-typing-pad{left:87px!important;right:8px!important;}
-}
-
-/* Playovia AI: enforce a visible, correctly sized page inside the app's main column. */
-#playhubApp .main:has(#novaPage.active){display:flex!important;flex-direction:column!important;box-sizing:border-box!important;height:100dvh!important;min-height:0!important;max-height:100dvh!important;overflow:hidden!important;}
-#playhubApp #novaPage.active{display:flex!important;position:relative!important;flex:1 1 0!important;width:100%!important;height:auto!important;min-height:0!important;max-height:none!important;margin:0!important;padding:0!important;overflow:hidden!important;}
-#playhubApp #novaPage.active #playoviaAiPanel{display:flex!important;position:relative!important;flex:1 1 0!important;width:100%!important;height:100%!important;min-height:0!important;max-height:none!important;margin:0!important;overflow:hidden!important;flex-direction:column!important;}
-#playhubApp #novaPage.active #aiMessages{display:flex!important;flex:1 1 0!important;min-height:0!important;overflow-y:auto!important;}
-@media(max-width:420px){#playhubApp .main:has(#novaPage.active){margin-left:78px!important;width:calc(100% - 78px)!important;padding:8px!important;}}
-
-/* AI page anchored below the app toolbar inside the main column. */
-#playhubApp .main:has(#novaPage.active){position:relative!important;overflow:hidden!important;height:100dvh!important;min-height:0!important;}
-#playhubApp #novaPage.active{display:flex!important;position:absolute!important;top:110px!important;left:12px!important;right:12px!important;bottom:8px!important;width:auto!important;height:auto!important;min-height:0!important;max-height:none!important;margin:0!important;padding:0!important;overflow:hidden!important;z-index:5!important;}
-#playhubApp #novaPage.active #playoviaAiPanel{display:flex!important;position:relative!important;width:100%!important;height:100%!important;min-height:0!important;max-height:none!important;flex:1 1 0!important;margin:0!important;overflow:hidden!important;flex-direction:column!important;}
-#playhubApp #novaPage.active #aiMessages{display:flex!important;flex:1 1 0!important;min-height:0!important;overflow-y:auto!important;}
-@media(max-width:420px){#playhubApp #novaPage.active{left:8px!important;right:8px!important;}}
-
-/* Final AI presentation: normal in-flow app page, never a modal or overlay. */
-#playhubApp .main:has(#novaPage.active){display:flex!important;flex-direction:column!important;position:relative!important;height:100dvh!important;min-height:0!important;max-height:100dvh!important;overflow:hidden!important;}
-#playhubApp #novaPage.active{display:flex!important;position:relative!important;inset:auto!important;top:auto!important;left:auto!important;right:auto!important;bottom:auto!important;z-index:1!important;box-sizing:border-box!important;flex:1 1 0!important;width:100%!important;height:auto!important;min-height:0!important;max-height:none!important;margin:0!important;padding:0!important;overflow:hidden!important;}
-#playhubApp #novaPage.active #playoviaAiPanel{display:flex!important;position:relative!important;inset:auto!important;box-sizing:border-box!important;flex:1 1 0!important;width:100%!important;height:100%!important;min-height:0!important;max-height:none!important;margin:0!important;border-radius:12px!important;overflow:hidden!important;flex-direction:column!important;}
-#playhubApp #novaPage.active #aiMessages{display:flex!important;flex:1 1 0!important;min-height:0!important;overflow-y:auto!important;}
-
-/* Final mobile AI page: restore sidebar offset and remove every floating-card visual. */
-@media(max-width:700px){#playhubApp:has(#novaPage.active) .main{margin-left:112px!important;width:calc(100% - 112px)!important;padding:9px 10px 0!important;height:100dvh!important;min-height:0!important;max-height:100dvh!important;overflow:hidden!important;}}
-@media(max-width:420px){#playhubApp:has(#novaPage.active) .main{margin-left:78px!important;width:calc(100% - 78px)!important;padding:8px 8px 0!important;}}
-#playhubApp #novaPage.active{position:relative!important;inset:auto!important;top:auto!important;left:auto!important;right:auto!important;bottom:auto!important;z-index:1!important;display:flex!important;flex:1 1 0!important;width:100%!important;height:auto!important;min-height:0!important;max-height:none!important;margin:0!important;padding:0!important;overflow:hidden!important;}
-#playhubApp #novaPage.active #playoviaAiPanel{position:relative!important;inset:auto!important;z-index:1!important;width:100%!important;height:100%!important;max-height:none!important;min-height:0!important;flex:1 1 0!important;margin:0!important;padding:0!important;border:0!important;border-radius:0!important;box-shadow:none!important;backdrop-filter:none!important;background:#080b15!important;transform:none!important;animation:none!important;}
-#playhubApp #novaPage.active .ai-head{border-radius:0!important;}
-#playhubApp #novaPage.active #aiCloseBtn{display:none!important;}
-
-/* Hard guarantee: AI is a normal active page child of main, never a floating panel. */
-#playhubApp main.main:has(> #novaPage.active){display:flex!important;flex-direction:column!important;box-sizing:border-box!important;height:calc(100dvh - 72px)!important;min-height:0!important;overflow:hidden!important;}
-#playhubApp main.main > #novaPage.active.page.nova-page{display:flex!important;position:relative!important;inset:auto!important;flex:1 1 0!important;width:100%!important;height:auto!important;min-height:0!important;max-height:none!important;margin:0!important;padding:0!important;visibility:visible!important;opacity:1!important;overflow:hidden!important;z-index:1!important;}
-#playhubApp #novaPage.active > #playoviaAiPanel.ai-panel{display:flex!important;position:relative!important;inset:auto!important;flex:1 1 0!important;width:100%!important;height:100%!important;min-height:0!important;max-height:none!important;margin:0!important;border:0!important;border-radius:0!important;box-shadow:none!important;backdrop-filter:none!important;transform:none!important;animation:none!important;overflow:hidden!important;}
-@media(max-width:700px){#playhubApp:has(#novaPage.active) .sidebar{display:flex!important}#playhubApp:has(#novaPage.active) main.main{margin-left:112px!important;width:calc(100% - 112px)!important;padding:9px 10px 0!important}}
-@media(max-width:420px){#playhubApp:has(#novaPage.active) main.main{margin-left:78px!important;width:calc(100% - 78px)!important;padding:8px!important}}
-
-/* Fresh Playovia AI page layout — normal app content, not a popup. */
-#playhubApp main.main:has(#novaPage.active){display:flex!important;flex-direction:column!important;height:100dvh!important;min-height:0!important;overflow:hidden!important;}
-#playhubApp main.main:has(#novaPage.active)>.topline{flex:0 0 48px!important;height:48px!important;margin-bottom:10px!important;}
-#playhubApp main.main:has(#novaPage.active)>#appStatus{display:none!important;}
-#playhubApp #novaPage.page.active{display:flex!important;position:relative!important;inset:auto!important;flex:1 1 0!important;width:100%!important;height:auto!important;min-height:0!important;max-height:none!important;margin:0!important;padding:0!important;overflow:hidden!important;}
-#playhubApp #playoviaAiPanel.ai-panel{display:flex!important;position:relative!important;inset:auto!important;flex:1 1 0!important;width:100%!important;height:100%!important;min-height:0!important;max-height:none!important;margin:0!important;padding:0!important;border:1px solid #303b59!important;border-radius:14px!important;box-shadow:none!important;backdrop-filter:none!important;transform:none!important;animation:none!important;overflow:hidden!important;flex-direction:column!important;background:#101729!important;}
-#playhubApp #playoviaAiPanel .ai-head,#playhubApp #playoviaAiPanel .ai-top-controls,#playhubApp #playoviaAiPanel .ai-suggestions,#playhubApp #playoviaAiPanel .ai-compose,#playhubApp #playoviaAiPanel .ai-footnote{flex-shrink:0!important;}
-#playhubApp #playoviaAiPanel .ai-messages{display:flex!important;flex:1 1 0!important;min-height:0!important;overflow-y:auto!important;}
-#playhubApp #playoviaAiPanel .ai-compose{position:relative!important;left:auto!important;right:auto!important;bottom:auto!important;}
-#playhubApp #playoviaAiPanel .ai-typing-pad{display:none;}
-@media(max-width:700px){
- #playhubApp main.main:has(#novaPage.active){margin-left:64px!important;width:calc(100% - 64px)!important;padding:9px 10px 8px!important;}
- #playhubApp #playoviaAiPanel.ai-panel{border-radius:12px!important;}
- #playhubApp.keyboard-open #playoviaAiPanel .ai-compose{position:fixed!important;left:74px!important;right:10px!important;bottom:calc(var(--playovia-keyboard-height,0px) + 8px + env(safe-area-inset-bottom))!important;z-index:132!important;}
- #playhubApp.keyboard-open #playoviaAiPanel .ai-typing-pad{display:flex!important;position:fixed!important;left:74px!important;right:10px!important;bottom:calc(var(--playovia-keyboard-height,0px) + 76px + env(safe-area-inset-bottom))!important;z-index:131!important;min-height:34px!important;max-height:58px!important;align-items:center!important;gap:9px!important;padding:7px 11px!important;border:1px solid #39445e!important;border-radius:12px!important;background:#171f34!important;overflow:hidden!important;}
-}
-@media(max-width:380px){
- #playhubApp main.main:has(#novaPage.active){margin-left:55px!important;width:calc(100% - 55px)!important;padding-left:8px!important;padding-right:8px!important;}
- #playhubApp.keyboard-open #playoviaAiPanel .ai-compose{left:63px!important;right:8px!important;}
- #playhubApp.keyboard-open #playoviaAiPanel .ai-typing-pad{left:63px!important;right:8px!important;}
+ #playhubApp main.main.ai-page-open{padding:9px 10px 8px!important;}
+ #playhubApp.keyboard-open #novaPage.ai-page-visible .ai-compose{position:fixed!important;left:calc(var(--playovia-sidebar-width,64px) + 10px)!important;right:10px!important;bottom:calc(var(--playovia-keyboard-height,0px) + 8px + env(safe-area-inset-bottom))!important;z-index:132!important;}
+ #playhubApp.keyboard-open #novaPage.ai-page-visible .ai-typing-pad{display:flex!important;position:fixed!important;left:calc(var(--playovia-sidebar-width,64px) + 10px)!important;right:10px!important;bottom:calc(var(--playovia-keyboard-height,0px) + 76px + env(safe-area-inset-bottom))!important;z-index:131!important;min-height:34px!important;max-height:58px!important;align-items:center!important;gap:9px!important;padding:7px 11px!important;border:1px solid #39445e!important;border-radius:12px!important;background:#171f34!important;overflow:hidden!important;}
 }
 </style>
 </head>
@@ -1158,7 +1031,52 @@ const PLAYOVIA_AI_ENDPOINT='https://test-gameonix.onrender.com';
 let playoviaAiHistory=[];let playoviaAiBusy=false;
 function aiAddBubble(text,who='assistant',extra=''){const box=$('aiMessages');if(!box)return;const el=document.createElement('div');el.className='ai-bubble '+who+(extra?' '+extra:'');el.textContent=text;box.appendChild(el);box.scrollTop=box.scrollHeight;return el}
 function aiSetBusy(on){playoviaAiBusy=on;$('aiSendBtn').disabled=on;$('aiInput').disabled=on;if(on){const t=document.createElement('div');t.id='aiTyping';t.className='ai-bubble ai-typing';t.innerHTML='<i></i><i></i><i></i>';$('aiMessages').appendChild(t);$('aiMessages').scrollTop=$('aiMessages').scrollHeight}else $('aiTyping')?.remove()}
-function aiOpen(){const panel=$('playoviaAiPanel');if(panel)panel.classList.remove('hidden');}
+function aiOpen(){
+ const root=$('playhubApp'),main=root?.querySelector('main.main'),sidebar=root?.querySelector('.sidebar'),page=$('novaPage'),panel=$('playoviaAiPanel');
+ if(!root||!main||!sidebar||!page||!panel){console.error('Playovia AI page mount missing');return;}
+ const sidebarWidth=Math.ceil(sidebar.getBoundingClientRect().width)||64;
+ root.style.setProperty('--playovia-sidebar-width',sidebarWidth+'px');
+ main.classList.add('ai-page-open');
+ main.style.setProperty('display','flex','important');
+ main.style.setProperty('flex-direction','column','important');
+ main.style.setProperty('position','relative','important');
+ main.style.setProperty('box-sizing','border-box','important');
+ main.style.setProperty('margin-left',sidebarWidth+'px','important');
+ main.style.setProperty('width','calc(100% - '+sidebarWidth+'px)','important');
+ main.style.setProperty('height','100dvh','important');
+ main.style.setProperty('min-height','0','important');
+ main.style.setProperty('max-height','100dvh','important');
+ main.style.setProperty('overflow','hidden','important');
+ page.classList.add('ai-page-visible');
+ page.style.setProperty('display','flex','important');
+ page.style.setProperty('position','relative','important');
+ page.style.setProperty('inset','auto','important');
+ page.style.setProperty('flex','1 1 0','important');
+ page.style.setProperty('width','100%','important');
+ page.style.setProperty('height','auto','important');
+ page.style.setProperty('min-height','0','important');
+ page.style.setProperty('max-height','none','important');
+ page.style.setProperty('margin','0','important');
+ page.style.setProperty('padding','0','important');
+ page.style.setProperty('overflow','hidden','important');
+ page.style.setProperty('visibility','visible','important');
+ page.style.setProperty('opacity','1','important');
+ panel.classList.remove('hidden');
+ panel.style.setProperty('display','flex','important');
+ panel.style.setProperty('position','relative','important');
+ panel.style.setProperty('inset','auto','important');
+ panel.style.setProperty('flex','1 1 0','important');
+ panel.style.setProperty('width','100%','important');
+ panel.style.setProperty('height','100%','important');
+ panel.style.setProperty('min-height','0','important');
+ panel.style.setProperty('max-height','none','important');
+ panel.style.setProperty('margin','0','important');
+ panel.style.setProperty('border','0','important');
+ panel.style.setProperty('border-radius','0','important');
+ panel.style.setProperty('box-shadow','none','important');
+ panel.style.setProperty('overflow','hidden','important');
+ const statusEl=$('appStatus');if(statusEl)statusEl.style.setProperty('display','none','important');
+}
 function aiClose(){setPage('home')}
 function aiClear(){playoviaAiHistory=[];$('aiMessages').innerHTML='<div class="ai-welcome"><strong>Chat cleared ✨</strong><p>What would you like to explore today?</p></div>'}
 async function aiRequest(payload){if(!PLAYOVIA_AI_ENDPOINT.startsWith('https://'))throw new Error('Playovia AI backend is being connected. Please try again soon.');const response=await fetch(PLAYOVIA_AI_ENDPOINT+'/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||'Could not reach the AI backend. Please try again.');return data}
