@@ -444,7 +444,7 @@ html.low-performance #playhubApp .hero{animation:siteHeroIn .2s ease-out both}
   #playhubApp .nova-page .ai-head{flex:0 0 auto!important;padding-top:max(12px,env(safe-area-inset-top))!important}
   #playhubApp .nova-page .ai-messages{flex:1 1 auto!important;min-height:0!important;overflow-y:auto!important;padding-bottom:150px!important;overscroll-behavior:contain}
   #playhubApp .nova-page .ai-suggestions{flex:0 0 auto!important}
-  #playhubApp .nova-page .ai-compose{position:fixed!important;left:12px!important;right:12px!important;bottom:calc(var(--playovia-keyboard-height,0px) + env(safe-area-inset-bottom))!important;z-index:130!important;padding:8px!important;margin:0!important;background:linear-gradient(180deg,transparent,#0b1020 28%)!important;display:flex!important;align-items:flex-end!important}
+  #playhubApp .nova-page .ai-compose{position:fixed!important;left:12px!important;right:12px!important;bottom:calc(var(--playovia-keyboard-height,0px) + env(safe-area-inset-bottom))!important;z-index:130!important;padding:8px!important;margin:0!important;background:linear-gradient(180deg,transparent,#0b1020 28%)!important;display:flex!important;align-items:flex-end!important;transform:translateZ(0)!important;}
   #playhubApp .nova-page .ai-footnote{position:fixed!important;left:12px!important;right:12px!important;bottom:calc(var(--playovia-keyboard-height,0px) + 62px + env(safe-area-inset-bottom))!important;z-index:129!important;text-align:center!important;pointer-events:none}
   #playhubApp.keyboard-open .nova-page .ai-suggestions{display:none!important}
   #playhubApp.keyboard-open .nova-page .ai-compose{padding:5px!important;background:#111827!important;border:1px solid #39445e!important;border-radius:15px!important;box-shadow:0 -5px 25px #0006!important}
@@ -453,7 +453,7 @@ html.low-performance #playhubApp .hero{animation:siteHeroIn .2s ease-out both}
   #playhubApp .nova-page .ai-top-controls{flex:0 0 auto!important}
 }
 @media(min-width:701px){
-  #playhubApp .nova-page.active{position:fixed!important;inset:0 0 0 112px!important;z-index:40!important;height:100vh!important;max-height:100vh!important;margin:0!important;padding:0!important;background:#080c18!important}
+  #playhubApp .nova-page.active{position:fixed!important;inset:0!important;left:0!important;right:0!important;top:0!important;bottom:0!important;z-index:100!important;width:100vw!important;height:100vh!important;height:100dvh!important;max-height:none!important;margin:0!important;padding:0!important;background:#080c18!important}
   #playhubApp .nova-page .ai-panel{width:min(1100px,100%)!important;height:100%!important;max-height:100%!important;border-radius:0!important}
 }
 
