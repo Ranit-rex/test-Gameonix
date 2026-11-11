@@ -457,6 +457,15 @@ html.low-performance #playhubApp .hero{animation:siteHeroIn .2s ease-out both}
   #playhubApp .nova-page .ai-panel{width:min(1100px,100%)!important;height:100%!important;max-height:100%!important;border-radius:0!important}
 }
 
+
+/* Reliable Playovia AI page visibility and layout */
+#playhubApp .nova-page.active{display:flex!important;visibility:visible!important;opacity:1!important;position:fixed!important;inset:0!important;z-index:100!important;width:100vw!important;height:100vh!important;height:100dvh!important;max-height:none!important;min-height:0!important;margin:0!important;padding:0!important;overflow:hidden!important;background:#080c18!important;flex-direction:column!important}
+#playhubApp .nova-page.active #playoviaAiPanel{display:flex!important;visibility:visible!important;opacity:1!important;position:absolute!important;inset:0!important;width:100%!important;height:100%!important;max-height:none!important;min-height:0!important;margin:0!important;border:0!important;border-radius:0!important;flex-direction:column!important;overflow:hidden!important}
+#playhubApp .nova-page.active #aiMessages{display:flex!important;visibility:visible!important;flex:1 1 0!important;min-height:0!important;overflow-y:auto!important}
+#playhubApp .nova-page.active #aiCompose{display:flex!important;flex:0 0 auto!important}
+#playhubApp .nova-page:not(.active){display:none!important}
+@media(max-width:700px){#playhubApp:has(.nova-page.active) .sidebar{display:none!important}#playhubApp:has(.nova-page.active) .main{display:none!important}}
+
 </style>
 </head>
 <body>
@@ -481,7 +490,7 @@ html.low-performance #playhubApp .hero{animation:siteHeroIn .2s ease-out both}
  <button class="navbtn" data-page="saved" aria-label="Saved games">★<small>Saved</small></button>
  <button class="navbtn" data-page="nova" aria-label="Open Playovia AI">✦<small>AI</small></button>
  <button class="navbtn hidden" data-page="admin" id="adminNav" aria-label="Admin dashboard">🛡<small>Admin</small></button>
- <button class="navbtn hidden" data-page="aiAdmin" id="aiAdminNav" aria-label="AI administration">✦<small>AI Ops</small></button>
+ 
  <div class="navspacer"></div>
  <button class="navbtn" data-page="settings" aria-label="Settings">⚙<small>Settings</small></button>
  <button class="navbtn" data-page="about" id="aboutBtn" aria-label="About">ⓘ<small>About</small></button>
