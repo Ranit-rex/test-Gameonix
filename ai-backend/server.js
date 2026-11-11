@@ -205,7 +205,7 @@ const server = http.createServer(async (req, res) => {
   }
   if (req.method === 'GET' && url.pathname === '/api/admin/key-status') {
     if (!process.env.FIREBASE_WEB_API_KEY) return send(res, 503, { error: 'Admin analytics is not configured.' }, origin);
-    const token = String(req.headers.authorization || '').replace(/^Bearer\\s+/i, '');
+    const token = String(req.headers.authorization || '').replace('Bearer ', '').trim();
     if (!(await verifyAdminToken(token))) return send(res, 403, { error: 'Admin access required.' }, origin);
     const provider = String(url.searchParams.get('provider') || '').toLowerCase();
     const slot = Number(url.searchParams.get('slot') || 1);
@@ -245,7 +245,7 @@ const server = http.createServer(async (req, res) => {
       if (!response.ok) return send(res, 200, { provider, slot, status: response.status === 401 || response.status === 403 ? 'invalid_key' : response.status === 429 ? 'rate_limited' : 'check_failed', message: provider.toUpperCase() + ' returned HTTP ' + response.status, quota: { exactRemaining: null, requests: aiUsage.lastQuotaByKey[provider + ':' + slot]?.requests ?? null, tokens: aiUsage.lastQuotaByKey[provider + ':' + slot]?.tokens ?? null, requestLimit: aiUsage.lastQuotaByKey[provider + ':' + slot]?.requestLimit ?? null, tokenLimit: aiUsage.lastQuotaByKey[provider + ':' + slot]?.tokenLimit ?? null, note: 'Groq reports organization/model rate limits in response headers, not an individual API-key credit balance.' } }, origin);
       const models = body.models || body.data || [];
       const expected = provider === 'gemini' ? GEMINI_MODEL : GROQ_MODEL;
-      const available = models.some(m => String(m.name || m.id || '').replace(/^models\\//, '') === expected);
+      const available = models.some(m => { const name = String(m.name || m.id || ''); return (name.startsWith('models/') ? name.slice(7) : name) === expected; });
       return send(res, 200, { provider, slot, status: 'ready', message: available ? 'Key valid · selected model listed' : 'Key valid · selected model not confirmed', modelAvailable: available,
         quota: provider === 'gemini' ? { exactRemaining: null, note: 'Gemini quota is project-level, not individually exposed per API key.' } : { exactRemaining: null, requests: aiUsage.lastQuotaByKey[provider + ':' + slot]?.requests ?? null, tokens: aiUsage.lastQuotaByKey[provider + ':' + slot]?.tokens ?? null, requestLimit: aiUsage.lastQuotaByKey[provider + ':' + slot]?.requestLimit ?? null, tokenLimit: aiUsage.lastQuotaByKey[provider + ':' + slot]?.tokenLimit ?? null, note: 'Groq remaining requests/tokens below are last-observed response headers; limits are organization/model scoped, not API-key credit balances.' } }, origin);
     } catch (error) {
