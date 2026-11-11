@@ -203,6 +203,7 @@ const server = http.createServer(async (req, res) => {
     return send(res, 200, { provider, model: provider === 'gemini' ? GEMINI_MODEL : provider === 'groq' ? GROQ_MODEL : OPENROUTER_MODEL, results }, origin);
   }
   if (req.method === 'GET' && url.pathname === '/api/admin/ai-stats') {
+    if (!process.env.FIREBASE_WEB_API_KEY) return send(res, 503, { error: 'Admin analytics is not configured: add FIREBASE_WEB_API_KEY to the Render environment.' }, origin);
     const token = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '');
     if (!(await verifyAdminToken(token))) return send(res, 403, { error: 'Admin access required.' }, origin);
     return send(res, 200, { ...aiUsage, keys: { gemini: [1,2,3].map(slot => ({slot,configured:!!getProviderKey('gemini',slot)})), groq: Array.from({length:10},(_,i)=>({slot:i+1,configured:!!getProviderKey('groq',i+1)})), openrouter: [1,2,3].map(slot=>({slot,configured:!!getProviderKey('openrouter',slot)})) } }, origin);
