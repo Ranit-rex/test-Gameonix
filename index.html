@@ -492,6 +492,39 @@ html.low-performance #playhubApp .hero{animation:siteHeroIn .2s ease-out both}
 }
 @media(min-width:701px){#playhubApp .nova-page.active #playoviaAiPanel{border-radius:16px!important;}}
 
+/* Final AI layout correction: keep the real sidebar width and prevent legacy full-screen rules from covering the chat. */
+#playhubApp .main:has(.nova-page.active){
+  display:flex!important;flex-direction:column!important;box-sizing:border-box!important;
+  margin-left:112px!important;width:calc(100% - 112px)!important;
+  height:100dvh!important;min-height:0!important;max-height:100dvh!important;
+  padding:10px 12px 8px!important;overflow:hidden!important;
+}
+#playhubApp .main:has(.nova-page.active)>.topline{display:flex!important;flex:0 0 62px!important;height:62px!important;margin:0 0 8px!important;}
+#playhubApp .main:has(.nova-page.active) #appStatus{display:none!important;}
+#playhubApp .nova-page.active{
+  display:flex!important;position:relative!important;inset:auto!important;z-index:1!important;
+  box-sizing:border-box!important;width:100%!important;height:auto!important;min-height:0!important;
+  max-height:none!important;flex:1 1 0!important;margin:0!important;padding:0!important;
+  overflow:hidden!important;background:transparent!important;
+}
+#playhubApp .nova-page.active #playoviaAiPanel{
+  display:flex!important;position:relative!important;inset:auto!important;box-sizing:border-box!important;
+  width:100%!important;height:100%!important;min-height:0!important;max-height:none!important;
+  flex:1 1 0!important;margin:0!important;border:1px solid #586083!important;
+  border-radius:12px!important;overflow:hidden!important;flex-direction:column!important;
+}
+#playhubApp .nova-page.active #aiMessages{display:flex!important;flex:1 1 0!important;min-height:0!important;overflow-y:auto!important;}
+@media(max-width:700px){
+  #playhubApp:has(.nova-page.active) .sidebar{display:flex!important;}
+  #playhubApp .main:has(.nova-page.active){margin-left:112px!important;width:calc(100% - 112px)!important;padding:8px 9px 0!important;}
+  #playhubApp.keyboard-open .nova-page.active .ai-compose{left:121px!important;right:9px!important;}
+  #playhubApp.keyboard-open .nova-page.active .ai-typing-pad{left:121px!important;right:9px!important;}
+}
+@media(max-width:420px){
+  #playhubApp .main:has(.nova-page.active){margin-left:78px!important;width:calc(100% - 78px)!important;}
+  #playhubApp.keyboard-open .nova-page.active .ai-compose{left:87px!important;right:8px!important;}
+  #playhubApp.keyboard-open .nova-page.active .ai-typing-pad{left:87px!important;right:8px!important;}
+}
 </style>
 </head>
 <body>
@@ -600,7 +633,7 @@ html.low-performance #playhubApp .hero{animation:siteHeroIn .2s ease-out both}
   <div class="admin-topline"><div><div class="admin-kicker"><span class="admin-live-dot"></span> PLAYHUB · SECURE ADMIN CONSOLE</div><h1 class="admin-heading">Control Center</h1><p class="admin-subtitle">Your platform, players and game operations — all in one place.</p></div><button class="admin-refresh" type="button" onclick="window.loadPlayHubAdmin&&window.loadPlayHubAdmin()">↻ <span>Refresh data</span></button></div>
   <div class="admin-commandbar"><div class="admin-command-copy"><strong>Workspace</strong><span>Manage the PlayHub ecosystem</span></div><div class="admin-command-meta"><span class="admin-secure-pill">🔒 Restricted access</span><span class="admin-free-pill">Firestore · Free mode</span></div></div>
   <div class="admin-tabs-wrap"><div class="admin-tabs-label">CONTROL MODULES</div><div class="settings-tabs admin-tabs">
-    <button class="settings-tab active" data-admin-tab="overview">⌂ Overview</button><button class="settings-tab" data-admin-tab="users">♙ Players</button><button class="settings-tab" data-admin-tab="reports">⚑ Reports</button><button class="settings-tab" data-admin-tab="announcements">◈ Announcements</button><button class="settings-tab" data-admin-tab="games">▣ Games</button><button class="settings-tab" data-admin-tab="analytics">⌁ Live analytics</button><button class="settings-tab" data-admin-tab="activity">☷ Audit log</button>
+    <button class="settings-tab active" data-admin-tab="overview">⌂ Overview</button><button class="settings-tab" data-admin-tab="users">♙ Players</button><button class="settings-tab" data-admin-tab="reports">⚑ Reports</button><button class="settings-tab" data-admin-tab="announcements">◈ Announcements</button><button class="settings-tab" data-admin-tab="games">▣ Games</button><button class="settings-tab" data-admin-tab="analytics">⌁ Live analytics</button><button class="settings-tab" data-admin-tab="activity">☷ Audit log</button><button class="settings-tab" type="button" onclick="setPage('aiAdmin')">✦ AI System</button>
   </div></div>
   <div id="adminStatus" class="status admin-status">Connecting to secure admin services…</div>
   
