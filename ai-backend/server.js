@@ -77,21 +77,38 @@ async function requestGemini(key, system, history, message) {
     });
   }
   contents.push({ role: 'user', parts: [{ text: message }] });
-  const response = await fetch(
-    'https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(GEMINI_MODEL) + ':generateContent',
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: system }] },
-        contents,
-        generationConfig: { temperature: 0.7, maxOutputTokens: 700 }
-      }),
-      signal: AbortSignal.timeout(120000)
-    }
-  );
+  const startedAt = Date.now();
+  let response;
+  try {
+    response = await fetch(
+      'https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(GEMINI_MODEL) + ':generateContent',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text: system }] },
+          contents,
+          generationConfig: { temperature: 0.7, maxOutputTokens: 700 }
+        }),
+        signal: AbortSignal.timeout(30000)
+      }
+    );
+  } catch (error) {
+    const elapsed = Date.now() - startedAt;
+    const detail = error?.name === 'TimeoutError'
+      ? 'Gemini did not respond within 30 seconds'
+      : String(error?.message || 'Network error');
+    console.warn('[Playovia AI] Gemini transport error after ' + elapsed + 'ms: ' + detail);
+    if (error?.name === 'TimeoutError') throw new Error('Gemini timed out after 30 seconds. The provider did not respond in time.');
+    throw new Error('Gemini network error: ' + detail);
+  }
   const body = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error('Gemini request failed (' + response.status + '): ' + (body?.error?.message || 'Provider error'));
+  const elapsed = Date.now() - startedAt;
+  if (!response.ok) {
+    console.warn('[Playovia AI] Gemini HTTP ' + response.status + ' after ' + elapsed + 'ms: ' + (body?.error?.message || 'Provider error'));
+    throw new Error('Gemini request failed (' + response.status + '): ' + (body?.error?.message || 'Provider error'));
+  }
+  console.info('[Playovia AI] Gemini responded successfully in ' + elapsed + 'ms');
   const parts = body?.candidates?.[0]?.content?.parts || [];
   const reply = parts.map(p => p.text || '').join('').trim();
   if (!reply) throw new Error('Gemini returned an empty response.');
