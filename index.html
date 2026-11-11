@@ -294,6 +294,12 @@ html,body{height:100%;overflow:hidden;overscroll-behavior:none}
 #playhubApp .sidebar{background:#0d101c;border-right:1px solid #293047}
 #playhubApp .navbtn{flex:0 0 auto}
 #playhubApp .navspacer{flex:1 1 auto;min-height:8px}
+/* Keep every sidebar destination reachable on short screens */
+#playhubApp .sidebar{overflow-y:auto!important;overflow-x:hidden!important;justify-content:flex-start;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#39415d transparent}
+#playhubApp .sidebar .navspacer{flex:0 0 10px!important;min-height:10px!important}
+#playhubApp .sidebar .navbtn{flex:0 0 auto!important}
+#playhubApp .sidebar::-webkit-scrollbar{width:3px}
+#playhubApp .sidebar::-webkit-scrollbar-thumb{background:#39415d;border-radius:8px}
 #playhubApp .page.active>*{animation:pageChildEnter .32s cubic-bezier(.2,.75,.25,1) both}
 #playhubApp .page.active>*:nth-child(2){animation-delay:.025s}
 #playhubApp .page.active>*:nth-child(3){animation-delay:.05s}
