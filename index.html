@@ -214,6 +214,46 @@ html.low-performance .game:hover,html.low-performance .recent-card:hover{transfo
 html.low-performance .game-loading-spinner,html.low-performance .game-loading-track span{animation-duration:1.8s}
 html.low-performance .gameoverlay,html.low-performance .game-loading{transition:none!important}
 @media(prefers-reduced-motion:reduce){.game-loading-spinner,.game-loading-track span,.gameoverlay.is-opening{animation:none!important}.gameoverlay,.game-loading{transition:none!important}}
+
+/* Site-wide micro-interactions: lightweight, GPU-friendly motion */
+.app{animation:siteAppIn .32s ease-out both}
+.topline{animation:siteHeaderIn .38s ease-out both}
+.page.active{animation:sitePageIn .24s ease-out both}
+.panel,.challenge-card,.suggest-mini,.friends-list .row{animation:siteCardIn .28s ease-out both}
+.game,.recent-card,.category-chip,.filter,.chat-tab,.navbtn,.notification-bell,.iconbtn{transition:transform .18s ease,border-color .18s ease,background-color .18s ease,box-shadow .18s ease,color .18s ease}
+button{transition:transform .16s ease,filter .16s ease,box-shadow .16s ease}
+button:active{transform:scale(.97)}
+.field{transition:border-color .18s ease,box-shadow .18s ease,background-color .18s ease}
+.field:focus{border-color:#9565ff;box-shadow:0 0 0 3px #a45cff22}
+.game-art img{transition:transform .35s cubic-bezier(.2,.7,.2,1),filter .25s ease}
+.game:active,.recent-card:active{transform:scale(.985)}
+.game-save{transition:transform .18s ease,background-color .18s ease,color .18s ease}
+.game-save:active{transform:scale(.88)}
+.hero{animation:siteHeroIn .48s cubic-bezier(.2,.75,.25,1) both}
+.hero:after{animation:siteHeroFloat 7s ease-in-out infinite}
+.notification-panel,.gameoverlay:not(.hidden),.gate-card{animation:siteCardIn .24s ease-out both}
+@media(hover:hover){
+ .game:hover .game-art img{transform:scale(1.045)}
+ .navbtn:hover{transform:translateY(-2px);background:#191f34;color:#fff}
+ .category-chip:hover,.filter:hover,.chat-tab:hover{transform:translateY(-1px);border-color:#9464ff}
+ button:hover{filter:brightness(1.08)}
+ .game-save:hover{transform:scale(1.08)}
+}
+@keyframes siteAppIn{from{opacity:0}to{opacity:1}}
+@keyframes siteHeaderIn{from{opacity:0;transform:translateY(-7px)}to{opacity:1;transform:translateY(0)}}
+@keyframes sitePageIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+@keyframes siteCardIn{from{opacity:0;transform:translateY(7px) scale(.995)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes siteHeroIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes siteHeroFloat{0%,100%{transform:rotate(-13deg) translateY(0)}50%{transform:rotate(-10deg) translateY(-7px)}}
+html.low-performance .app,html.low-performance .topline,html.low-performance .page.active,html.low-performance .panel,html.low-performance .challenge-card,html.low-performance .suggest-mini,html.low-performance .friends-list .row,html.low-performance .hero,html.low-performance .notification-panel,html.low-performance .gate-card{animation-duration:.18s}
+html.low-performance .hero:after{animation:none!important}
+html.low-performance .game-art img{transition:none!important}
+@media(prefers-reduced-motion:reduce){
+ .app,.topline,.page.active,.panel,.challenge-card,.suggest-mini,.friends-list .row,.hero,.hero:after,.notification-panel,.gate-card{animation:none!important}
+ button,.game,.recent-card,.category-chip,.filter,.chat-tab,.navbtn,.notification-bell,.iconbtn,.field,.game-art img,.game-save{transition:none!important}
+ button:active,.game:active,.recent-card:active{transform:none!important}
+}
+
 </style>
 </head>
 <body>
