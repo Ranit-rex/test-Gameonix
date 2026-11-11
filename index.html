@@ -314,6 +314,53 @@ html.low-performance #playhubApp .game:hover{box-shadow:none}
  #playhubApp .panel,.challenge-card,.game,.friends-stat,.party-card,.profile-card,.saved-card,#playhubApp .primary:after,#playhubApp .login:after,.friends-primary:after{transition:none!important}
 }
 
+
+/* PLAYOVIA MOTION SYSTEM — refined, responsive and performance-aware */
+:root{--motion-fast:180ms;--motion-base:320ms;--motion-slow:560ms;--motion-ease:cubic-bezier(.22,1,.36,1);--motion-spring:cubic-bezier(.2,.85,.25,1)}
+#playhubApp .searchwrap{position:relative;isolation:isolate;transition:border-color var(--motion-base) var(--motion-ease),background var(--motion-base) var(--motion-ease),box-shadow var(--motion-base) var(--motion-ease),transform var(--motion-base) var(--motion-ease)}
+#playhubApp .searchwrap:before{content:"";position:absolute;inset:-1px;border-radius:inherit;pointer-events:none;opacity:0;background:linear-gradient(110deg,#a45cff66,#258bff66,#51e0a044);filter:blur(10px);transition:opacity var(--motion-base) ease;z-index:-1}
+#playhubApp .searchwrap:focus-within{border-color:#9b72ff;background:#171d32;box-shadow:0 0 0 3px #a45cff20,0 9px 28px #653dff18;transform:translateY(-1px)}
+#playhubApp .searchwrap:focus-within:before{opacity:1}
+#playhubApp .searchwrap input{caret-color:#c29aff}
+#playhubApp .game,#playhubApp .panel,#playhubApp .challenge-card,#playhubApp .recent-card,#playhubApp .suggest-mini{will-change:transform;transition:transform var(--motion-base) var(--motion-spring),border-color var(--motion-base) ease,box-shadow var(--motion-base) ease,background-color var(--motion-base) ease}
+#playhubApp .game{box-shadow:0 3px 12px #00000012}
+#playhubApp .panel{box-shadow:0 8px 24px #00000012}
+@media(hover:hover) and (pointer:fine){
+ #playhubApp .game:hover{transform:translateY(-6px) scale(1.012);border-color:#9c75ff;box-shadow:0 18px 38px #0005,0 0 0 1px #a45cff24}
+ #playhubApp .panel:hover,#playhubApp .challenge-card:hover{transform:translateY(-3px);border-color:#465477;box-shadow:0 14px 32px #0003}
+ #playhubApp .game-art img{transform:scale(1.001)}
+ #playhubApp .game:hover .game-art img{transform:scale(1.065);filter:saturate(1.12) brightness(1.05)}
+ #playhubApp .navbtn:hover{transform:translateY(-2px);color:#fff;background:#ffffff0b}
+ #playhubApp button:not(:disabled):hover{filter:brightness(1.08)}
+}
+#playhubApp button:not(:disabled):active{transform:scale(.965);transition-duration:90ms}
+#playhubApp .primary,#playhubApp .login{position:relative;isolation:isolate;overflow:hidden;transition:transform var(--motion-fast) var(--motion-spring),filter var(--motion-base) ease,box-shadow var(--motion-base) ease}
+#playhubApp .primary:hover,#playhubApp .login:hover{box-shadow:0 12px 34px #754cff55,0 0 0 1px #ffffff20}
+#playhubApp .hero{background-size:140% 140%;animation:playoviaHeroDrift 16s ease-in-out infinite alternate,siteHeroIn .48s var(--motion-ease) both}
+#playhubApp .hero:before{animation:playoviaOrbDrift 12s ease-in-out infinite alternate}
+#playhubApp .hero:after{filter:drop-shadow(0 12px 24px #0004)}
+#playhubApp .notification-panel,#playhubApp .profile-menu,#playhubApp .game-details-modal,#playhubApp .popup{transform-origin:top right}
+#playhubApp .page.active{animation:playoviaPageEnter .38s var(--motion-ease) both}
+#playhubApp .game{animation:playoviaCardEnter .42s var(--motion-ease) both}
+#playhubApp .game:nth-child(2){animation-delay:25ms}
+#playhubApp .game:nth-child(3){animation-delay:50ms}
+#playhubApp .game:nth-child(4){animation-delay:75ms}
+#playhubApp .game:nth-child(5){animation-delay:100ms}
+#playhubApp .game:nth-child(6){animation-delay:125ms}
+#playhubApp .game:nth-child(n+7){animation-delay:145ms}
+@keyframes playoviaPageEnter{from{opacity:0;transform:translateY(8px) scale(.998);filter:blur(2px)}to{opacity:1;transform:translateY(0) scale(1);filter:blur(0)}}
+@keyframes playoviaCardEnter{from{opacity:0;transform:translateY(12px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes playoviaHeroDrift{from{background-position:0% 40%}to{background-position:100% 60%}}
+@keyframes playoviaOrbDrift{from{transform:translate3d(0,0,0) scale(1)}to{transform:translate3d(-12px,9px,0) scale(1.035)}}
+#playhubApp .field:focus{border-color:#9b72ff;box-shadow:0 0 0 3px #a45cff20;background:#10172a}
+#playhubApp .category-chip.active,#playhubApp .filter.active{box-shadow:0 5px 18px #8c52ff24}
+html.low-performance #playhubApp .game,html.low-performance #playhubApp .panel,html.low-performance #playhubApp .challenge-card{will-change:auto;animation:none!important}
+html.low-performance #playhubApp .hero{animation:siteHeroIn .2s ease-out both}
+@media(prefers-reduced-motion:reduce){
+ #playhubApp .searchwrap,#playhubApp .game,#playhubApp .panel,#playhubApp .challenge-card,#playhubApp .recent-card,#playhubApp button,#playhubApp .field{transition:none!important;will-change:auto}
+ #playhubApp .hero,#playhubApp .hero:before,#playhubApp .page.active,#playhubApp .game{animation:none!important}
+}
+
 </style>
 </head>
 <body>
@@ -570,8 +617,46 @@ function searchScore(g,q){const query=searchNormalize(q),words=query.split(' ').
 function matchingGames(q){const words=searchNormalize(q).split(' ').filter(w=>w.length>1);if(!words.length)return allGames;return allGames.map(g=>({g,score:searchScore(g,q)})).filter(x=>x.score>=3.5).sort((a,b)=>b.score-a.score||a.g.title.localeCompare(b.g.title)).map(x=>x.g)}
 function rememberSearch(q){const clean=searchNormalize(q);if(clean.length<2)return;let history=[];try{history=JSON.parse(localStorage.getItem(userStoreKey('searchTaste'))||'[]')}catch(_){}history=[clean,...history.filter(x=>x!==clean)].slice(0,20);try{localStorage.setItem(userStoreKey('searchTaste'),JSON.stringify(history))}catch(_){}}
 function filterGames(q){const list=matchingGames(q);if(q.trim())rememberSearch(q);const active=document.querySelector('.filter.active');if(active?.dataset.filter==='saved')renderSavedGames();renderCategoryFilters();const visible=categoryGames(list);$('allGames').innerHTML=gameMarkup(visible);wireGameCards($('allGames'));$('gamesMeta').textContent=visible.length+' games'+(q.trim()?' found':'');const home=$('homeGames');if(home){const picks=rankedGames(allGames).slice(0,8);home.innerHTML=gameMarkup(picks);wireGameCards(home)}}
-$('librarySearch').addEventListener('input',e=>filterGames(e.target.value));
-$('globalSearch').addEventListener('input',e=>{const q=e.target.value;if(q.trim()){setPage('games');$('librarySearch').value=q;filterGames(q)}else{$('librarySearch').value='';filterGames('')}});
+// Keep the active search stable for this browser tab. This also survives accidental
+// UI re-renders and page reloads without writing anything to Firebase.
+const SEARCH_SESSION_KEY='playhub_search_query_v1';
+function readSearchSession(){try{return sessionStorage.getItem(SEARCH_SESSION_KEY)||''}catch(_){return ''}}
+function saveSearchSession(value){try{sessionStorage.setItem(SEARCH_SESSION_KEY,String(value??''))}catch(_){}}
+function syncSearchFields(value,runFilter=true){
+ const q=String(value??'');const top=$('globalSearch'),library=$('librarySearch');
+ if(top&&top.value!==q)top.value=q;
+ if(library&&library.value!==q)library.value=q;
+ saveSearchSession(q);
+ if(runFilter)filterGames(q);
+}
+document.addEventListener('input',e=>{
+ if(e.target?.id==='globalSearch'||e.target?.id==='librarySearch'){
+  const q=e.target.value;
+  saveSearchSession(q);
+  if(e.target.id==='globalSearch'&&q.trim())setPage('games');
+  syncSearchFields(q,false);
+  filterGames(q);
+ }
+});
+function restoreSearchSession(){
+ const saved=readSearchSession();if(!saved)return;
+ const top=$('globalSearch'),library=$('librarySearch');
+ if(top&&!top.value&&document.activeElement!==top){
+  syncSearchFields(saved,false);
+  filterGames(saved);
+ }
+}
+const restoredSearch=readSearchSession();
+if(restoredSearch){
+ $('globalSearch').value=restoredSearch;
+ $('librarySearch').value=restoredSearch;
+ filterGames(restoredSearch);
+}
+window.addEventListener('pageshow',restoreSearchSession);
+window.addEventListener('focus',restoreSearchSession);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)restoreSearchSession()});
+// Safety net for rare programmatic input resets; user-clears are saved immediately above.
+setInterval(restoreSearchSession,1800);
 
 document.querySelectorAll('.filter').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.filter').forEach(x=>x.classList.toggle('active',x===b));filterGames($('globalSearch').value)}));
 
