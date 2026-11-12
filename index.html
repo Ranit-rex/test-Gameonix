@@ -492,6 +492,25 @@ html.low-performance #playhubApp .hero{animation:siteHeroIn .2s ease-out both}
 .ai-key-result strong{color:#fff}.ai-key-result .ai-quota-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:9px}
 .ai-key-result .ai-quota-item{padding:8px;border-radius:9px;background:#15223a}.ai-key-result .ai-quota-item small{display:block;color:#91a3c1;font-size:9px}.ai-key-result .ai-quota-item b{display:block;margin-top:3px;font-size:13px}
 @media(max-width:520px){.ai-key-checker-controls{grid-template-columns:1fr 1fr}.ai-key-checker-controls button{grid-column:1/-1;width:100%}}.ai-admin-key-details-wrap{margin:16px 0;padding:14px;border:1px solid var(--line);border-radius:15px;background:#0d1424}.ai-admin-key-details-wrap h3{margin:0 0 6px;font-size:15px}.ai-admin-key-details{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-top:12px}.ai-admin-key-detail{min-width:0;padding:12px;border:1px solid #303950;border-radius:12px;background:#141c30}.ai-admin-key-detail-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}.ai-admin-key-detail-head strong{font-size:12px}.ai-key-state{font-size:10px;color:#ff9aa8;text-transform:capitalize}.ai-key-state.ready{color:#51e0a0}.ai-admin-key-detail .ai-quota-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.ai-admin-key-detail .ai-quota-item{padding:8px}.ai-admin-key-detail .ai-quota-item small{font-size:9px}.ai-admin-key-detail .ai-quota-item b{font-size:12px;overflow-wrap:anywhere}
+
+/* Reliable mobile scrolling + visible AI chat layout */
+html,body{height:auto!important;min-height:100%;overflow-x:hidden!important;overflow-y:auto!important;overscroll-behavior-y:auto!important}
+#playhubApp{height:auto!important;min-height:100dvh!important;overflow:visible!important}
+#playhubApp .sidebar{position:fixed!important;top:0!important;bottom:0!important;left:0!important;height:100dvh!important;overflow-y:auto!important;overscroll-behavior:contain!important}
+#playhubApp .main{display:block!important;height:auto!important;min-height:100dvh!important;overflow:visible!important}
+#playhubApp .page{display:none!important}
+#playhubApp .page.active{display:block!important;min-height:calc(100dvh - 150px)!important;height:auto!important;max-height:none!important;overflow:visible!important;overscroll-behavior: auto!important;padding-bottom:max(28px,env(safe-area-inset-bottom))!important}
+#playhubApp .playovia-ad-placement{display:flex;box-sizing:border-box;width:300px!important;max-width:100%!important;height:60px!important;max-height:60px!important;min-height:0!important;margin:0 auto 8px!important;padding:0!important;overflow:hidden!important}
+#playhubApp .playovia-ad-placement ins.adsbygoogle{display:inline-block!important;box-sizing:border-box!important;width:300px!important;max-width:100%!important;height:60px!important;max-height:60px!important;min-height:0!important;overflow:hidden!important}
+#playhubApp .playovia-ad-placement iframe{max-width:100%!important;max-height:60px!important}
+#playhubApp .nova-page{display:block!important;height:auto!important;min-height:calc(100dvh - 160px)!important;max-height:none!important;overflow:visible!important;padding:0!important;margin:0!important}
+#playhubApp .nova-page .ai-panel{position:relative!important;inset:auto!important;display:flex!important;flex-direction:column!important;width:min(900px,100%)!important;height:min(680px,calc(100dvh - 175px))!important;min-height:400px!important;max-height:none!important;margin:0 auto!important;flex:0 0 auto!important;overflow:hidden!important;border-radius:16px!important;transform:none!important}
+#playhubApp .nova-page .ai-messages{display:flex!important;flex:1 1 auto!important;min-height:0!important;overflow-y:auto!important;-webkit-overflow-scrolling:touch!important}
+@media(max-width:520px){
+ #playhubApp .main{padding:10px 10px 28px 10px!important}
+ #playhubApp .nova-page .ai-panel{width:100%!important;height:min(650px,calc(100dvh - 165px))!important;min-height:390px!important;border-radius:12px!important}
+}
+
 </style>
 <link rel="stylesheet" href="./admin-dashboard.css?v=1">
 </head>
