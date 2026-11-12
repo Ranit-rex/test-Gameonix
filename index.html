@@ -760,17 +760,19 @@ function openGameDetails(slug){
   event?.preventDefault();
   const playButton=$('gameDetailsPlay');
   if(playButton.dataset.launching==='true')return;
+  // Always show the guest choice first. Do not block the prompt on game URL validation.
+  if(!currentUser){showGuestPlayPrompt(game);return}
   if(!game||typeof game.url!=='string'||!game.url.trim()){
     const message='This game link is not available yet. Please try another game.';
     status(message,'error');
+    const detailStatus=$('gameDetailsStatus');
+    if(detailStatus)detailStatus.textContent=message;
     playButton.textContent='Unavailable';
     setTimeout(()=>{if(playButton.isConnected)playButton.textContent='▶ Play'},2200);
     return;
   }
-  if(!currentUser){showGuestPlayPrompt(game);return}
   try{
     playButton.dataset.launching='true';playButton.disabled=true;playButton.textContent='Starting…';
-    if(!currentUser)recordGuestPlay(game.slug,game.title);
     launchGame(game.url.trim(),game.title,game.slug);
     closeGameDetails();
   }catch(error){
