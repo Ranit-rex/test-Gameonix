@@ -804,7 +804,7 @@ function showGuestPlayPrompt(game){
   modal=document.createElement('div');modal.id='guestPlayPrompt';modal.className='modal hidden';
   modal.innerHTML='<div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="guestPlayTitle"><button type="button" class="modal-close" id="guestPlayClose" aria-label="Close">×</button><div class="eyebrow">PLAYOVIA MULTIPLAYER</div><h2 id="guestPlayTitle">This is a multiplayer game</h2><p>Login to continue and play with other members.</p><button type="button" class="game-details-play" id="guestPlaySignup">Login</button><button type="button" class="game-details-save" id="guestPlaySolo">Play Solo (Not Recommended)</button><small>Solo play may not include multiplayer features or saved progress.</small></div>';
   document.body.appendChild(modal);
-  $('guestPlayClose').onclick=()=>modal.classList.add('hidden');
+  $('guestPlayClose').onclick=()=>modal.classList.add('hidden');modal.style.display='none';
   modal.addEventListener('click',e=>{if(e.target===modal)modal.classList.add('hidden')});
   $('guestPlaySignup').onclick=()=>{modal.classList.add('hidden');$('loginBtn').click()};
  }
@@ -814,8 +814,23 @@ function showGuestPlayPrompt(game){
   try{recordGuestPlay(game.slug,game.title);closeGameDetails();launchGame(game.url.trim(),game.title,game.slug)}
   catch(error){console.error('Guest solo launch failed:',error);status('Could not start this game: '+(error.message||'Please try again.'),'error')}
  };
- modal.classList.remove('hidden');
+ modal.classList.remove('hidden');modal.style.display='grid';
 }
+
+/* Reliable delegated Play handler: catches taps even when the details panel is rebuilt. */
+document.addEventListener('click',function playoviaReliableGameStart(event){
+ const playButton=event.target.closest&&event.target.closest('#gameDetailsPlay');
+ if(!playButton)return;
+ event.preventDefault();
+ event.stopImmediatePropagation();
+ const game=activeDetailsGame;
+ if(!game){status('Please close and reopen this game, then try Play again.','error');return}
+ if(!currentUser){showGuestPlayPrompt(game);return}
+ if(typeof game.url!=='string'||!game.url.trim()){status('This game link is not available yet. Please try another game.','error');return}
+ try{launchGame(game.url.trim(),game.title,game.slug);closeGameDetails()}
+ catch(error){console.error('Game start failed:',error);status('Could not start this game: '+(error.message||'Please try again.'),'error')}
+},true);
+
 function updateDetailsStarPicker(){
  const row=$('gameReviewStars');if(!row)return;
  row.querySelectorAll('[data-rating]').forEach(b=>{const active=Number(b.dataset.rating)<=activeDetailsRating;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(Number(b.dataset.rating)===activeDetailsRating))});
