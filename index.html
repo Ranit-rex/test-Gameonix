@@ -819,19 +819,6 @@ function showGuestPlayPrompt(game){
  }
  modal.classList.remove('hidden');modal.style.display='grid';
 }
-/* Reliable delegated Play handler: catches taps even when the details panel is rebuilt. */
-document.addEventListener('click',function playoviaReliableGameStart(event){
- const playButton=event.target.closest&&event.target.closest('#gameDetailsPlay');
- if(!playButton)return;
- event.preventDefault();
- event.stopImmediatePropagation();
- const game=activeDetailsGame;
- if(!game){status('Please close and reopen this game, then try Play again.','error');return}
- if(!currentUser){showGuestPlayPrompt(game);return}
- if(typeof game.url!=='string'||!game.url.trim()){status('This game link is not available yet. Please try another game.','error');return}
- try{launchGame(game.url.trim(),game.title,game.slug);closeGameDetails()}
- catch(error){console.error('Game start failed:',error);status('Could not start this game: '+(error.message||'Please try again.'),'error')}
-},true);
 
 function updateDetailsStarPicker(){
  const row=$('gameReviewStars');if(!row)return;
