@@ -804,19 +804,19 @@ function showGuestPlayPrompt(game){
   modal=document.createElement('div');modal.id='guestPlayPrompt';modal.className='modal hidden';
   modal.innerHTML='<div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="guestPlayTitle"><button type="button" class="modal-close" id="guestPlayClose" aria-label="Close">×</button><div class="eyebrow">PLAYOVIA MULTIPLAYER</div><h2 id="guestPlayTitle">This is a multiplayer game</h2><p>Login to continue and play with other members.</p><button type="button" class="game-details-play" id="guestPlaySignup">Login</button><button type="button" class="game-details-save" id="guestPlaySolo">Play Solo (Not Recommended)</button><small>Solo play may not include multiplayer features or saved progress.</small></div>';
   document.body.appendChild(modal);
-  $('guestPlayClose').onclick=()=>modal.classList.add('hidden');modal.style.display='none';
-  modal.addEventListener('click',e=>{if(e.target===modal)modal.classList.add('hidden')});
-  $('guestPlaySignup').onclick=()=>{modal.classList.add('hidden');$('loginBtn').click()};
+  const hidePrompt=()=>{modal.classList.add('hidden');modal.style.display='none'};
+  $('guestPlayClose').onclick=hidePrompt;
+  modal.addEventListener('click',e=>{if(e.target===modal)hidePrompt()});
+  $('guestPlaySignup').onclick=()=>{hidePrompt();$('loginBtn').click()};
+  $('guestPlaySolo').onclick=()=>{
+   hidePrompt();
+   if(!game||typeof game.url!=='string'||!game.url.trim()){status('This game link is not available yet. Please try another game.','error');return}
+   try{recordGuestPlay(game.slug,game.title);closeGameDetails();launchGame(game.url.trim(),game.title,game.slug)}
+   catch(error){console.error('Guest solo launch failed:',error);status('Could not start this game: '+(error.message||'Please try again.'),'error')}
+  };
  }
- $('guestPlaySolo').onclick=()=>{
-  modal.classList.add('hidden');
-  if(!game||typeof game.url!=='string'||!game.url.trim()){status('This game link is not available yet. Please try another game.','error');return}
-  try{recordGuestPlay(game.slug,game.title);closeGameDetails();launchGame(game.url.trim(),game.title,game.slug)}
-  catch(error){console.error('Guest solo launch failed:',error);status('Could not start this game: '+(error.message||'Please try again.'),'error')}
- };
  modal.classList.remove('hidden');modal.style.display='grid';
 }
-
 /* Reliable delegated Play handler: catches taps even when the details panel is rebuilt. */
 document.addEventListener('click',function playoviaReliableGameStart(event){
  const playButton=event.target.closest&&event.target.closest('#gameDetailsPlay');
