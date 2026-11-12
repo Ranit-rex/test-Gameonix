@@ -1110,15 +1110,4 @@ $('playoviaAiLaunch')?.addEventListener('click',()=>{if($('playoviaAiPanel').cla
 firebaseInitPromise=initFirebase();
 </script>
 
-<script>
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', function () {
-    navigator.serviceWorker.register('/sw.js', { scope: '/' })
-      .catch(function (error) {
-        console.error('MoneyTag service worker registration failed:', error);
-      });
-  });
-}
-</script>
-
 </body></html>
