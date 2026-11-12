@@ -1,7 +1,6 @@
 <!doctype html>
 <html lang="en">
 <head>
-<script>(function(s){s.dataset.zone='12248040',s.src='https://nap5k.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4790966794040054"
      crossorigin="anonymous"></script>
 
@@ -505,6 +504,14 @@ html.low-performance #playhubApp .hero{animation:siteHeroIn .2s ease-out both}
 @media(max-width:520px){.ai-key-checker-controls{grid-template-columns:1fr 1fr}.ai-key-checker-controls button{grid-column:1/-1;width:100%}}.ai-admin-key-details-wrap{margin:16px 0;padding:14px;border:1px solid var(--line);border-radius:15px;background:#0d1424}.ai-admin-key-details-wrap h3{margin:0 0 6px;font-size:15px}.ai-admin-key-details{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-top:12px}.ai-admin-key-detail{min-width:0;padding:12px;border:1px solid #303950;border-radius:12px;background:#141c30}.ai-admin-key-detail-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}.ai-admin-key-detail-head strong{font-size:12px}.ai-key-state{font-size:10px;color:#ff9aa8;text-transform:capitalize}.ai-key-state.ready{color:#51e0a0}.ai-admin-key-detail .ai-quota-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.ai-admin-key-detail .ai-quota-item{padding:8px}.ai-admin-key-detail .ai-quota-item small{font-size:9px}.ai-admin-key-detail .ai-quota-item b{font-size:12px;overflow-wrap:anywhere}
 \n#guestPlayPrompt{position:fixed;inset:0;z-index:1200;display:grid;place-items:center;padding:18px;background:#050711d9;backdrop-filter:blur(10px)}#guestPlayPrompt.hidden{display:none}#guestPlayPrompt .modal-card{position:relative;width:min(100%,420px);padding:28px;border:1px solid #514477;border-radius:22px;background:linear-gradient(145deg,#242044,#111a30);box-shadow:0 24px 80px #000b;color:#f5f3ff;text-align:center}#guestPlayPrompt h2{font-size:24px;margin:12px 0}#guestPlayPrompt p{color:#b9c2d7;line-height:1.6}#guestPlayPrompt .game-details-play,#guestPlayPrompt .game-details-save{width:100%;margin-top:12px;min-height:48px}#guestPlayPrompt small{display:block;margin-top:14px;color:#929db6}#guestPlayPrompt .modal-close{position:absolute;right:14px;top:10px;background:none;border:0;color:#fff;font-size:28px}</style>
 <link rel="stylesheet" href="./admin-dashboard.css?v=1">
+<style>
+/* Guest header: show a real Login button instead of an empty avatar oval. */
+@media(max-width:700px){
+  .account .login.signin-header{display:inline-flex!important;align-items:center;justify-content:center;font-size:12px!important;line-height:1;width:auto!important;min-width:66px;height:38px!important;padding:0 11px!important;border-radius:11px!important;position:static!important}
+  .account .login.signin-header:after{content:none!important}
+  .account .profile-menu-trigger.hidden{display:none!important}
+}
+</style>
 </head>
 <body>
 <div id="loginGate" aria-label="Playovia sign in">
@@ -689,7 +696,7 @@ $('exploreBtn')?.addEventListener('click',()=>setPage('games'));$('viewFavourite
 
 // Admin workspace tab navigation, with AI tools isolated in their own tab
 (function(){const tabs=[...document.querySelectorAll('[data-admin-tab]')];const panels={overview:'adminTabOverview',users:'adminTabUsers',reports:'adminTabReports',announcements:'adminTabAnnouncements',games:'adminTabGames',ai:'adminTabAI'};function activateAdminTab(name){tabs.forEach(btn=>btn.classList.toggle('active',btn.dataset.adminTab===name));Object.entries(panels).forEach(([key,id])=>{const el=$(id);if(el)el.classList.toggle('hidden',key!==name)});if(name==='ai')loadAiAdminStats()}tabs.forEach(btn=>btn.addEventListener('click',()=>activateAdminTab(btn.dataset.adminTab)))})();
-function updateAccount(user){$('loginBtn').classList.toggle('hidden',!!user);$('loginBtn').textContent='Login';$('logoutBtn').classList.toggle('hidden',!user);$('profileMenuTrigger').classList.toggle('hidden',!user);$('profileMenu').classList.add('hidden');$('profileMenuTrigger').setAttribute('aria-expanded','false');$('userName').textContent=user?(currentUsername?'@'+currentUsername:'Player'):'Guest';if(user?.photoURL)$('userAvatar').src=user.photoURL;else $('userAvatar').removeAttribute('src');$('loginGate').classList.add('hidden');$('playhubApp').classList.remove('hidden');$('gameOverlay').classList.add('hidden');if(user){['friends','party','globalChat','settings','saved'].forEach(page=>{const section=$(page+'Page');if(section)section.classList.remove('signin-required')});if(['friends','party','globalChat','settings','saved'].includes(currentPage)){document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id===currentPage+'Page'));if(currentPage==='friends'){setFriendsView('main');loadSocial()}if(currentPage==='party'){loadPartyInvites();watchPartyRoom();refreshPublicParties()}if(currentPage==='globalChat'){setChatView('global');loadGlobalChat();loadFriendChatList()}if(currentPage==='settings'){setSettingsTab('profile');loadProfile();loadSettingsPreferences()}if(currentPage==='saved')renderSavedGames()}}}
+function updateAccount(user){$('loginBtn').classList.toggle('hidden',!!user);$('loginBtn').textContent='Login';$('profileMenuTrigger').classList.toggle('hidden',!user);$('profileMenu').classList.add('hidden');$('logoutBtn').classList.toggle('hidden',!user);$('profileMenu').classList.add('hidden');$('profileMenuTrigger').setAttribute('aria-expanded','false');$('userName').textContent=user?(currentUsername?'@'+currentUsername:'Player'):'Guest';if(user?.photoURL)$('userAvatar').src=user.photoURL;else $('userAvatar').removeAttribute('src');$('loginGate').classList.add('hidden');$('playhubApp').classList.remove('hidden');$('gameOverlay').classList.add('hidden');if(user){['friends','party','globalChat','settings','saved'].forEach(page=>{const section=$(page+'Page');if(section)section.classList.remove('signin-required')});if(['friends','party','globalChat','settings','saved'].includes(currentPage)){document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id===currentPage+'Page'));if(currentPage==='friends'){setFriendsView('main');loadSocial()}if(currentPage==='party'){loadPartyInvites();watchPartyRoom();refreshPublicParties()}if(currentPage==='globalChat'){setChatView('global');loadGlobalChat();loadFriendChatList()}if(currentPage==='settings'){setSettingsTab('profile');loadProfile();loadSettingsPreferences()}if(currentPage==='saved')renderSavedGames()}}}
 function userStoreKey(kind){return 'playhub_'+kind+'_'+(currentUser?.uid||'guest')}function readStore(kind){try{const value=JSON.parse(localStorage.getItem(userStoreKey(kind))||'[]');return Array.isArray(value)?value:[]}catch(_){return []}}function readPlays(){try{const value=JSON.parse(localStorage.getItem(userStoreKey('plays'))||'{}');return value&&typeof value==='object'&&!Array.isArray(value)?value:{}}catch(_){return {}}}function generatedCover(g){const colors={runner:['#174e62','#1ca68b','🏃'],racing:['#602b44','#f18b45','🏎️'],parkour:['#294b79','#45b8d8','🧗'],fighting:['#52234e','#e15c75','⚔️'],horror:['#171d36','#5d4d91','👻'],puzzle:['#31533e','#9acb6a','🧩'],shooter:['#35445b','#a7a6c6','🎯'],sports:['#245b52','#54c8a2','🏆'],adventure:['#352b65','#5686db','🎮']};const c=colors[genreFor(g)]||colors.adventure;const title=String(g.title||'Playovia Game').replace(/[&<>\"]/g,'');const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 420"><defs><linearGradient id="g" x2="1" y2="1"><stop stop-color="${c[0]}"/><stop offset="1" stop-color="${c[1]}"/></linearGradient><radialGradient id="r"><stop stop-color="#fff" stop-opacity=".22"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient></defs><rect width="720" height="420" fill="url(#g)"/><circle cx="570" cy="110" r="230" fill="url(#r)"/><circle cx="575" cy="215" r="115" fill="#fff" fill-opacity=".08"/><text x="575" y="255" text-anchor="middle" font-size="130">${c[2]}</text><path d="M0 340 Q180 290 360 350 T720 330 V420 H0Z" fill="#07111f" fill-opacity=".25"/><text x="34" y="58" fill="#fff" font-family="Arial,sans-serif" font-size="19" font-weight="700" letter-spacing="5">PLAYOVIA ORIGINAL</text><text x="34" y="375" fill="#fff" font-family="Arial,sans-serif" font-size="42" font-weight="800">${title.slice(0,24)}</text></svg>`;return 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg)}function coverFor(g){return g.thumbnail||generatedCover(g)}function genreFor(g){const t=(g.title+' '+g.slug+' '+(g.category||'')+' '+(g.description||'')).toLowerCase();const groups={runner:['runner','run','endless'],racing:['race','racing','car','drift'],parkour:['parkour','obby','jump'],fighting:['brawl','fight','battle','clash'],horror:['ghost','horror','zombie','scary'],puzzle:['puzzle','brain','match'],shooter:['shooter','gun','fps'],sports:['sport','football','soccer','basket']};for(const [genre,words] of Object.entries(groups))if(words.some(w=>t.includes(w)))return genre;return 'adventure'}function rankedGames(list){const plays=readPlays(),taste={};for(const g of allGames){const n=plays[g.slug]||0;if(n)taste[genreFor(g)]=(taste[genreFor(g)]||0)+n}let searches=[];try{searches=JSON.parse(localStorage.getItem(userStoreKey('searchTaste'))||'[]')}catch(_){}const searchTaste={};for(const q of searches.slice(0,12))for(const g of allGames){const score=searchScore(g,q);if(score>=4)searchTaste[genreFor(g)]=(searchTaste[genreFor(g)]||0)+Math.max(1,score/5)}return [...list].sort((a,b)=>{const score=g=>(plays[g.slug]||0)*8+(taste[genreFor(g)]||0)*2+(searchTaste[genreFor(g)]||0)*3+(isSaved(g.slug)?1:0);return score(b)-score(a)||a.title.localeCompare(b.title)})}function randomizeGames(){manualOrder=[...allGames];for(let i=manualOrder.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[manualOrder[i],manualOrder[j]]=[manualOrder[j],manualOrder[i]]}renderGames(manualOrder);status('Game order shuffled. Recommendations will learn from your play history.','ok')}function writeStore(kind,value){try{localStorage.setItem(userStoreKey(kind),JSON.stringify(value))}catch(e){console.warn('Local game data could not be saved:',e)}}function isSaved(slug){return readStore('saved').includes(slug)}function toggleSaved(slug){const list=readStore('saved');const next=list.includes(slug)?list.filter(x=>x!==slug):[...list,slug];writeStore('saved',next);renderGames(allGames);renderSavedGames();renderHomeFavourites();return next.includes(slug)}function renderSavedGames(){const el=$('savedGames');if(!el)return;const saved=readStore('saved');const list=allGames.filter(g=>saved.includes(g.slug));el.innerHTML=list.length?gameMarkup(list):'<div class="empty">No saved games yet. Open a game’s ⓘ info and choose Add to Saved.</div>';wireGameCards(el)}function renderRecentGames(){const ids=readStore('recent');const list=ids.map(id=>allGames.find(g=>g.slug===id)).filter(Boolean);['recentGamesHome','recentGamesAll'].forEach(id=>{const el=$(id);if(!el)return;const section=el.closest('.recent-block');if(section)section.classList.toggle('hidden',list.length===0);el.innerHTML=list.length?list.map(g=>{const cover=coverFor(g);return `<div class="recent-card" role="button" tabindex="0" data-slug="${esc(g.slug)}" data-url="${esc(g.url)}" data-title="${esc(g.title)}">${cover?`<img src="${esc(cover)}" alt="" loading="lazy" onerror="this.remove()">`:`<div class="recent-fallback">🎮</div>`}<span>${esc(g.title)}</span></div>`}).join(''):'';el.querySelectorAll('.recent-card').forEach(card=>{const play=()=>openGameDetails(card.dataset.slug);card.addEventListener('click',play);card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();play()}})})})}function rememberGame(slug){const list=readStore('recent').filter(x=>x!==slug);list.unshift(slug);writeStore('recent',list.slice(0,8));renderRecentGames();updateDailyPlayLog(slug);renderHomeTrending()}
 // Attach auth controls immediately: the button never depends on Firebase loading to have a click handler.
 async function startGoogleLogin(){const gate=$('gateStatus');const buttons=[$('gateLoginBtn'),$('loginBtn')];buttons.forEach(b=>b.disabled=true);try{if(!auth&&firebaseInitPromise){gate.textContent='Finishing secure Firebase connection...';gate.className='gate-status';await firebaseInitPromise}if(!auth){const detail=authError||(firebaseInitPromise?'Firebase initialization finished without creating an Auth instance.':'Playovia startup stopped before Firebase initialization. Refresh the page and share this exact message.');throw new Error(detail)}gate.textContent='Connecting to Google...';gate.className='gate-status';status('Connecting to Google...');const provider=new firebase.auth.GoogleAuthProvider();provider.setCustomParameters({prompt:'select_account'});let result;/* GitHub Pages cannot proxy Firebase's /__/auth helper endpoints. Use popup only; redirect falls back to a cross-site helper and breaks on modern mobile Chrome storage partitioning. Keep this call directly in the button gesture. */result=await auth.signInWithPopup(provider);if(result&&result.user){console.info('Google sign-in completed:',result.user.uid);gate.textContent='Google login successful. Loading Playovia...';gate.className='gate-status ok'}}catch(e){console.error('Google login start failed:',e);const msg=e.code?authMessage(e)+' ['+e.code+']':(e.message||'Google login could not start.');gate.textContent=msg;gate.className='gate-status error';status(msg,'error')}finally{buttons.forEach(b=>b.disabled=false)}}
@@ -753,12 +760,28 @@ function openGameDetails(slug){
   event?.preventDefault();
   const playButton=$('gameDetailsPlay');
   if(playButton.dataset.launching==='true')return;
-  if(!game||!game.url){status('This game is temporarily unavailable. Please try another game.','error');return}
+  if(!game||typeof game.url!=='string'||!game.url.trim()){
+    const message='This game link is not available yet. Please try another game.';
+    status(message,'error');
+    playButton.textContent='Unavailable';
+    setTimeout(()=>{if(playButton.isConnected)playButton.textContent='▶ Play'},2200);
+    return;
+  }
   if(!currentUser&&isMultiplayerGame(game)){showGuestPlayPrompt(game);return}
-  if(!currentUser)recordGuestPlay(game.slug,game.title);
-  try{playButton.dataset.launching='true';playButton.disabled=true;playButton.textContent='Starting…';closeGameDetails();launchGame(game.url,game.title,game.slug)}
-  catch(error){console.error('Game launch failed:',error);status('Could not start this game: '+(error.message||'Please try again.'),'error')}
-  finally{playButton.dataset.launching='false';playButton.disabled=false;playButton.textContent='▶ Play'}
+  try{
+    playButton.dataset.launching='true';playButton.disabled=true;playButton.textContent='Starting…';
+    if(!currentUser)recordGuestPlay(game.slug,game.title);
+    launchGame(game.url.trim(),game.title,game.slug);
+    closeGameDetails();
+  }catch(error){
+    console.error('Game launch failed:',error);
+    status('Could not start this game: '+(error.message||'Please try again.'),'error');
+    const detailStatus=$('gameDetailsStatus');
+    if(detailStatus)detailStatus.textContent='Could not start. Please try again.';
+  }finally{
+    playButton.dataset.launching='false';playButton.disabled=false;
+    if(playButton.isConnected)playButton.textContent='▶ Play';
+  }
 };
  $('gameDetailsSave').onclick=()=>{const saved=toggleSaved(game.slug);$('gameDetailsSave').textContent=saved?'★ Saved':'☆ Save';document.querySelectorAll('#gameDetailsContent .game-details-stat')[2].querySelector('b').textContent=saved?'★ Saved':'☆ Not saved'};
  $('gameReviewStars').querySelectorAll('[data-rating]').forEach(b=>b.onclick=()=>{activeDetailsRating=Number(b.dataset.rating);updateDetailsStarPicker()});
@@ -1147,12 +1170,21 @@ firebaseInitPromise=initFirebase();
 </script>
 
 <script>
+// Remove the former Monetag service worker and its push subscription from this site.
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', function () {
-    navigator.serviceWorker.register('/sw.js', { scope: '/' })
-      .catch(function (error) {
-        console.error('Monetag service worker registration failed:', error);
-      });
+  window.addEventListener('load', async function () {
+    try {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(registrations.map(async registration => {
+        try {
+          const subscription = await registration.pushManager?.getSubscription();
+          if (subscription) await subscription.unsubscribe();
+        } catch (_) {}
+        await registration.unregister();
+      }));
+    } catch (error) {
+      console.warn('Legacy service worker cleanup could not finish:', error);
+    }
   });
 }
 </script>
