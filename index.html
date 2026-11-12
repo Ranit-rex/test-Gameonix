@@ -5,7 +5,21 @@
      crossorigin="anonymous"></script>
 
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#080b15">
-<title>Playovia — Your Gaming Universe</title>
+<meta name="description" content="Discover games on Playovia, explore new genres, track recently played titles and connect with friends for supported multiplayer sessions and voice parties.">
+<meta name="robots" content="index,follow,max-image-preview:large">
+<link rel="canonical" href="https://playovia.xyz/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Playovia">
+<meta property="og:title" content="Discover Games and Play Together | Playovia">
+<meta property="og:description" content="Explore the Playovia game collection, find your next favourite and connect with friends for supported multiplayer play.">
+<meta property="og:url" content="https://playovia.xyz/">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Discover Games and Play Together | Playovia">
+<meta name="twitter:description" content="Explore games, keep track of recent plays and connect with your gaming friends on Playovia.">
+<title>Discover Games and Play Together | Playovia</title>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebSite","name":"Playovia","url":"https://playovia.xyz/","description":"A game discovery and social play platform with a browsable game collection, player connections and supported multiplayer features."}
+</script>
 <style>
 :root{--bg:#080b15;--surface:#111729;--surface2:#1a2036;--line:#252d45;--text:#f5f6ff;--muted:#9aa4bd;--purple:#a45cff;--blue:#258bff;--green:#51e0a0;--red:#ff687d}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial}button,input,textarea{font:inherit}button{cursor:pointer}button:disabled{opacity:.55;cursor:wait}.hidden{display:none!important}
@@ -502,7 +516,8 @@ html.low-performance #playhubApp .hero{animation:siteHeroIn .2s ease-out both}
 .ai-key-result strong{color:#fff}.ai-key-result .ai-quota-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:9px}
 .ai-key-result .ai-quota-item{padding:8px;border-radius:9px;background:#15223a}.ai-key-result .ai-quota-item small{display:block;color:#91a3c1;font-size:9px}.ai-key-result .ai-quota-item b{display:block;margin-top:3px;font-size:13px}
 @media(max-width:520px){.ai-key-checker-controls{grid-template-columns:1fr 1fr}.ai-key-checker-controls button{grid-column:1/-1;width:100%}}.ai-admin-key-details-wrap{margin:16px 0;padding:14px;border:1px solid var(--line);border-radius:15px;background:#0d1424}.ai-admin-key-details-wrap h3{margin:0 0 6px;font-size:15px}.ai-admin-key-details{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-top:12px}.ai-admin-key-detail{min-width:0;padding:12px;border:1px solid #303950;border-radius:12px;background:#141c30}.ai-admin-key-detail-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}.ai-admin-key-detail-head strong{font-size:12px}.ai-key-state{font-size:10px;color:#ff9aa8;text-transform:capitalize}.ai-key-state.ready{color:#51e0a0}.ai-admin-key-detail .ai-quota-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.ai-admin-key-detail .ai-quota-item{padding:8px}.ai-admin-key-detail .ai-quota-item small{font-size:9px}.ai-admin-key-detail .ai-quota-item b{font-size:12px;overflow-wrap:anywhere}
-\n#guestPlayPrompt{position:fixed;inset:0;z-index:1200;display:grid;place-items:center;padding:18px;background:#050711d9;backdrop-filter:blur(10px)}#guestPlayPrompt.hidden{display:none}#guestPlayPrompt .modal-card{position:relative;width:min(100%,420px);padding:28px;border:1px solid #514477;border-radius:22px;background:linear-gradient(145deg,#242044,#111a30);box-shadow:0 24px 80px #000b;color:#f5f3ff;text-align:center}#guestPlayPrompt h2{font-size:24px;margin:12px 0}#guestPlayPrompt p{color:#b9c2d7;line-height:1.6}#guestPlayPrompt .game-details-play,#guestPlayPrompt .game-details-save{width:100%;margin-top:12px;min-height:48px}#guestPlayPrompt small{display:block;margin-top:14px;color:#929db6}#guestPlayPrompt .modal-close{position:absolute;right:14px;top:10px;background:none;border:0;color:#fff;font-size:28px}</style>
+\n#guestPlayPrompt{position:fixed;inset:0;z-index:1200;display:grid;place-items:center;padding:18px;background:#050711d9;backdrop-filter:blur(10px)}#guestPlayPrompt.hidden{display:none}#guestPlayPrompt .modal-card{position:relative;width:min(100%,420px);padding:28px;border:1px solid #514477;border-radius:22px;background:linear-gradient(145deg,#242044,#111a30);box-shadow:0 24px 80px #000b;color:#f5f3ff;text-align:center}#guestPlayPrompt h2{font-size:24px;margin:12px 0}#guestPlayPrompt p{color:#b9c2d7;line-height:1.6}#guestPlayPrompt .game-details-play,#guestPlayPrompt .game-details-save{width:100%;margin-top:12px;min-height:48px}#guestPlayPrompt small{display:block;margin-top:14px;color:#929db6}#guestPlayPrompt .modal-close{position:absolute;right:14px;top:10px;background:none;border:0;color:#fff;font-size:28px}.editorial-guide{max-width:1100px;margin:42px 0 24px;padding:28px clamp(18px,3vw,34px);border:1px solid #252d45;border-radius:22px;background:linear-gradient(145deg,#111729,#0d1220)}.editorial-guide h2{font-size:clamp(24px,3vw,34px);line-height:1.2;margin:8px 0 14px}.editorial-guide h3{font-size:18px;margin:24px 0 7px;color:#f2edff}.editorial-guide p{max-width:900px;color:#b9c3d8;line-height:1.8;margin:0 0 10px}.editorial-guide a{color:#c4a4ff;text-underline-offset:3px}.editorial-guide .eyebrow{color:#b99aff;font-size:11px;letter-spacing:.14em;font-weight:800}
+</style>
 <link rel="stylesheet" href="./admin-dashboard.css?v=1">
 <style>
 /* Guest header: show a real Login button instead of an empty avatar oval. */
@@ -559,6 +574,22 @@ html.low-performance #playhubApp .hero{animation:siteHeroIn .2s ease-out both}
   <div class="sectionhead"><div><h2>Recommended for You</h2><p>Play more of what you enjoy — recommendations learn from your games</p></div><span class="count" id="gameCount">0 GAMES</span></div>
   <div class="filters"><button class="filter active" data-filter="all">All Games</button><button class="filter" data-filter="games">Games</button></div>
   <p class="games-meta" id="gamesMeta">Finding games...</p><div id="homeGames" class="grid"><div class="empty">Loading games...</div></div>
+
+ <section class="editorial-guide" aria-labelledby="playovia-guide-title">
+  <div class="eyebrow">A BETTER WAY TO FIND YOUR NEXT GAME</div>
+  <h2 id="playovia-guide-title">Discover, choose and play on Playovia</h2>
+  <p>Playovia brings a changing collection of browser-playable experiences into one place. Instead of jumping between scattered game links, you can browse the catalogue, search for a title and open its game page to see the available way to play. Game availability, controls and features can differ from one title to another.</p>
+  <h3>Find a game that fits your mood</h3>
+  <p>Start with the game catalogue and use its search and category options to narrow down what you want to try. If you are not sure what to pick, explore the recommendations or use the surprise option to discover a title you might otherwise have missed. Your recently played area can help you return to games you have opened before on the same device or account, where that feature is supported.</p>
+  <h3>Play solo or connect with friends</h3>
+  <p>Some titles are suited to a solo session, while supported multiplayer games let players meet through their own rooms or game-specific joining options. Playovia also includes player connections and party features for members. Sign-in is required for account-based social tools and any game flow that specifically needs a member account; the requirements are shown as you enter those features.</p>
+  <h3>What to expect when you open a game</h3>
+  <p>Choose a title from the catalogue to view its available details and start options. A game may load in an embedded player or open through its supported launch flow. Performance depends on the game, your browser, device and network connection. For the best experience, use an up-to-date browser and allow the game area to finish loading before starting.</p>
+  <h3>Game creators, credits and rights</h3>
+  <p>Playovia is a discovery and play platform, not the owner of every game shown in its catalogue. Third-party games, names, artwork, music and other assets remain with their respective creators or rights holders unless a specific licence says otherwise. Read our <a href="./game-licensing.html">Game Licensing &amp; Credits</a> page for attribution and rights information, or use the <a href="./report-game.html">game report page</a> to flag a rights or content concern.</p>
+  <h3>Play responsibly and get help</h3>
+  <p>Use the <a href="./terms.html">Terms &amp; Conditions</a> to understand the rules for using the platform and the <a href="./privacy-policy.html">Privacy Policy</a> to learn about data handling. If something is not working or you need to contact the team, visit <a href="./support.html">Playovia Support</a>.</p>
+ </section>
  
  </section>
  <section id="gamesPage" class="page game-library">
