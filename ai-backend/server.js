@@ -11,6 +11,8 @@ const MAX_MESSAGE_CHARS = 1200;
 const MAX_IMAGE_BASE64_CHARS = 2_300_000;
 const rateBuckets = new Map();
 const aiUsage = { total: 0, success: 0, failed: 0, byProvider: { gemini: 0, groq: 0, openrouter: 0 }, byKey: {}, recent: [], lastQuota: {}, lastQuotaByKey: {} };
+const trafficStats = { totalPageviews: 0, daily: new Map(), pages: new Map() };
+let maintenanceMode = false;
 const activeKeyLoads = new Map();
 const chatKeyRoutes = new Map();
 const ASSISTANT_NAMES = { gemini: 'Playovia GO', groq: 'Playovia Pro', openrouter: 'MTO v2' };
@@ -223,6 +225,48 @@ const server = http.createServer(async (req, res) => {
   }
 
   const url = new URL(req.url, 'http://localhost');
+  if (req.method === 'POST' && url.pathname === '/api/analytics/visit') {
+    const ip = String(req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
+    if (rateLimited('analytics:' + ip)) return send(res, 429, { error: 'Too many analytics events.' }, origin);
+    try {
+      let raw = '';
+      for await (const chunk of req) { raw += chunk; if (Buffer.byteLength(raw) > 2048) return send(res, 413, { error: 'Analytics event too large.' }, origin); }
+      const input = JSON.parse(raw || '{}');
+      const sessionId = String(input.sessionId || '').slice(0, 100);
+      const page = String(input.page || '/').split('?')[0].split('#')[0].slice(0, 120);
+      if (!/^[a-zA-Z0-9_-]{8,100}$/.test(sessionId)) return send(res, 400, { error: 'Invalid session identifier.' }, origin);
+      if (!page.startsWith('/') || page.startsWith('/games/')) return send(res, 400, { error: 'Invalid page path.' }, origin);
+      const day = new Date().toISOString().slice(0, 10);
+      const dayData = trafficStats.daily.get(day) || { pageviews: 0, sessions: new Set() };
+      dayData.pageviews++;
+      dayData.sessions.add(sessionId);
+      trafficStats.daily.set(day, dayData);
+      trafficStats.totalPageviews++;
+      trafficStats.pages.set(page, (trafficStats.pages.get(page) || 0) + 1);
+      for (const key of trafficStats.daily.keys()) if (key < new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10)) trafficStats.daily.delete(key);
+      return send(res, 202, { ok: true }, origin);
+    } catch (_) { return send(res, 400, { error: 'Invalid analytics event.' }, origin); }
+  }
+
+  if (req.method === 'GET' && url.pathname === '/api/site/status') {
+    return send(res, 200, { maintenanceMode, generatedAt: new Date().toISOString() }, origin);
+  }
+
+  if (req.method === 'POST' && url.pathname === '/api/discord/maintenance') {
+    const expected = String(process.env.DISCORD_INTEGRATION_TOKEN || '');
+    const supplied = String(req.headers.authorization || '').replace(/^Bearer\\s+/i, '');
+    const a = Buffer.from(expected), b = Buffer.from(supplied);
+    if (!expected || a.length !== b.length || !crypto.timingSafeEqual(a, b)) return send(res, 401, { error: 'Unauthorized.' }, origin);
+    try {
+      let raw = '';
+      for await (const chunk of req) { raw += chunk; if (Buffer.byteLength(raw) > 2048) return send(res, 413, { error: 'Request too large.' }, origin); }
+      const input = JSON.parse(raw || '{}');
+      if (typeof input.enabled !== 'boolean') return send(res, 400, { error: 'enabled must be a boolean.' }, origin);
+      maintenanceMode = input.enabled;
+      return send(res, 200, { ok: true, maintenanceMode }, origin);
+    } catch (_) { return send(res, 400, { error: 'Invalid request.' }, origin); }
+  }
+
   if (req.method === 'GET' && url.pathname === '/api/discord/overview') {
     const expected = String(process.env.DISCORD_INTEGRATION_TOKEN || '');
     const supplied = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '');
@@ -246,7 +290,18 @@ const server = http.createServer(async (req, res) => {
         success: aiUsage.success,
         failed: aiUsage.failed,
         byProvider: { ...aiUsage.byProvider }
-      }
+      },
+      traffic: (() => {
+        const today = new Date().toISOString().slice(0, 10);
+        const current = trafficStats.daily.get(today) || { pageviews: 0, sessions: new Set() };
+        return {
+          totalPageviews: trafficStats.totalPageviews,
+          todayPageviews: current.pageviews,
+          uniqueSessionsToday: current.sessions.size,
+          topPages: [...trafficStats.pages.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5).map(([path, views]) => ({ path, views }))
+        };
+      })(),
+      maintenanceMode
     }, origin);
   }
   if (req.method === 'GET' && url.pathname === '/health') {
