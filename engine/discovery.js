@@ -22,10 +22,10 @@ const PlayHubDiscovery = (() => {
       .replace(/\b\w/g, c => c.toUpperCase());
   }
 
-  async function readMetadata(slug) {
+  async function readMetadata(category, subcategory, slug) {
     try {
       const response = await fetch(
-        `${RAW}/games/${slug}/game.json`,
+        `${RAW}/games/${category}/${subcategory}/${slug}/game.json`,
         { cache: "no-store" }
       );
 
@@ -61,46 +61,32 @@ const PlayHubDiscovery = (() => {
         .map(item => item.path)
     );
 
-    const folders = new Set();
-
+    const folders = new Map();
     for (const path of paths) {
-      const match = path.match(/^games\/([^/]+)\/index\.html$/i);
-
-      if (match) folders.add(match[1]);
+      const match = path.match(/^games\/([^/]+)\/([^/]+)\/([^/]+)\/index\.html$/i);
+      if (match) folders.set(match[3], { category: match[1], subcategory: match[2], slug: match[3] });
     }
-
     const games = await Promise.all(
-      [...folders].map(async slug => {
-        const metadata = await readMetadata(slug);
-
-        const thumbnailCandidates = [
-          metadata.thumbnail,
-          "thumbnail.png",
-          "cover.png",
-          "assets/thumbnail.png",
-          "assets/cover.png"
-        ].filter(Boolean);
-
-        const thumbnail = thumbnailCandidates
-          .map(path => {
-            if (/^https?:\/\//i.test(path)) return path;
-
-            return `${RAW}/games/${slug}/${path.replace(/^\.?\//, "")}`;
-          })[0];
-
+      [...folders.values()].map(async ({ category, subcategory, slug }) => {
+        const metadata = await readMetadata(category, subcategory, slug);
+        const thumbnailCandidates = [metadata.thumbnail, "thumbnail.png", "cover.png", "thumbnail.svg", "cover.svg"].filter(Boolean);
+        const thumbnail = thumbnailCandidates.map(path => {
+          if (/^https?:\/\//i.test(path)) return path;
+          return `${RAW}/games/${category}/${subcategory}/${slug}/${path.replace(/^\.?\//, "")}`;
+        })[0];
         return {
-          id: slug,
+          id: metadata.slug || slug,
           title: metadata.title || titleFromSlug(slug),
           description: metadata.description || "Discover and play this game on Playovia.",
-          category: metadata.category || "Games",
+          category: metadata.category || category,
+          subcategory: metadata.subcategory || subcategory,
           thumbnail,
-          url: `${PAGES}${encodeURIComponent(slug)}/`,
-          folder: `games/${slug}/`,
+          url: `${PAGES}${category}/${subcategory}/${encodeURIComponent(slug)}/`,
+          folder: `games/${category}/${subcategory}/${slug}/`,
           status: metadata.status || "published"
         };
       })
     );
-
     return games
       .filter(game => game.status !== "hidden")
       .sort((a, b) => a.title.localeCompare(b.title));
