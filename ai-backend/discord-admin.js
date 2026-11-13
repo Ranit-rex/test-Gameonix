@@ -76,8 +76,14 @@ async function handle(req, res, origin, send) {
       send(res,200,{ok:true,uid,banned},origin); return true;
     }
     if (action === 'currency') {
-      const uid=String(input.uid||''), operation=String(input.operation||''), amount=Number(input.amount), reason=String(input.reason||'').trim().slice(0,300);
-      if(!/^[A-Za-z0-9_-]{1,128}$/.test(uid)||!['add','remove','set'].includes(operation)||!Number.isSafeInteger(amount)||amount<=0||!reason){send(res,400,{error:'Valid uid, operation, positive whole amount and reason required.'},origin);return true;}
+      let uid=String(input.uid||'').trim(), operation=String(input.operation||''), amount=Number(input.amount), reason=String(input.reason||'').trim().slice(0,300);
+      if(/^[A-Z]{5}[0-9]{4}$/i.test(uid)){
+        const playerLink=await database.collection('playerIds').doc(uid.toUpperCase()).get();
+        const linked=playerLink.exists?playerLink.data():null;
+        uid=String(linked?.uid||linked?.userId||linked?.accountUid||'').trim();
+        if(!uid){send(res,404,{error:'Player ID was not found or has no linked account.'},origin);return true;}
+      }
+      if(!/^[A-Za-z0-9_-]{1,128}$/.test(uid)||!['add','remove','set'].includes(operation)||!Number.isSafeInteger(amount)||amount<=0||!reason){send(res,400,{error:'Enter a valid Player ID or UID, operation, positive whole amount and reason.'},origin);return true;}
       const ref=database.collection('users').doc(uid), log=database.collection('currencyTransactions').doc();let before=0,after=0;
       await database.runTransaction(async tx=>{const s=await tx.get(ref);if(!s.exists)throw new Error('User profile not found.');before=Math.max(0,Number(s.data().currencyBalance||0));after=operation==='add'?before+amount:operation==='remove'?before-amount:amount;if(!Number.isSafeInteger(after)||after<0)throw new Error('Insufficient balance or invalid balance.');tx.set(ref,{currencyBalance:after,updatedAt:stamp},{merge:true});tx.set(log,{uid,operation,amount,previousBalance:before,newBalance:after,reason,createdAt:stamp});});
       await audit(database,'currency_adjusted',actor,{uid,reason});
