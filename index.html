@@ -1330,13 +1330,13 @@ function aiAddBubble(text,who='assistant',extra='',withTools=true){
  const box=$('aiMessages');if(!box)return;
  const el=document.createElement('div');el.className='ai-bubble '+who+(extra?' '+extra:'');
  aiRenderText(el,text);box.appendChild(el);
- if(withTools&&who!=='error'&&who!=='user'){
+ if(withTools&&who!=='error'){
   const tools=document.createElement('div');tools.className='ai-message-tools';
   const copy=document.createElement('button');copy.type='button';copy.textContent='⧉ Copy';copy.addEventListener('click',()=>aiCopyText(text,copy));
   const share=document.createElement('button');share.type='button';share.textContent='↗ Share';share.addEventListener('click',()=>aiShareText(text));
   tools.append(copy,share);
   const lastUser=[...playoviaAiHistory].reverse().find(x=>x.role==='user');
-  if(lastUser){const regen=document.createElement('button');regen.type='button';regen.textContent='↻ Regenerate';regen.addEventListener('click',()=>aiRegenerate());tools.append(regen)}
+  if(who!=='user'&&lastUser){const regen=document.createElement('button');regen.type='button';regen.textContent='↻ Regenerate';regen.addEventListener('click',()=>aiRegenerate());tools.append(regen)}
   box.appendChild(tools);
   aiAppendGameCards(box,text);
  }
