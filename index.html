@@ -774,14 +774,14 @@ function isRetiredPlayoviaGame(game){
  return ['mobalegends','disasterrush','clashbrawl'].includes(slug)||['mobalegends','disasterrush','clashbrawl'].includes(title);
 }
 async function discoverGames(){
- const cacheKey='playovia_game_catalog_v8',cacheMaxAge=60*60*1000;let catalog=null;
+ const cacheKey='playovia_game_catalog_v9',cacheMaxAge=60*60*1000;let catalog=null;
  // Retired titles are filtered even from an old local catalogue before anything is rendered.
  try{for(let v=1;v<=7;v++)localStorage.removeItem('playovia_game_catalog_v'+v)}catch(_){}
  try{const cached=JSON.parse(localStorage.getItem(cacheKey)||'null');if(cached&&Date.now()-cached.savedAt<cacheMaxAge&&Array.isArray(cached.games))catalog=cached.games.filter(g=>!isRetiredPlayoviaGame(g))}catch(_){}
  if(catalog){allGames=catalog;discoveredGames=catalog.slice();renderGames(allGames);$('gameCount').textContent=allGames.length+' GAMES';$('gamesMeta').textContent=allGames.length+' games'}
  try{
   if(!catalog){
-   const r=await fetch('https://api.github.com/repos/Ranit-rex/test-Gameonix/git/trees/main?recursive=1&playovia_catalog=20261113-2',{cache:'no-store'});
+   const r=await fetch('https://api.github.com/repos/Ranit-rex/test-Gameonix/git/trees/main?recursive=1&playovia_catalog=20261113-3',{cache:'no-store'});
    if(!r.ok)throw new Error('Game list unavailable ('+r.status+')');
    const data=await r.json(),files=(data.tree||[]).filter(x=>/^games\/[^/]+\/index\.html$/.test(x.path)&&Number(x.size)>0&&!isRetiredPlayoviaGame({slug:x.path.split('/')[1]}));
    catalog=files.map(file=>{const slug=file.path.split('/')[1],title=slug.replace(/[-_]/g,' ').replace(/\b\w/g,c=>c.toUpperCase()),base='https://raw.githubusercontent.com/Ranit-rex/test-Gameonix/main/games/'+encodeURIComponent(slug)+'/',cover=(slug.toLowerCase()==='ghost night'?['thumbnail.svg','cover.svg','thumbnail.png','thumbnail.jpg','cover.png','cover.jpg']:['cover.svg','thumbnail.svg','thumbnail.png','thumbnail.jpg','cover.png','cover.jpg']).find(name=>data.tree.some(x=>x.path==='games/'+slug+'/'+name));const meta=GAME_CATALOG_META[slug]||{};return{slug,title:meta.title||title,description:meta.description||'Explore this game, master its challenges, and enjoy a fresh adventure every time you play.',category:meta.category||'Games',thumbnail:slug.toLowerCase()==='ghost night'?'./games/Ghost%20Night/ghost-night.webp':(slug.toLowerCase()==='ashgrave'?'https://raw.githubusercontent.com/Ranit-rex/test-Gameonix/main/games/Ashgrave/images/ashgrave-cover.svg':(cover?base+encodeURIComponent(cover):'')),url:'./games/'+encodeURIComponent(slug)+'/?build=dh-multiplayer-2'}});
@@ -1236,21 +1236,40 @@ firebaseInitPromise=initFirebase();
 </script>
 
 <script>
-// Remove the former advertising service worker and its push subscription from this site.
-if ('serviceWorker' in navigator) {
+// Remove legacy service workers and their stale cached app shell.
+if ('serviceWorker' in navigator || 'caches' in window) {
   window.addEventListener('load', async function () {
+    let changed = false;
     try {
-      const registrations = await navigator.serviceWorker.getRegistrations();
-      await Promise.all(registrations.map(async registration => {
-        try {
-          const subscription = await registration.pushManager?.getSubscription();
-          if (subscription) await subscription.unsubscribe();
-        } catch (_) {}
-        await registration.unregister();
-      }));
+      if ('serviceWorker' in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        const results = await Promise.all(registrations.map(async registration => {
+          try {
+            const subscription = await registration.pushManager?.getSubscription();
+            if (subscription) await subscription.unsubscribe();
+          } catch (_) {}
+          return registration.unregister();
+        }));
+        changed = results.some(Boolean) || changed;
+      }
+      if ('caches' in window) {
+        const cacheNames = await caches.keys();
+        const deleted = await Promise.all(cacheNames.map(name => caches.delete(name)));
+        changed = deleted.some(Boolean) || changed;
+      }
     } catch (error) {
-      console.warn('Legacy service worker cleanup could not finish:', error);
+      console.warn('Legacy app cache cleanup could not finish:', error);
     }
+    // A one-time cache-busted reload makes the browser request the current homepage.
+    try {
+      const key = 'playovia_legacy_cache_refresh_v1';
+      if (changed && !sessionStorage.getItem(key)) {
+        sessionStorage.setItem(key, '1');
+        const url = new URL(location.href);
+        url.searchParams.set('catalog-refresh', '20261113-3');
+        location.replace(url.toString());
+      }
+    } catch (_) {}
   });
 }
 </script>
