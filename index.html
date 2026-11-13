@@ -1390,7 +1390,7 @@ function aiSearchGamesNow(){
 function aiToggleScreenshot(){const p=$('aiScreenshotPanel');if(!p)return;p.classList.toggle('hidden');if(!p.classList.contains('hidden'))$('aiScreenshotInput')?.focus()}
 async function aiAnalyzeScreenshot(){
  const file=$('aiScreenshotInput')?.files?.[0];if(!file){aiAddBubble('Choose a screenshot first.','assistant','error',false);return}
- if(!/^image\\/(png|jpeg|webp)$/.test(file.type)){aiAddBubble('Please choose a PNG, JPG or WebP screenshot.','assistant','error',false);return}
+ if(!/^image\/(png|jpeg|webp)$/.test(file.type)){aiAddBubble('Please choose a PNG, JPG or WebP screenshot.','assistant','error',false);return}
  if(file.size>12*1024*1024){aiAddBubble('Screenshot is too large. Choose an image under 12 MB.','assistant','error',false);return}
  const question=String($('aiScreenshotQuestion')?.value||'What is happening in this screenshot, and what should I do next?').trim();
  const reader=new FileReader();
