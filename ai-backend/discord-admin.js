@@ -29,7 +29,7 @@ function audit(database, action, actor, details = {}) {
 function userData(s) {
   const u = s.data() || {};
   return { uid: s.id, displayName: u.displayName || u.username || 'Player', username: u.username || '',
-    email: u.email || '', currencyBalance: Number(u.currencyBalance || 0), banned: u.banned === true, banReason: u.banReason || '' };
+    currencyBalance: Number(u.currencyBalance || 0), banned: u.banned === true, banReason: u.banReason || '' };
 }
 async function handle(req, res, origin, send) {
   const url = new URL(req.url, 'http://localhost');
