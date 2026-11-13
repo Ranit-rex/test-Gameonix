@@ -774,9 +774,9 @@ function isRetiredPlayoviaGame(game){
  return ['mobalegends','disasterrush','clashbrawl'].includes(slug)||['mobalegends','disasterrush','clashbrawl'].includes(title);
 }
 async function discoverGames(){
- const cacheKey='playovia_game_catalog_v9',cacheMaxAge=60*60*1000;let catalog=null;
+ const cacheKey='playovia_game_catalog_v10',cacheMaxAge=60*60*1000;let catalog=null;
  // Retired titles are filtered even from an old local catalogue before anything is rendered.
- try{for(let v=1;v<=7;v++)localStorage.removeItem('playovia_game_catalog_v'+v)}catch(_){}
+ try{for(let v=1;v<=9;v++)localStorage.removeItem('playovia_game_catalog_v'+v)}catch(_){}
  try{const cached=JSON.parse(localStorage.getItem(cacheKey)||'null');if(cached&&Date.now()-cached.savedAt<cacheMaxAge&&Array.isArray(cached.games))catalog=cached.games.filter(g=>!isRetiredPlayoviaGame(g))}catch(_){}
  if(catalog){allGames=catalog;discoveredGames=catalog.slice();renderGames(allGames);$('gameCount').textContent=allGames.length+' GAMES';$('gamesMeta').textContent=allGames.length+' games'}
  try{
