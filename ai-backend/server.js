@@ -1,4 +1,5 @@
 const http = require('node:http');
+const crypto = require('node:crypto');
 
 const PORT = Number(process.env.PORT || 3000);
 const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
@@ -222,6 +223,32 @@ const server = http.createServer(async (req, res) => {
   }
 
   const url = new URL(req.url, 'http://localhost');
+  if (req.method === 'GET' && url.pathname === '/api/discord/overview') {
+    const expected = String(process.env.DISCORD_INTEGRATION_TOKEN || '');
+    const supplied = String(req.headers.authorization || '').replace(/^Bearer\\s+/i, '');
+    if (!expected) return send(res, 503, { error: 'Discord integration is not configured on the backend.' }, origin);
+    const expectedBuffer = Buffer.from(expected);
+    const suppliedBuffer = Buffer.from(supplied);
+    const authorized = expectedBuffer.length === suppliedBuffer.length && crypto.timingSafeEqual(expectedBuffer, suppliedBuffer);
+    if (!authorized) return send(res, 401, { error: 'Invalid Discord integration token.' }, origin);
+    return send(res, 200, {
+      ok: true,
+      service: 'Playovia AI',
+      uptimeSeconds: Math.floor(process.uptime()),
+      generatedAt: new Date().toISOString(),
+      providersConfigured: {
+        gemini: availableSlots('gemini').length > 0,
+        groq: availableSlots('groq').length > 0,
+        openrouter: availableSlots('openrouter').length > 0
+      },
+      ai: {
+        total: aiUsage.total,
+        success: aiUsage.success,
+        failed: aiUsage.failed,
+        byProvider: { ...aiUsage.byProvider }
+      }
+    }, origin);
+  }
   if (req.method === 'GET' && url.pathname === '/health') {
     return send(res, 200, { ok: true, service: 'Playovia AI', providers: ['gemini', 'groq', 'openrouter'] }, origin);
   }
