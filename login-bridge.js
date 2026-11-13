@@ -1,7 +1,7 @@
 /* Reliable standalone click bridge for Playovia Google sign-in. */
 (function(){
  'use strict';
- const CONFIG={apiKey:'AIzaSyB_pZ9WfVSx2XHuDeSZ7VrwEr-Pz_m_2QM',authDomain:'play-hub-688e.firebaseapp.com',databaseURL:'https://play-hub-688e-default-rtdb.asia-southeast1.firebasedatabase.app',projectId:'play-hub-688e',storageBucket:'play-hub-688e.firebasestorage.app',messagingSenderId:'195222206861',appId:'1:195222206861:web:828a8cf16991f982a925c4'};
+ const CONFIG={apiKey:'AIzaSyB_pZ9WfVSx2XHuDeSZ7VrwEr-Pz_m_2QM',authDomain:'play-hub-688e8.firebaseapp.com',databaseURL:'https://play-hub-688e8-default-rtdb.asia-southeast1.firebasedatabase.app',projectId:'play-hub-688e8',storageBucket:'play-hub-688e8.firebasestorage.app',messagingSenderId:'195222206861',appId:'1:195222206861:web:828a8cf16991f982a925c4'};
  let busy=false;
  const say=(v,bad)=>{const n=document.getElementById('gateStatus');if(n){n.textContent=v;n.className='gate-status'+(bad?' error':' ok')}};
  const load=src=>new Promise((ok,no)=>{const x=document.createElement('script');x.src=src;x.onload=ok;x.onerror=()=>no(new Error('Could not load Firebase Auth SDK'));document.head.appendChild(x)});
