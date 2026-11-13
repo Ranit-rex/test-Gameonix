@@ -254,7 +254,7 @@ const server = http.createServer(async (req, res) => {
 
   if (req.method === 'POST' && url.pathname === '/api/discord/maintenance') {
     const expected = String(process.env.DISCORD_INTEGRATION_TOKEN || '');
-    const supplied = String(req.headers.authorization || '').replace(/^Bearer\\s+/i, '');
+    const supplied = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '');
     const a = Buffer.from(expected), b = Buffer.from(supplied);
     if (!expected || a.length !== b.length || !crypto.timingSafeEqual(a, b)) return send(res, 401, { error: 'Unauthorized.' }, origin);
     try {
