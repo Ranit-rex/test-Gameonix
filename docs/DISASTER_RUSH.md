@@ -10,7 +10,7 @@ A Three.js 3D survival game for Playovia. Players survive a sequence of environm
 ## Technology
 - Three.js r160 from CDN for the 3D scene.
 - Existing `../../shared/multiplayer.js` helper for room creation, joining, public room discovery, host start, and room lifecycle.
-- Firebase Realtime Database project `play-hub-688e`, reusing the existing Playovia multiplayer paths.
+- Firebase Realtime Database project `play-hub-688e8`, reusing the existing Playovia multiplayer paths.
 - Existing PlayHub Firebase bridge is used when the game is opened inside the platform; standalone fallback uses Firebase anonymous auth.
 - Game id: `disasterrush`.
 
