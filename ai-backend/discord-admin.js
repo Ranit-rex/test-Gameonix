@@ -35,7 +35,7 @@ async function handle(req, res, origin, send) {
   const url = new URL(req.url, 'http://localhost');
   if (req.method !== 'POST' || url.pathname !== '/api/discord/admin') return false;
   const expected = String(process.env.DISCORD_INTEGRATION_TOKEN || '');
-  const supplied = String(req.headers.authorization || '').replace(/^Bearer\\s+/i, '');
+  const supplied = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '');
   const a = Buffer.from(expected), b = Buffer.from(supplied);
   if (!expected || a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
     send(res, 401, { error: 'Unauthorized.' }, origin); return true;
