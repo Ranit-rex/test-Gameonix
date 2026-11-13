@@ -225,7 +225,7 @@ const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://localhost');
   if (req.method === 'GET' && url.pathname === '/api/discord/overview') {
     const expected = String(process.env.DISCORD_INTEGRATION_TOKEN || '');
-    const supplied = String(req.headers.authorization || '').replace(/^Bearer\\s+/i, '');
+    const supplied = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '');
     if (!expected) return send(res, 503, { error: 'Discord integration is not configured on the backend.' }, origin);
     const expectedBuffer = Buffer.from(expected);
     const suppliedBuffer = Buffer.from(supplied);
