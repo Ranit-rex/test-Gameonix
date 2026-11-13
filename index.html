@@ -522,7 +522,7 @@ html.low-performance #playhubApp .hero{animation:siteHeroIn .2s ease-out both}
 <style>
 /* Guest header: show a real Login button instead of an empty avatar oval. */
 @media(max-width:700px){
-  .account .login.signin-header{display:inline-flex!important;align-items:center;justify-content:center;font-size:12px!important;line-height:1;width:auto!important;min-width:66px;height:38px!important;padding:0 11px!important;border-radius:11px!important;position:static!important}
+  .account .login.signin-header:not(.hidden){display:inline-flex!important;align-items:center;justify-content:center;font-size:12px!important;line-height:1;width:auto!important;min-width:66px;height:38px!important;padding:0 11px!important;border-radius:11px!important;position:static!important}
   .account .login.signin-header:after{content:none!important}
   .account .profile-menu-trigger.hidden{display:none!important}
 }
