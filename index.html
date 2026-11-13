@@ -1438,8 +1438,6 @@ function aiAddBubble(text,who='assistant',extra='',withTools=true){
   const share=document.createElement('button');share.type='button';share.textContent='↗ Share';share.addEventListener('click',()=>aiShareText(text));
   tools.append(copy,share);
   if(who==='assistant'){const listen=document.createElement('button');listen.type='button';listen.className='ai-listen-btn';listen.textContent='🔊 Listen';listen.addEventListener('click',()=>aiSpeakText(text,listen));tools.append(listen)}
-  const lastUser=[...playoviaAiHistory].reverse().find(x=>x.role==='user');
-  if(who!=='user'&&lastUser){const regen=document.createElement('button');regen.type='button';regen.textContent='↻ Regenerate';regen.addEventListener('click',()=>aiRegenerate());tools.append(regen)}
   box.appendChild(tools);
   aiAppendGameCards(box,text);
  }
@@ -1462,24 +1460,16 @@ function aiAppendGameCards(box,answer){
   card.appendChild(button);box.appendChild(card);
  });
 }
-async function aiRegenerate(){
- if(playoviaAiBusy)return;
- const last=playoviaAiHistory.filter(x=>x.role==='user').slice(-1)[0];if(!last)return;
- const prior=playoviaAiHistory.slice(0,-2);playoviaAiHistory=prior;
- const oldMessages=[...$('aiMessages').children];const lastAssistant=oldMessages.findLast?.(x=>x.classList?.contains('assistant'));
- if(lastAssistant){let node=lastAssistant;while(node&&node!==$('aiMessages')){const prev=node.previousSibling;node.remove();node=prev}}
- await aiSend(last.text,true);
-}
 function aiSetBusy(on){playoviaAiBusy=on;$('aiSendBtn').disabled=on;$('aiInput').disabled=on;if(on){const t=document.createElement('div');t.id='aiTyping';t.className='ai-bubble ai-typing';t.innerHTML='<i></i><i></i><i></i>';$('aiMessages').appendChild(t);$('aiMessages').scrollTop=$('aiMessages').scrollHeight}else $('aiTyping')?.remove()}
 function aiOpen(){$('aiProviderSelect')?.closest('.ai-provider-row')?.classList.remove('hidden');$('playoviaAiPanel').classList.remove('hidden');}
 function aiClose(){setPage('home')}
 function aiClear(){playoviaAiHistory=[];try{localStorage.removeItem(PLAYOVIA_AI_CHAT_STORAGE)}catch(_){}$('aiMessages').innerHTML='<div class="ai-welcome"><strong>Chat cleared ✨</strong><p>What would you like to explore today?</p></div>'}
 async function aiRequest(payload){if(!PLAYOVIA_AI_ENDPOINT.startsWith('https://'))throw new Error('Playovia AI backend is not configured.');const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),40000);try{const response=await fetch(PLAYOVIA_AI_ENDPOINT+'/api/chat',{method:'POST',mode:'cors',credentials:'omit',cache:'no-store',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload),signal:controller.signal});const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||('AI server returned HTTP '+response.status+'.'));return data}catch(error){if(error.name==='AbortError')throw new Error('Playovia AI timed out. Please try again.');if(error instanceof TypeError)throw new Error('AI connection blocked. Check the Playovia domain CORS setting and backend status.');throw error}finally{clearTimeout(timer)}}
 let playoviaChatId=(typeof crypto!=='undefined'&&crypto.randomUUID)?crypto.randomUUID():('pv-'+Date.now()+'-'+Math.random().toString(36).slice(2));
-async function aiSend(message,isRegenerate=false){
+async function aiSend(message){
  const clean=String(message||'').trim();if(!clean||playoviaAiBusy)return;
- if(!isRegenerate){const localAction=aiHandleLocalCommand(clean);if(localAction){aiAddBubble(clean,'user','',false);playoviaAiHistory.push({role:'user',text:clean},{role:'model',text:localAction});playoviaAiHistory=playoviaAiHistory.slice(-30);aiPersistChat();aiAddBubble(localAction,'assistant');return}}
- if(!isRegenerate)aiAddBubble(clean,'user','',false);
+ {const localAction=aiHandleLocalCommand(clean);if(localAction){aiAddBubble(clean,'user','',false);playoviaAiHistory.push({role:'user',text:clean},{role:'model',text:localAction});playoviaAiHistory=playoviaAiHistory.slice(-30);aiPersistChat();aiAddBubble(localAction,'assistant');return}}
+ aiAddBubble(clean,'user','',false);
  $('aiInput').value='';aiSetBusy(true);
  try{
   const games=(typeof allGames!=='undefined'?allGames:[]).slice(0,40).map(g=>({title:g.title||g.name||'',slug:g.slug||'',url:g.url||'',category:g.category||'',description:String(g.description||'').slice(0,180)}));
