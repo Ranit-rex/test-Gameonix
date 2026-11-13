@@ -36,3 +36,24 @@ Optional model variables:
 - API keys remain server-side and are never sent to the browser.
 
 After deploy, test `https://YOUR-SERVICE.onrender.com/health`.
+
+## Discord website control integration
+
+The Discord bot uses the private backend routes below. The Firebase Admin credential must stay in Render and must never be committed to GitHub or pasted into Discord.
+
+Add these Render environment variables:
+- `DISCORD_INTEGRATION_TOKEN`: a long random secret; set the exact same value as the bot's `PLAYOVIA_DISCORD_TOKEN` in Enzonic.
+- `FIREBASE_SERVICE_ACCOUNT_JSON`: the complete Firebase service-account JSON contents (one-line JSON is fine).
+
+Create/download the service-account key from Firebase Console → Project settings → Service accounts → Generate new private key. Store the JSON only in Render Environment as `FIREBASE_SERVICE_ACCOUNT_JSON`. Do not upload it to this repository.
+
+The bot's `/panel` includes analytics, players, reports, announcements, game listings and admin activity. Additional commands:
+- `/player-search` — look up a 9-character Player ID.
+- `/player-ban` — ban/unban by UID.
+- `/currency` — add/remove/set a player's coin balance with an audit reason.
+- `/report-update` — change report status.
+- `/announcement` — publish a website announcement.
+- `/game-setting` — edit a game listing's title/category/description/visibility.
+- `/admin-data` — read each admin section.
+
+All these actions require the Discord user's ID to be listed in the bot's `DISCORD_ADMIN_IDS`. Privileged writes are recorded in Firestore `adminAuditLog`. The integration does not expose Firebase credentials or provider API keys to Discord.
