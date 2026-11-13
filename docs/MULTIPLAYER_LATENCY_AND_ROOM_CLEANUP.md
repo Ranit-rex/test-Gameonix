@@ -5,7 +5,7 @@
 - Bomb Tag host-state sync is reduced from 500 ms to 200 ms.
 - Antarctic player sync is reduced from 150 ms to 100 ms and host world sync from 500 ms to 250 ms.
 - Room heartbeats update the member's `lastSeen` and the room's `updatedAt` together.
-- Disaster Rush and Antarctic now send a heartbeat every 25 seconds while in a room.
+- Antarctic sends a heartbeat every 25 seconds while in a room.
 - A scheduled Firebase Function runs every 15 minutes and removes rooms whose `updatedAt` is older than 30 minutes, including their linked match record. Active rooms stay alive because connected members refresh the heartbeat timestamp.
 
 ## One-time Firebase deployment requirement
