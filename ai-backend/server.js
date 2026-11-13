@@ -65,8 +65,9 @@ async function verifyAdminToken(token) {
       signal: AbortSignal.timeout(10000)
     });
     const data = await response.json().catch(() => ({}));
-    const email = String(data?.users?.[0]?.email || '').toLowerCase();
-    return response.ok && ['firegamingugw@gmail.com', 'mranit66@gmail.com'].includes(email);
+    const account = data?.users?.[0];
+    const email = String(account?.email || '').toLowerCase();
+    return response.ok && account?.emailVerified === true && ['firegamingugw@gmail.com', 'mranit66@gmail.com'].includes(email);
   } catch (_) { return false; }
 }
 
@@ -222,6 +223,8 @@ const server = http.createServer(async (req, res) => {
     return send(res, 200, { ok: true, service: 'Playovia AI', providers: ['gemini', 'groq', 'openrouter'] }, origin);
   }
   if (req.method === 'GET' && url.pathname === '/api/keys/check') {
+    const adminToken = String(req.headers.authorization || '').replace('Bearer ', '').trim();
+    if (!(await verifyAdminToken(adminToken))) return send(res, 403, { error: 'Admin access required.' }, origin);
     const checkIp = String(req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
     if (rateLimited(checkIp)) return send(res, 429, { error: 'Too many key checks. Please wait a minute.' }, origin);
     const provider = String(url.searchParams.get('provider') || '').toLowerCase();
@@ -251,6 +254,8 @@ const server = http.createServer(async (req, res) => {
     return send(res, 200, { provider, model: provider === 'gemini' ? GEMINI_MODEL : provider === 'groq' ? GROQ_MODEL : OPENROUTER_MODEL, results }, origin);
   }
   if (req.method === 'GET' && url.pathname === '/api/models') {
+    const adminToken = String(req.headers.authorization || '').replace('Bearer ', '').trim();
+    if (!(await verifyAdminToken(adminToken))) return send(res, 403, { error: 'Admin access required.' }, origin);
     const checkIp = String(req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
     if (rateLimited(checkIp)) return send(res, 429, { error: 'Too many model-list checks. Please wait a minute.' }, origin);
     const provider = String(url.searchParams.get('provider') || '').toLowerCase();
@@ -276,6 +281,8 @@ const server = http.createServer(async (req, res) => {
     }
   }
   if (req.method === 'POST' && url.pathname === '/api/test-key') {
+    const adminToken = String(req.headers.authorization || '').replace('Bearer ', '').trim();
+    if (!(await verifyAdminToken(adminToken))) return send(res, 403, { error: 'Admin access required.' }, origin);
     const ip = String(req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
     if (rateLimited(ip)) return send(res, 429, { error: 'Too many key tests. Please wait a minute.' }, origin);
     try {
