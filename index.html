@@ -774,19 +774,19 @@ function isRetiredPlayoviaGame(game){
  return ['mobalegends','disasterrush','clashbrawl'].includes(slug)||['mobalegends','disasterrush','clashbrawl'].includes(title);
 }
 async function discoverGames(){
- const cacheKey='playovia_game_catalog_v12',cacheMaxAge=60*60*1000;let catalog=null;
- try{for(let v=1;v<=11;v++)localStorage.removeItem('playovia_game_catalog_v'+v)}catch(_){}
+ const cacheKey='playovia_game_catalog_v13',cacheMaxAge=60*60*1000;let catalog=null;
+ try{for(let v=1;v<=12;v++)localStorage.removeItem('playovia_game_catalog_v'+v)}catch(_){}
  try{const cached=JSON.parse(localStorage.getItem(cacheKey)||'null');if(cached&&Date.now()-cached.savedAt<cacheMaxAge&&Array.isArray(cached.games))catalog=cached.games.filter(g=>!isRetiredPlayoviaGame(g))}catch(_){}
  if(catalog){allGames=catalog;discoveredGames=catalog.slice();renderGames(allGames);$('gameCount').textContent=allGames.length+' GAMES';$('gamesMeta').textContent=allGames.length+' games'}
  try{
   if(!catalog){
-   const r=await fetch('https://api.github.com/repos/Ranit-rex/test-Gameonix/git/trees/main?recursive=1&playovia_catalog=20261113-5',{cache:'no-store'});
+   const r=await fetch('https://api.github.com/repos/Ranit-rex/test-Gameonix/git/trees/main?recursive=1&playovia_catalog=20261113-6',{cache:'no-store'});
    if(!r.ok)throw new Error('Game list unavailable ('+r.status+')');
    const data=await r.json();
    const files=(data.tree||[]).filter(x=>/^games\/[^/]+\/[^/]+\/[^/]+\/index\.html$/.test(x.path)&&Number(x.size)>0&&!isRetiredPlayoviaGame({slug:(GAME_CATALOG_META[x.path.split('/')[3]]||{}).slug||x.path.split('/')[3]}));
    catalog=files.map(file=>{
     const parts=file.path.split('/'),categoryFolder=parts[1],subcategoryFolder=parts[2],folder=parts[3],meta=GAME_CATALOG_META[folder]||{},slug=meta.slug||folder;
-    const base='https://raw.githubusercontent.com/Ranit-rex/test-Gameonix/main/games/'+categoryFolder+'/'+subcategoryFolder+'/'+encodeURIComponent(folder)+'/';
+    const base='https://playovia.xyz/games/'+categoryFolder+'/'+subcategoryFolder+'/'+encodeURIComponent(folder)+'/';
     const candidates=meta.thumbnail?[meta.thumbnail]:(folder==='last-lantern'?['thumbnail.svg','cover.svg','thumbnail.png','thumbnail.jpg','cover.png','cover.jpg']:['cover.svg','thumbnail.svg','thumbnail.png','thumbnail.jpg','cover.png','cover.jpg']);
     const cover=candidates.find(name=>data.tree.some(x=>x.path==='games/'+categoryFolder+'/'+subcategoryFolder+'/'+folder+'/'+name));
     const coverUrl=cover?base+cover.split('/').map(encodeURIComponent).join('/'):'';
