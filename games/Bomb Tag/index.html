@@ -12,7 +12,7 @@
 <script src="../../shared/multiplayer.js"></script>
 <script>
 (()=>{'use strict';
-const $=id=>document.getElementById(id), CFG={apiKey:'AIzaSyB_pZ9WfVSx2XHuDeSZ7VrwEr-Pz_m_2QM',authDomain:'play-hub-688e.firebaseapp.com',databaseURL:'https://play-hub-688e-default-rtdb.asia-southeast1.firebasedatabase.app',projectId:'play-hub-688e',storageBucket:'play-hub-688e.firebasestorage.app',messagingSenderId:'195222206861',appId:'1:195222206861:web:828a8cf16991f982a925c4'};
+const $=id=>document.getElementById(id), CFG={apiKey:'AIzaSyB_pZ9WfVSx2XHuDeSZ7VrwEr-Pz_m_2QM',authDomain:'play-hub-688e8.firebaseapp.com',databaseURL:'https://play-hub-688e8-default-rtdb.asia-southeast1.firebasedatabase.app',projectId:'play-hub-688e8',storageBucket:'play-hub-688e8.firebasestorage.app',messagingSenderId:'195222206861',appId:'1:195222206861:web:828a8cf16991f982a925c4'};
 const W=900,H=580,FUSE_DURATION=20000,st={mode:'solo',uid:'',name:'Player',db:null,auth:null,room:null,roomRef:null,roomOff:null,matchRoot:null,matchRef:null,matchOff:null,host:false,roomData:null,players:[],me:null,bombHolder:null,fuseEndsAt:0,round:1,eliminated:[],winnerUid:null,keys:{},raf:0,lastWrite:0,lastHost:0,started:false,botCount:5,roundOver:false,gameOver:false,moveVec:{x:0,y:0}};
 const canvas=$('arena'),ctx=canvas.getContext('2d');const arenaMap=new Image();arenaMap.src='arena-map.svg?v=20261108c';const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);const esc=s=>String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function show(id){document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active'));$(id).classList.add('active')}
