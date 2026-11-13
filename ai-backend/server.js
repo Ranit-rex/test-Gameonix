@@ -1,5 +1,6 @@
 const http = require('node:http');
 const crypto = require('node:crypto');
+const discordAdmin = require('./discord-admin');
 
 const PORT = Number(process.env.PORT || 3000);
 const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
@@ -225,6 +226,7 @@ const server = http.createServer(async (req, res) => {
   }
 
   const url = new URL(req.url, 'http://localhost');
+  if (await discordAdmin.handle(req, res, origin, send)) return;
   if (req.method === 'POST' && url.pathname === '/api/analytics/visit') {
     const ip = String(req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
     if (rateLimited('analytics:' + ip)) return send(res, 429, { error: 'Too many analytics events.' }, origin);
