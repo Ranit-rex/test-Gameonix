@@ -13,42 +13,27 @@ const ROOM_PATHS = ["multiplayer/rooms", "rooms"];
 const MATCH_PATHS = ["multiplayer/matches", "matches"];
 
 async function cleanupRoomTree(db, roomPath, matchPath, now) {
-  const roomsRef = db.ref(roomPath);
-  const roomSnap = await roomsRef.once("value");
-  const roomData = roomSnap.val() || {};
-  const expiredCodes = new Set();
+  const cutoff = now - ROOM_TTL_MS;
+  // Read only expired room metadata, never download the full matches/drawing tree.
+  const snapshot = await db.ref(roomPath)
+    .orderByChild("updatedAt")
+    .endAt(cutoff)
+    .once("value");
   const updates = {};
   let removedRooms = 0;
-
-  for (const [code, room] of Object.entries(roomData)) {
-    if (!room || typeof room !== "object") continue;
-    const createdAt = Number(room.createdAt || room.startedAt || 0);
-    const updatedAt = Number(room.updatedAt || room.lastSeen || createdAt);
-    const lastActivity = Math.max(createdAt, updatedAt);
-    if (!lastActivity || now - lastActivity < ROOM_TTL_MS) continue;
-    expiredCodes.add(code);
-    updates[`${roomPath}/${code}`] = null;
-    removedRooms++;
-    if (room.matchId && matchPath) updates[`${matchPath}/${room.matchId}`] = null;
-  }
-
   let removedMatches = 0;
-  if (matchPath) {
-    const matchSnap = await db.ref(matchPath).once("value");
-    const matchData = matchSnap.val() || {};
-    const liveRoomCodes = new Set(Object.keys(roomData).filter(code => !expiredCodes.has(code)));
-    for (const [id, match] of Object.entries(matchData)) {
-      if (!match || typeof match !== "object") continue;
-      const code = String(match.roomCode || match.roomId || "");
-      const createdAt = Number(match.createdAt || match.startedAt || 0);
-      const roomStillExists = code && liveRoomCodes.has(code);
-      const expired = createdAt > 0 && now - createdAt >= ROOM_TTL_MS;
-      if (expiredCodes.has(code) || (!roomStillExists && expired)) {
-        updates[`${matchPath}/${id}`] = null;
-        removedMatches++;
-      }
+
+  snapshot.forEach(child => {
+    const room = child.val() || {};
+    const updatedAt = Number(room.updatedAt || room.createdAt || 0);
+    if (!updatedAt || now - updatedAt < ROOM_TTL_MS) return;
+    updates[`${roomPath}/${child.key}`] = null;
+    removedRooms++;
+    if (room.matchId && matchPath) {
+      updates[`${matchPath}/${room.matchId}`] = null;
+      removedMatches++;
     }
-  }
+  });
 
   if (Object.keys(updates).length) await db.ref().update(updates);
   return { removedRooms, removedMatches };
