@@ -928,6 +928,11 @@ async function discoverGames(){
     const coverUrl=cover?base+cover.split('/').map(encodeURIComponent).join('/'):'';
     return{slug,title:meta.title||folder.replace(/[-_]/g,' ').replace(/\b\w/g,c=>c.toUpperCase()),description:meta.description||'Explore this game, master its challenges, and enjoy a fresh adventure every time you play.',category:meta.category||categoryFolder,subcategory:meta.subcategory||subcategoryFolder,thumbnail:coverUrl,url:'./games/'+categoryFolder+'/'+subcategoryFolder+'/'+encodeURIComponent(folder)+'/?build=dh-multiplayer-2'};
    });
+   catalog.push(
+    {slug:'playovia-street-racer',title:'Playovia Street Racer',description:'A neon 3D driving challenge. Dodge traffic, survive the city and chase a new high score.',category:'3D Racing',subcategory:'Playovia Originals',thumbnail:'',url:'https://ranit-rex.github.io/Playovia-3D-Games/?mode=racer'},
+    {slug:'playovia-island-adventure',title:'Playovia Island Adventure',description:'Explore a 3D island, collect glowing crystals and discover the beacon.',category:'3D Adventure',subcategory:'Playovia Originals',thumbnail:'',url:'https://ranit-rex.github.io/Playovia-3D-Games/?mode=adventure'},
+    {slug:'playovia-neon-arena',title:'Playovia Neon Arena',description:'A first-person 3D target arena. Aim, shoot and build your score.',category:'3D Action',subcategory:'Playovia Originals',thumbnail:'',url:'https://ranit-rex.github.io/Playovia-3D-Games/?mode=arena'}
+   );
    localStorage.setItem(cacheKey,JSON.stringify({savedAt:Date.now(),games:catalog}));
    allGames=catalog;discoveredGames=catalog.slice();renderGames(allGames);$('gameCount').textContent=allGames.length+' GAMES';$('gamesMeta').textContent=allGames.length+' games';
   }
