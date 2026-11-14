@@ -907,10 +907,10 @@ const GAME_CATALOG_META={"antarctic-the-last-signal":{"slug":"ANTARCTIC","title"
 function isRetiredPlayoviaGame(game){
  const slug=String(game?.slug||'').toLowerCase().replace(/[^a-z0-9]/g,'');
  const title=String(game?.title||'').toLowerCase().replace(/[^a-z0-9]/g,'');
- return ['mobalegends','disasterrush','clashbrawl'].includes(slug)||['mobalegends','disasterrush','clashbrawl'].includes(title);
+ return ['mobalegends','disasterrush','clashbrawl','chess','8ballpool','bobbleleague'].includes(slug)||['mobalegends','disasterrush','clashbrawl','chess','8ballpool','bobbleleague'].includes(title);
 }
 async function discoverGames(){
- const cacheKey='playovia_game_catalog_v16',cacheMaxAge=60*60*1000;let catalog=null;
+ const cacheKey='playovia_game_catalog_v17',cacheMaxAge=60*60*1000;let catalog=null;
  try{for(let v=1;v<=13;v++)localStorage.removeItem('playovia_game_catalog_v'+v)}catch(_){}
  try{const cached=JSON.parse(localStorage.getItem(cacheKey)||'null');if(cached&&Date.now()-cached.savedAt<cacheMaxAge&&Array.isArray(cached.games))catalog=cached.games.filter(g=>!isRetiredPlayoviaGame(g))}catch(_){}
  if(catalog){allGames=catalog;discoveredGames=catalog.slice();renderGames(allGames);$('gameCount').textContent=allGames.length+' GAMES';$('gamesMeta').textContent=allGames.length+' games'}
