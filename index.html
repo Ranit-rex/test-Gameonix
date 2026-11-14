@@ -1055,14 +1055,14 @@ function updateDetailsStarPicker(){
  const statusEl=$('gameReviewStatus');if(statusEl&&activeDetailsRating)statusEl.textContent='Selected: '+activeDetailsRating+' out of 5 stars';
 }
 async function loadGameRatingSummary(slug){
- if(!db){$('gameRatingCount').textContent='Ratings unavailable';return}
+ if(!db){$('gameRatingCount').textContent='Ratings unavailable';if($('pvRatingMini'))$('pvRatingMini').textContent='—';return}
  try{
   const summaryRef=db.collection('gameStarRatings').doc(slug);
   const ownRef=summaryRef.collection('users').doc(currentUser?.uid||'__signed_out__');
   const results=await Promise.all([summaryRef.get(),ownRef.get()]);
   if(!activeDetailsGame||activeDetailsGame.slug!==slug)return;
   const summary=results[0].exists?results[0].data():{},count=Math.max(0,Number(summary.count)||0),total=Math.max(0,Number(summary.total)||0),avg=count?total/count:0;
-  $('gameRatingAverage').textContent=count?avg.toFixed(1):'—';
+  $('gameRatingAverage').textContent=count?avg.toFixed(1):'—';if($('pvRatingMini'))$('pvRatingMini').textContent=count?avg.toFixed(1):'New';
   $('gameRatingStars').textContent=gameDetailsStars(avg);
   $('gameRatingCount').textContent=count+' '+(count===1?'rating':'ratings');
   if(results[1].exists){activeDetailsHasRating=true;activeDetailsRating=Number(results[1].data().rating)||0;updateDetailsStarPicker();$('gameReviewSubmit').textContent='Update rating';$('gameReviewStatus').textContent='Your current rating: '+activeDetailsRating+'/5 · You can edit it anytime'}
