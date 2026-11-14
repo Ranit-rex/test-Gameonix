@@ -1,6 +1,10 @@
 name: Firebase multiplayer room cleanup
 
 on:
+  push:
+    paths:
+      - "functions/cleanup-rooms.js"
+      - ".github/workflows/firebase-room-cleanup.yml"
   schedule:
     - cron: "*/5 * * * *"
   workflow_dispatch:
