@@ -87,7 +87,16 @@ const PlayHubDiscovery = (() => {
         };
       })
     );
+    const retiredGames = new Set(["chess", "8ballpool", "8-ball-pool", "bobbleleague", "bobble-league"]);
     return games
+      .filter(game => {
+        const slug = String(game.id || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+        const title = String(game.title || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+        return !retiredGames.has(slug) && !retiredGames.has(title) &&
+          slug !== "8ballpool" && title !== "8ballpool" &&
+          slug !== "bobbleleague" && title !== "bobbleleague" &&
+          slug !== "chess" && title !== "chess";
+      })
       .filter(game => game.status !== "hidden")
       .sort((a, b) => a.title.localeCompare(b.title));
   }
