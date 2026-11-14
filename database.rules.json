@@ -190,6 +190,11 @@
           }
         }
       }
+    },
+    "rooms": {
+      ".indexOn": [
+        "updatedAt"
+      ]
     }
   }
 }
