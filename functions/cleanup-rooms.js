@@ -15,12 +15,14 @@ const TTL = 60 * 60 * 1000;
 const CUTOFF = Date.now() - TTL;
 
 async function cleanupRooms(path, matchPath) {
-  const snap = await db.ref(path).orderByChild("updatedAt").endAt(CUTOFF).once("value");
+  // Read the collection first: querying only updatedAt misses legacy rooms
+  // that have createdAt but no updatedAt field.
+  const snap = await db.ref(path).once("value");
   const updates = {};
   let rooms = 0, matches = 0;
   snap.forEach(child => {
     const room = child.val() || {};
-    const stamp = Number(room.updatedAt || room.createdAt || 0);
+    const stamp = Number(room.updatedAt || room.createdAt || room.lastActivityAt || 0);
     if (!stamp || stamp > CUTOFF) return;
     updates[`${path}/${child.key}`] = null;
     rooms++;
