@@ -79,9 +79,9 @@
     return { roomId: normalized, ref, data };
   }
 
-  async function listRooms({ db, gameId, maxAgeMs = 1800000 }) {
+  async function listRooms({ db, gameId, maxAgeMs = 600000 }) {
     if (!db || !gameId) return [];
-    const snap = await rooms(db).orderByChild('gameId').equalTo(String(gameId)).once('value'), found = [], now = Date.now();
+    const snap = await rooms(db).orderByChild('gameId').equalTo(String(gameId)).once('value'), found = [], now = Date.now();\n    maxAgeMs = Math.min(Number(maxAgeMs) || 600000, 600000);
     snap.forEach(child => {
       const data = child.val() || {}, members = data.members || {};
       const count = Object.keys(members).length;
