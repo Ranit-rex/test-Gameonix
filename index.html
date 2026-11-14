@@ -604,53 +604,27 @@ html.low-performance #playhubApp .hero{animation:siteHeroIn .2s ease-out both}
 @media(max-width:700px){.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}.grid .pv-grid-card{border-radius:20px}.pv-grid-card .game-info{padding:13px 12px 14px}.pv-grid-meta{font-size:9px;margin-bottom:9px}.pv-grid-meta span:last-child{font-size:10px}.pv-grid-card .game-info h3{font-size:15px;margin-bottom:7px}.pv-grid-card .game-info p{font-size:11px;line-height:1.5;min-height:34px;margin-bottom:12px}.pv-grid-rating{top:8px;left:8px;padding:6px 8px;font-size:12px;border-radius:9px}.pv-grid-rating b{font-size:11px}.pv-grid-card .pv-grid-play{min-height:43px;border-radius:13px;font-size:14px}.pv-grid-card .pv-grid-play b{font-size:13px}.pv-grid-card .game-info-btn{top:8px;right:8px;width:31px;height:31px}}
 @media(max-width:360px){.grid{gap:9px}.pv-grid-card .game-info{padding:11px 9px}.pv-grid-card .game-info h3{font-size:14px}.pv-grid-meta{font-size:8px}}
 
-/* Mobile: compact rounded-square game tiles */
+/* Restore the earlier clean game-card layout and full-cover artwork */
 @media(max-width:700px){
- .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}
- .grid .pv-grid-card{aspect-ratio:1/1;min-height:0;border-radius:17px;position:relative}
- .pv-grid-card .game-art{position:absolute;inset:0;width:100%;height:100%;aspect-ratio:auto}
- .pv-grid-card .game-art img{width:100%;height:100%;object-fit:cover}
- .pv-grid-card .game-art:after{inset:30% 0 0;background:linear-gradient(180deg,transparent 8%,rgba(8,12,25,.28) 42%,rgba(8,12,25,.97) 100%)}
- .pv-grid-card .game-info{position:absolute;z-index:2;left:0;right:0;bottom:0;padding:12px 11px 11px;background:linear-gradient(180deg,transparent,#0d1426 24%)}
- .pv-grid-meta{margin:0 0 6px;font-size:8px;line-height:1.2}
- .pv-grid-meta span:last-child{font-size:9px}
- .pv-grid-card .game-info h3{font-size:13px;line-height:1.2;margin:0 0 8px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
- .pv-grid-card .game-info p{display:none}
- .pv-grid-card .pv-grid-play{min-height:31px;padding:6px 8px;border-radius:10px;font-size:11px;gap:6px}
+ .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+ .grid .pv-grid-card{aspect-ratio:auto;min-height:0;border-radius:19px}
+ .pv-grid-card .game-art{position:relative;inset:auto;width:100%;height:auto;aspect-ratio:16/9;min-height:0;display:block;overflow:hidden;background:#111a2c}
+ .pv-grid-card .game-art img{width:100%;height:100%;object-fit:contain;transform:none!important;background:#111a2c}
+ .pv-grid-card .game-art:after{inset:48% 0 0;background:linear-gradient(180deg,transparent,rgba(8,12,25,.24));}
+ .pv-grid-card .game-info{position:relative;left:auto;right:auto;bottom:auto;padding:12px 12px 13px;background:linear-gradient(180deg,#11182a,#101729)}
+ .pv-grid-meta{margin:0 0 7px;font-size:9px;line-height:1.2}
+ .pv-grid-meta span:last-child{font-size:10px}
+ .pv-grid-card .game-info h3{font-size:14px;line-height:1.25;margin:0 0 6px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+ .pv-grid-card .game-info p{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:32px;margin:0 0 10px;font-size:10.5px;line-height:1.5}
+ .pv-grid-card .pv-grid-play{min-height:35px;padding:7px 8px;border-radius:11px;font-size:12px;gap:6px}
  .pv-grid-card .pv-grid-play b{font-size:11px}
  .pv-grid-rating{top:8px;left:8px;padding:5px 7px;font-size:11px;border-radius:8px;gap:4px}
  .pv-grid-rating b{font-size:10px}
  .pv-grid-card .game-info-btn{top:7px;right:7px;width:28px;height:28px;font-size:13px}
 }
-@media(max-width:360px){
- .grid{gap:8px}
- .grid .pv-grid-card{border-radius:14px}
- .pv-grid-card .game-info{padding:9px}
- .pv-grid-card .game-info h3{font-size:12px}
- .pv-grid-card .pv-grid-play{min-height:28px}
-}
-
-
-/* Slightly larger mobile cards, with a smaller section Play button */
-@media(max-width:700px){
- .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
- .grid .pv-grid-card{aspect-ratio:3/4;min-height:0;border-radius:18px}
- .pv-grid-card .game-info{padding:13px 12px 12px}
- .pv-grid-meta{margin-bottom:7px;font-size:9px}
- .pv-grid-card .game-info h3{font-size:14.5px;margin-bottom:6px}
- .pv-grid-card .game-info p{font-size:11px;line-height:1.45;-webkit-line-clamp:2;margin-bottom:10px}
- .pv-grid-card .pv-grid-play{min-height:38px;font-size:12.5px}
-}
-@media(max-width:360px){
- .grid{gap:10px}
- .grid .pv-grid-card{aspect-ratio:3/4}
- .pv-grid-card .game-info p{font-size:10px}
-}
-/* The standalone Play button above the game grid */
-#gamesPage .games-header .login,
-#gamesPage .games-header button,
-#gamesPage .section-heading button,
-#gamesPage .play-all-btn{padding:8px 13px!important;min-height:34px!important;font-size:12px!important;border-radius:10px!important}
+@media(max-width:360px){.grid{gap:9px}.pv-grid-card .game-info{padding:10px}.pv-grid-card .game-info p{font-size:10px}}
+/* Keep the section-level Play button compact */
+#gamesPage .games-header .login,#gamesPage .games-header button,#gamesPage .section-heading button,#gamesPage .play-all-btn{padding:8px 13px!important;min-height:34px!important;font-size:12px!important;border-radius:10px!important}
 
 </style>
 <link rel="stylesheet" href="./admin/admin-dashboard.css?v=1">
