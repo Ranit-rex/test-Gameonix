@@ -927,7 +927,8 @@ async function discoverGames(){
     const cover=candidates.find(name=>data.tree.some(x=>x.path==='games/'+categoryFolder+'/'+subcategoryFolder+'/'+folder+'/'+name));
     const coverUrl=cover?base+cover.split('/').map(encodeURIComponent).join('/'):'';
     return{slug,title:meta.title||folder.replace(/[-_]/g,' ').replace(/\b\w/g,c=>c.toUpperCase()),description:meta.description||'Explore this game, master its challenges, and enjoy a fresh adventure every time you play.',category:meta.category||categoryFolder,subcategory:meta.subcategory||subcategoryFolder,thumbnail:coverUrl,url:'./games/'+categoryFolder+'/'+subcategoryFolder+'/'+encodeURIComponent(folder)+'/?build=dh-multiplayer-2'};
-   });\n   localStorage.setItem(cacheKey,JSON.stringify({savedAt:Date.now(),games:catalog}));
+   });
+   localStorage.setItem(cacheKey,JSON.stringify({savedAt:Date.now(),games:catalog}));
    allGames=catalog;discoveredGames=catalog.slice();renderGames(allGames);$('gameCount').textContent=allGames.length+' GAMES';$('gamesMeta').textContent=allGames.length+' games';
   }
  }catch(e){if(!catalog){console.error('Game discovery:',e);$('homeGames').innerHTML='<div class="empty">Could not load games. Check connection and refresh.</div>';$('allGames').innerHTML='<div class="empty">Could not load games.</div>';$('gamesMeta').textContent='Game list unavailable';return}}
