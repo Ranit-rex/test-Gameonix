@@ -1099,18 +1099,21 @@ function updateDetailsStarPicker(){
  const statusEl=$('gameReviewStatus');if(statusEl&&activeDetailsRating)statusEl.textContent='Selected: '+activeDetailsRating+' out of 5 stars';
 }
 async function loadGridGameRatings(games){
- // Game discovery can finish before the optional Firestore SDK has initialized.
+ // Public aggregate ratings are intentionally readable without login.
+ // Wait for Firestore initialization; guest users do not need an Auth session.
  try{await window.PlayHubFirebase?.firestoreReady}catch(_){}
- if(!db)return;
- const unique=[...new Map((games||[]).map(g=>[g.slug,g])).values()];
+ if(!db){console.warn('Public game ratings waiting: Firestore is not connected yet.');return}
+ const unique=[...new Map((games||[]).filter(g=>g&&g.slug).map(g=>[g.slug,g])).values()];
  await Promise.all(unique.map(async game=>{
   try{
-   const snap=await db.collection('gameStarRatings').doc(game.slug).get();
+   const ref=db.collection('gameStarRatings').doc(game.slug);
+   // Prefer a fresh public server read; fall back to the SDK cache if offline.
+   const snap=await ref.get({source:'server'}).catch(()=>ref.get());
    const summary=snap.exists?snap.data():{},count=Math.max(0,Number(summary.count)||0),total=Math.max(0,Number(summary.total)||0);
    const label=count?(total/count).toFixed(1):'New';
    document.querySelectorAll('[data-grid-rating]').forEach(el=>{if(el.dataset.gridRating===game.slug)el.textContent=label});
   }catch(error){
-   console.warn('Game rating could not load for '+game.slug,error);
+   console.warn('Public game rating could not load for '+game.slug,error);
    document.querySelectorAll('[data-grid-rating]').forEach(el=>{if(el.dataset.gridRating===game.slug)el.textContent='—'});
   }
  }));
