@@ -235,7 +235,8 @@ service cloud.firestore {
       function myRatingPath() {
         return /databases/$(database)/documents/gameStarRatings/$(gameSlug)/users/$(request.auth.uid);
       }
-      allow read: if signedIn();
+      // Aggregate totals are public so guests can see game ratings; per-user ratings stay private.
+      allow read: if true;
       allow create: if signedIn() &&
         request.resource.data.keys().hasOnly(['count', 'total', 'updatedAt']) &&
         request.resource.data.count == 1 &&
