@@ -10,6 +10,32 @@
   const matches = db => db.ref(ROOT + '/matches');
   const room = (db, code) => rooms(db).child(String(code || '').toUpperCase());
   const match = (db, id) => matches(db).child(id);
+  const roomWatchers = new WeakMap();
+  function watchRooms({ db, gameId, callback, maxAgeMs = 600000 }) {
+    if (!db || !gameId || typeof callback !== 'function') return () => {};
+    let byGame = roomWatchers.get(db);
+    if (!byGame) { byGame = new Map(); roomWatchers.set(db, byGame); }
+    const key = String(gameId);
+    let entry = byGame.get(key);
+    if (!entry) {
+      const ref = rooms(db).orderByChild('gameId').equalTo(key);
+      entry = { ref, callback: null, signature: null, handler: null };
+      entry.handler = snap => {
+        const signature = JSON.stringify(snap.val() || {});
+        if (signature === entry.signature) return;
+        entry.signature = signature;
+        if (entry.callback) entry.callback();
+      };
+      byGame.set(key, entry);
+      ref.on('value', entry.handler);
+    }
+    entry.callback = callback;
+    return () => {
+      if (byGame.get(key) !== entry) return;
+      entry.ref.off('value', entry.handler);
+      byGame.delete(key);
+    };
+  }
   // Cleanup is server-managed. The browser must never scan/delete the full RTDB tree.
   async function cleanupOldRooms() {
     return { rooms: 0, matches: 0, serverManaged: true };
@@ -135,6 +161,6 @@ function showInviteCode(){const code=new URLSearchParams(location.search).get('i
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',showInviteCode,{once:true});else showInviteCode();
 
   global.PlayoviaMultiplayer = Object.freeze({
-    rooms, matches, room, match, createRoom, joinRoom, listRooms, startMatch, leaveRoom, heartbeat, cleanupOldRooms, showInviteButton
+    rooms, matches, room, match, createRoom, joinRoom, listRooms, watchRooms, startMatch, leaveRoom, heartbeat, cleanupOldRooms, showInviteButton
   });
 })(window);
