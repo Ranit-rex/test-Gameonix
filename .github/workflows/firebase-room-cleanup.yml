@@ -27,5 +27,5 @@ jobs:
         run: npm install --prefix functions --no-save firebase-admin@^12.7.0
       - name: Remove rooms and matches inactive for one hour
         env:
-          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_PLAY_HUB_688E }}
         run: node functions/cleanup-rooms.js
