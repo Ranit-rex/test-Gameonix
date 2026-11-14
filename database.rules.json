@@ -188,12 +188,20 @@
             ".read": "auth != null && root.child('multiplayer/rooms').child(root.child('multiplayer/matches').child($matchId).child('roomCode').val()).child('members').child(auth.uid).exists()",
             ".write": "auth != null && root.child('multiplayer/rooms').child(root.child('multiplayer/matches').child($matchId).child('roomCode').val()).child('members').child(auth.uid).exists()"
           }
-        }
+        },
+        ".indexOn": [
+          "createdAt"
+        ]
       }
     },
     "rooms": {
       ".indexOn": [
         "updatedAt"
+      ]
+    },
+    "matches": {
+      ".indexOn": [
+        "createdAt"
       ]
     }
   }
