@@ -10,34 +10,12 @@
   const matches = db => db.ref(ROOT + '/matches');
   const room = (db, code) => rooms(db).child(String(code || '').toUpperCase());
   const match = (db, id) => matches(db).child(id);
-  const CLEANUP_AGE_MS = 60 * 60 * 1000;
-  const cleanupTimers = new WeakMap();
-  async function cleanupOldRooms(db) {
-    if (!db) return { rooms: 0, matches: 0 };
-    const now = Date.now(), cutoff = now - CLEANUP_AGE_MS;
-    const roomSnap = await rooms(db).once('value');
-    const roomData = roomSnap.val() || {}, staleCodes = new Set();
-    const roomDeletes = [];
-    for (const [code, data] of Object.entries(roomData)) {
-      const last = Number(data?.updatedAt || data?.createdAt || 0);
-      if (!last || last < cutoff) { staleCodes.add(code); roomDeletes.push(rooms(db).child(code).remove()); }
-    }
-    const matchSnap = await matches(db).once('value'), matchData = matchSnap.val() || {};
-    const matchDeletes = [];
-    for (const [id, data] of Object.entries(matchData)) {
-      const code = String(data?.roomCode || '');
-      if (!code || staleCodes.has(code) || !roomData[code]) matchDeletes.push(matches(db).child(id).remove());
-    }
-    await Promise.all([...roomDeletes, ...matchDeletes]);
-    return { rooms: roomDeletes.length, matches: matchDeletes.length };
+  // Cleanup is server-managed. The browser must never scan/delete the full RTDB tree.
+  async function cleanupOldRooms() {
+    return { rooms: 0, matches: 0, serverManaged: true };
   }
-  function startHourlyCleanup(db) {
-    if (!db || cleanupTimers.has(db)) return;
-    cleanupOldRooms(db).catch(() => {});
-    const timer = setInterval(() => cleanupOldRooms(db).catch(() => {}), CLEANUP_AGE_MS);
-    cleanupTimers.set(db, timer);
-  }
-
+  function startHourlyCleanup() {}
+  
   async function createRoom({ db, uid, name, gameId, mode, gameTitle, maxPlayers = 4, visibility = 'public' }) {
     if (!db || !uid || !gameId) throw new Error('Multiplayer is not ready. Sign in and retry.');
     startHourlyCleanup(db);
