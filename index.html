@@ -1488,11 +1488,20 @@ function dispatchRemoteGameKey(button,action){
    'antarctic-the-last-signal':{...common,a:[' ','Space'],b:['e','KeyE'],l1:['Shift','ShiftLeft']},
    'bomb-tag':{...common}
   };
-  const gameMap=maps[activeRemoteGameSlug]||common;
-  const pair=gameMap[button];if(pair){
+  const fallback={...common,a:[' ','Space'],b:['Shift','ShiftLeft'],x:['e','KeyE'],y:['q','KeyQ'],l1:['Shift','ShiftLeft'],r1:['e','KeyE'],l2:['Control','ControlLeft'],r2:['Alt','AltLeft'],start:['Escape','Escape'],select:['Tab','Tab']};
+  const gameMap=maps[activeRemoteGameSlug]||fallback;
+  const pair=gameMap[button]||fallback[button];if(pair){
    try{frame.focus({preventScroll:true})}catch(_){try{frame.focus()}catch(__){}}
-   const event=new KeyboardEvent(action==='down'?'keydown':'keyup',{key:pair[0],code:pair[1],bubbles:true,cancelable:true,composed:true});
-   win.dispatchEvent(event);
+   try{win.focus()}catch(_){}
+   const type=action==='down'?'keydown':'keyup';
+   const event=new KeyboardEvent(type,{key:pair[0],code:pair[1],bubbles:true,cancelable:true,composed:true});
+   // Keyboard listeners in games usually live on the document/canvas, not window.
+   // Dispatch on the focused game element so the event bubbles through document and window.
+   let doc=null,target=null;
+   try{doc=frame.contentDocument;target=doc&&(doc.activeElement&&doc.activeElement!==doc.body?doc.activeElement:(doc.querySelector('canvas, [tabindex], input, button')||doc.body||doc.documentElement))}catch(_){}
+   if(target){try{target.focus({preventScroll:true})}catch(_){};target.dispatchEvent(event)}
+   else win.dispatchEvent(event);
+   try{if(doc)doc.dispatchEvent(new KeyboardEvent(type,{key:pair[0],code:pair[1],bubbles:true,cancelable:true,composed:true}))}catch(_){}
   }
  }catch(e){console.warn('Remote controller bridge:',e)}
 }
