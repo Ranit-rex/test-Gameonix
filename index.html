@@ -1459,7 +1459,8 @@ function sendRemoteGameInput(payload){
   }
  }catch(e){console.warn('Remote controller bridge:',e)}
 }
-function connectRemoteControllerSocket(){try{const session=remoteControllerSession;if(!session)return;const ws=new WebSocket(PLAYOVIA_AI_ENDPOINT.replace(/^http/,'ws')+'/api/controller/socket?sessionId='+encodeURIComponent(session.sessionId)+'&role=host&token='+encodeURIComponent(session.hostToken));remoteControllerSocket=ws;ws.onmessage=event=>{try{const data=JSON.parse(event.data);if(data.type==='input')sendRemoteGameInput({action:data.action,button:data.button,at:data.at||Date.now()})}catch(_){}};ws.onopen=()=>{if(remoteControllerSession!==session){ws.close();return}remoteControllerSocket=ws};ws.onclose=()=>{if(remoteControllerSocket===ws)remoteControllerSocket=null};ws.onerror=()=>{try{ws.close()}catch(_){}}}catch(_){}}\nasync function startRemoteController(){
+function connectRemoteControllerSocket(){try{const session=remoteControllerSession;if(!session)return;const ws=new WebSocket(PLAYOVIA_AI_ENDPOINT.replace(/^http/,'ws')+'/api/controller/socket?sessionId='+encodeURIComponent(session.sessionId)+'&role=host&token='+encodeURIComponent(session.hostToken));remoteControllerSocket=ws;ws.onmessage=event=>{try{const data=JSON.parse(event.data);if(data.type==='input')sendRemoteGameInput({action:data.action,button:data.button,at:data.at||Date.now()})}catch(_){}};ws.onopen=()=>{if(remoteControllerSession!==session){ws.close();return}remoteControllerSocket=ws};ws.onclose=()=>{if(remoteControllerSocket===ws)remoteControllerSocket=null};ws.onerror=()=>{try{ws.close()}catch(_){}}}catch(_){}}
+async function startRemoteController(){
  if(!currentUser){$('remoteControllerStatus').textContent='Sign in to Playovia on this phone first.';return}
  try{
   $('remoteControllerStatus').textContent='Creating a secure pairing code on Playovia server…';
