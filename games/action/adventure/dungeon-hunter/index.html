@@ -66,171 +66,116 @@ function dhLoadScript(url){return new Promise((ok,no)=>{const x=document.createE
 async function dhBoot(){
  try{
   const base='https://www.gstatic.com/firebasejs/10.14.1/';
-  await dhLoadScript(base+'firebase-app-compat.js');
-  await dhLoadScript(base+'firebase-auth-compat.js');
-  await dhLoadScript(base+'firebase-database-compat.js');
+  await dhLoadScript(base+'firebase-app-compat.js');await dhLoadScript(base+'firebase-auth-compat.js');await dhLoadScript(base+'firebase-database-compat.js');
   let bridge=null;try{bridge=window.parent&&window.parent!==window?window.parent.PlayHubFirebase:null}catch(_){}
   if(bridge?.ready)await bridge.ready;
   if(bridge?.db&&bridge?.auth){dhDb=bridge.db;dhAuth=bridge.auth}
   else{if(!firebase.apps.length)firebase.initializeApp(DH_FIREBASE_CONFIG);dhAuth=firebase.auth();dhDb=firebase.database()}
   dhAuth.onAuthStateChanged(async u=>{
    dhUser=u;dhProfile={};
-   if(u){try{
-    let fs=bridge?.firestore;
-    if(!fs){await dhLoadScript(base+'firebase-firestore-compat.js');fs=firebase.firestore()}
-    const snap=await fs.collection('users').doc(u.uid).get();dhProfile=snap.exists?snap.data():{};
-   }catch(_){}}
-   dhWatchRooms();
-   dhSay(u?'Signed in · rooms ready':'Sign in on Playovia to create or join online rooms');
-   if(state==='menu')menu();
+   if(u){try{let fs=bridge?.firestore;if(!fs){await dhLoadScript(base+'firebase-firestore-compat.js');fs=firebase.firestore()}const p=await fs.collection('users').doc(u.uid).get();dhProfile=p.exists?p.data():{}}catch(_){}}
+   dhWatchRooms();dhSay(u?'Signed in · online rooms ready':'Sign in on Playovia to create or join online rooms');if(state==='menu')menu();
   });
- }catch(e){dhSay('Online multiplayer unavailable: '+e.message);console.error('Dungeon Hunter multiplayer boot:',e)}
+ }catch(e){dhSay('Online multiplayer unavailable: '+e.message);console.error('Dungeon Hunter multiplayer:',e)}
 }
 function dhRefreshRooms(){
- if(!dhDb||!window.PlayoviaMultiplayer)return;
- const box=$('#dhRoomList');if(!box)return;
+ const box=$('#dhRoomList');if(!dhDb||!box)return;
  PlayoviaMultiplayer.listRooms({db:dhDb,gameId:'dungeon-hunter'}).then(rooms=>{
-  if(!$('#dhRoomList'))return;
-  const uid=dhAuth?.currentUser?.uid||dhUser?.uid;
-  const joinable=uid?rooms.filter(r=>r.hostUid!==uid&&!r.members?.[uid]):[];
-  box.innerHTML=joinable.length?joinable.map(r=>'<div class="dh-room-item"><span><b>'+dhEsc(r.hostName||'Hunter')+'</b><small>'+Object.keys(r.members||{}).length+'/'+(r.maxPlayers||4)+' players · '+dhEsc(r.mode||'Normal')+'</small></span><button class="b" onclick="dhJoinRoom(\''+dhEsc(r.roomId)+'\')">Join</button></div>').join(''):'<small>No other public rooms yet. Create one or share your room code!</small>';
+  const liveBox=$('#dhRoomList');if(!liveBox)return;
+  const uid=dhUser?.uid;
+  const joinable=rooms.filter(r=>r.hostUid!==uid&&!r.members?.[uid]);
+  liveBox.innerHTML=joinable.length?joinable.map(r=>'<div class="dh-room-item"><span><b>'+dhEsc(r.hostName||'Hunter')+'</b><small>'+Object.keys(r.members||{}).length+'/'+(r.maxPlayers||4)+' players · '+dhEsc(r.mode||'Normal')+'</small></span><button class="b" onclick="dhJoinRoom(\''+dhEsc(r.roomId)+'\')">Join</button></div>').join(''):'<small>No other public rooms yet. Create one or share your room code!</small>';
  }).catch(e=>{box.textContent='Could not load rooms: '+e.message});
 }
 function dhWatchRooms(){
  if(!dhDb||!window.PlayoviaMultiplayer)return;
  if(dhRoomsWatchStop)dhRoomsWatchStop();
- dhRoomsWatchStop=PlayoviaMultiplayer.watchRooms({db:dhDb,gameId:'dungeon-hunter',callback:dhRefreshRooms});
- dhRefreshRooms();
+ dhRoomsWatchStop=PlayoviaMultiplayer.watchRooms({db:dhDb,gameId:'dungeon-hunter',callback:dhRefreshRooms});dhRefreshRooms();
 }
 async function dhCreateRoom(){
- const user=dhAuth?.currentUser||dhUser;
- if(!dhDb||!user){dhSay('Please sign in on Playovia first.');return}
- const button=[...document.querySelectorAll('button')].find(b=>/CREATE ROOM/i.test(b.textContent||''));
- if(button)button.disabled=true;
- dhSay('Creating your room…');
+ const user=dhAuth?.currentUser||dhUser;if(!dhDb||!user){dhSay('Please sign in on Playovia first.');return}
+ if(dhRoomRef){dhShowRoomLobby();dhSay('You already have a room open. Leave it before creating another.');return}
+ const button=[...document.querySelectorAll('button')].find(b=>/CREATE ROOM/i.test(b.textContent||''));if(button)button.disabled=true;
+ let stage='room reservation';
  try{
-  dhUser=user;if(dhRoomRef)await dhLeaveRoom(false);
-  const name=String(dhProfile.username||user.displayName||user.email?.split('@')[0]||'Hunter').slice(0,32);
+  dhUser=user;const name=String(dhProfile.username||user.displayName||user.email?.split('@')[0]||'Hunter').slice(0,32);
   const mode=$('#dhMode')?.value||'Normal',visibility=$('#dhVisibility')?.value||'public';
   const made=await PlayoviaMultiplayer.createRoom({db:dhDb,uid:user.uid,name,gameId:'dungeon-hunter',mode,gameTitle:'Dungeon Hunter',maxPlayers:4,visibility});
-  try{await dhEnterRoom(made.roomId)}
-  catch(enterError){dhSay('Room '+made.roomId+' was created, but lobby setup failed: '+(enterError?.message||enterError));console.error('Dungeon Hunter room lobby setup:',enterError);return}
-  dhSay('Room created · share the 8-character code with friends.');
- }catch(e){dhSay('Room creation failed: '+(e?.message||'Unknown error'));console.error('Dungeon Hunter create room:',e)}
+  stage='opening room '+made.roomId;await dhEnterRoom(made.roomId);dhSay('Room created · share code '+made.roomId);
+ }catch(e){dhSay('Could not complete '+stage+': '+(e?.message||'Unknown error'));console.error('Dungeon Hunter create ['+stage+']:',e)}
  finally{if(button)button.disabled=false}
 }
-async function dhJoinByCode(){
- const code=String($('#dhJoinCode')?.value||'').trim().toUpperCase();
- if(!/^[A-HJ-NP-Z2-9]{8}$/.test(code)){dhSay('Enter the 8-character room code.');return}
- await dhJoinRoom(code);
-}
+async function dhJoinByCode(){const code=String($('#dhJoinCode')?.value||'').trim().toUpperCase();if(!/^[A-HJ-NP-Z2-9]{8}$/.test(code)){dhSay('Enter the 8-character room code.');return}await dhJoinRoom(code)}
 async function dhJoinRoom(code){
- const user=dhAuth?.currentUser||dhUser;
- if(!dhDb||!user){dhSay('Please sign in on Playovia first.');return}
- if(dhRoomRef&&dhRoomId===code){dhShowRoomLobby();dhSay('You are already in this room. Share the code with friends.');return}
-  try{
-  dhUser=user;
-  const ref=PlayoviaMultiplayer.room(dhDb,code),snap=await ref.once('value'),room=snap.val();
-  if(!room)throw Error('Room no longer exists.');
-  if(room.gameId!=='dungeon-hunter'||room.status!=='waiting')throw Error('This room is no longer waiting.');
-  if(room.hostUid===user.uid||room.members?.[user.uid]){
-   await dhEnterRoom(code);
-   dhSay('You are already in this room.');
-   return;
-  }
-  const joined=await PlayoviaMultiplayer.joinRoom({db:dhDb,uid:user.uid,name:String(dhProfile.username||user.displayName||user.email?.split('@')[0]||'Hunter'),gameId:'dungeon-hunter',code});
-  await dhEnterRoom(joined.roomId);
-  dhSay('Joined room · waiting for the host.');
- }catch(e){dhSay(e?.message||'Could not join room.');console.error('Dungeon Hunter join room:',e)}
+ const user=dhAuth?.currentUser||dhUser;if(!dhDb||!user){dhSay('Please sign in on Playovia first.');return}
+ if(dhRoomRef){if(dhRoomId===code){dhShowRoomLobby();dhSay('You are already in this room.');return}dhSay('Leave your current room before joining another.');return}
+ try{
+  dhUser=user;const ref=PlayoviaMultiplayer.room(dhDb,code),snap=await ref.once('value'),room=snap.val();
+  if(!room)throw Error('Room no longer exists.');if(room.gameId!=='dungeon-hunter'||room.status!=='waiting')throw Error('This room is no longer waiting.');
+  if(room.hostUid===user.uid||room.members?.[user.uid]){await dhEnterRoom(code);dhSay('You are already in this room.');return}
+  const joined=await PlayoviaMultiplayer.joinRoom({db:dhDb,uid:user.uid,name:String(dhProfile.username||user.displayName||'Hunter').slice(0,32),gameId:'dungeon-hunter',code});
+  await dhEnterRoom(joined.roomId);dhSay('Joined room · waiting for host.');
+ }catch(e){dhSay('Could not join room: '+(e?.message||e));console.error('Dungeon Hunter join:',e)}
 }
 function dhWatchMemberEvents(members){
  for(const [uid,entry] of Object.entries(dhMemberEventQueries)){if(!members[uid]){entry.ref.off('child_added',entry.fn);delete dhMemberEventQueries[uid]}}
- for(const uid of Object.keys(members||{})){
-  if(uid===dhUser?.uid||dhMemberEventQueries[uid])continue;
-  const ref=dhPlayersRef.child(uid).child('events');
-  const fn=s=>{const v=s.val();if(!v||dhSeenEvents.has(s.key))return;dhSeenEvents.add(s.key);if(dhSeenEvents.size>400)dhSeenEvents.delete(dhSeenEvents.values().next().value);if(v.type==='damage'&&state==='play'){const enemy=E.find(e=>e.uid===v.enemyUid);if(enemy&&!enemy.dead){enemy.hp-=Math.max(0,+v.amount||0);enemy.agg=1;if(enemy.hp<=0)kill(enemy)}}};
+ for(const uid of Object.keys(members||{})){if(uid===dhUser?.uid||dhMemberEventQueries[uid])continue;
+  const ref=dhPlayersRef.child(uid).child('events');const fn=s=>{const v=s.val();if(!v||dhSeenEvents.has(s.key))return;dhSeenEvents.add(s.key);if(dhSeenEvents.size>400)dhSeenEvents.delete(dhSeenEvents.values().next().value);if(v.type==='damage'&&state==='play'){const enemy=E.find(e=>e.uid===v.enemyUid);if(enemy&&!enemy.dead){enemy.hp-=Math.max(0,+v.amount||0);enemy.agg=1;if(enemy.hp<=0)kill(enemy)}}};
   ref.on('child_added',fn);dhMemberEventQueries[uid]={ref,fn};
  }
 }
 async function dhEnterRoom(id){
  if(!dhUser||!dhDb)throw Error('Sign in on Playovia first.');
- if(dhRoomRef&&dhRoomId===id){dhShowRoomLobby();return}
- if(dhRoomRef)await dhLeaveRoom(false);
- const ref=PlayoviaMultiplayer.room(dhDb,id),snap=await ref.once('value');
- if(!snap.exists())throw Error('Room no longer exists.');
- const data=snap.val(),members=data.members||{};
- if(data.gameId!=='dungeon-hunter'||data.status!=='waiting')throw Error('This room is no longer waiting.');
+ if(dhRoomRef){if(dhRoomId===id){dhShowRoomLobby();return}throw Error('Leave your current room before entering another.')}
+ const ref=PlayoviaMultiplayer.room(dhDb,id),snap=await ref.once('value');if(!snap.exists())throw Error('Room no longer exists.');
+ const data=snap.val(),members=data.members||{};if(data.gameId!=='dungeon-hunter')throw Error('This room belongs to another game.');
  if(!members[dhUser.uid])throw Error('Room membership was not confirmed. Please join again.');
- dhRoomId=id;dhRoomRef=ref;dhPlayersRef=ref.child('members');dhRoomMeta=data;dhRoomHost=data.hostUid===dhUser.uid;dhGameStarted=false;dhSeenEvents.clear();dhRemotePlayers=members;
- const now=Date.now(),name=String(dhProfile.username||dhUser.displayName||'Hunter').slice(0,32);
- const own=dhPlayersRef.child(dhUser.uid),old=members[dhUser.uid]||{};
- try{await own.update({uid:dhUser.uid,name,joinedAt:old.joinedAt||now,lastSeen:now,cls:S.cls,x:old.x??60,y:old.y??450,hp:old.hp??mhp(),mhp:mhp(),world:old.world??0,updatedAt:now})}
- catch(e){throw Error('Player data write failed: '+(e?.message||e))}
- try{await own.onDisconnect().remove()}catch(e){console.warn('Player disconnect cleanup permission unavailable; heartbeat remains active:',e)}
- if(dhRoomHost)try{await ref.onDisconnect().remove()}catch(e){console.warn('Host disconnect cleanup permission unavailable; server cleanup will handle stale rooms:',e)}
+ dhRoomId=id;dhRoomRef=ref;dhPlayersRef=ref.child('members');dhRoomMeta=data;dhRoomHost=data.hostUid===dhUser.uid;dhGameStarted=data.status==='playing';dhSeenEvents.clear();dhRemotePlayers=members;
  dhSharedRoomListener=ss=>{
-  const room=ss.val();
-  if(!room){dhLeaveRoom(false).then(()=>{menu();dhSay('Room closed by host.')});return}
-  dhRoomMeta=room;dhRoomHost=room.hostUid===dhUser?.uid;dhRemotePlayers=room.members||{};
-  dhWatchMemberEvents(dhRemotePlayers);
-  if(room.status==='playing'&&room.matchId)dhWatchSharedMatch(room.matchId);
-  else if(room.status==='waiting'&&(state==='menu'||state==='room'))dhShowRoomLobby();
+  const room=ss.val();if(!room){dhResetRoom(false);menu();dhSay('Room closed by host.');return}
+  dhRoomMeta=room;dhRoomHost=room.hostUid===dhUser?.uid;dhRemotePlayers=room.members||{};dhWatchMemberEvents(dhRemotePlayers);
+  if(room.status==='playing'&&room.matchId)dhWatchSharedMatch(room.matchId);else if(room.status==='waiting'&&(state==='menu'||state==='room'))dhShowRoomLobby();
  };
  ref.on('value',dhSharedRoomListener);
  if(dhHeartbeatTimer)clearInterval(dhHeartbeatTimer);
- dhHeartbeatTimer=setInterval(()=>{if(dhRoomRef&&dhUser)PlayoviaMultiplayer.heartbeat(dhRoomRef,dhUser.uid).catch(()=>{})},25000);
+ dhHeartbeatTimer=setInterval(()=>{if(dhRoomRef&&dhUser)PlayoviaMultiplayer.heartbeat(dhRoomRef,dhUser.uid).catch(e=>console.warn('Room heartbeat:',e))},25000);
  dhShowRoomLobby();dhWatchMemberEvents(dhRemotePlayers);
+ if(data.status==='playing'&&data.matchId)dhWatchSharedMatch(data.matchId);
 }
 function dhShowRoomLobby(){
- if(!dhRoomMeta||!dhRoomRef)return;
- setS('room');$('#hud').style.display='none';
+ if(!dhRoomMeta||!dhRoomRef)return;setS('room');$('#hud').style.display='none';
  const players=Object.values(dhRemotePlayers||{}),host=dhRoomHost;
  pn('<h1>⚔ DUNGEON HUNTER</h1><h2>👥 Multiplayer Room</h2><p>Share this 8-character code with your friends. Up to 4 hunters can play together.</p><div class="dh-room-tools"><div>ROOM CODE</div><div class="dh-room-code">'+dhEsc(dhRoomMeta.roomId)+'</div><button class="b" onclick="navigator.clipboard?.writeText(\''+dhEsc(dhRoomMeta.roomId)+'\').then(()=>dhSay(\'Room code copied!\')).catch(()=>dhSay(\'Code: '+dhEsc(dhRoomMeta.roomId)+'\'))">📋 Copy Code</button><h3>Players ('+players.length+'/4)</h3><div class="dh-players">'+players.map(p=>'⚔ '+dhEsc(p.name||'Hunter')+(p.uid===dhUser.uid?' (You)':'')+' · '+dhEsc(CL[p.cls]?.n||'Warrior')).join('<br>')+'</div><div class="dh-status" id="dhStatus">'+(host?'You are the host. Start when everyone is ready.':'Waiting for the host to start…')+'</div><div class="dh-row">'+(host?'<button class="b" onclick="dhStartRoom()">▶ START HUNT</button>':'<button class="b" disabled>WAITING FOR HOST</button>')+'<button class="b" onclick="dhLeaveRoom(true)">← Leave Room</button></div></div>');
 }
 async function dhStartRoom(){
  if(!dhRoomHost||!dhRoomRef||!dhUser)return;
- try{
-  const mode=dhRoomMeta?.mode||'Normal',seed=(Math.random()*2147483647)|0;
-  await PlayoviaMultiplayer.startMatch({db:dhDb,roomRef:dhRoomRef,uid:dhUser.uid,gameId:'dungeon-hunter',state:{seed,world:0,difficulty:mode==='Hard'?2:1,startedAt:Date.now()}});
- }catch(e){dhSay('Could not start: '+(e?.message||'Unknown error'));console.error('Dungeon Hunter start match:',e)}
+ try{const mode=dhRoomMeta?.mode||'Normal',seed=(Math.random()*2147483647)|0;await PlayoviaMultiplayer.startMatch({db:dhDb,roomRef:dhRoomRef,uid:dhUser.uid,gameId:'dungeon-hunter',state:{seed,world:0,difficulty:mode==='Hard'?2:1,startedAt:Date.now()}})}
+ catch(e){dhSay('Could not start hunt: '+(e?.message||e));console.error('Dungeon Hunter start:',e)}
 }
 function dhWatchSharedMatch(id){
  if(dhSharedMatchRef&&dhSharedMatchRef.key===id)return;
  if(dhSharedMatchRef&&dhSharedMatchListener)dhSharedMatchRef.child('state').off('value',dhSharedMatchListener);
- dhSharedMatchRef=PlayoviaMultiplayer.match(dhDb,id);
- dhSharedMatchListener=ss=>{const matchState=ss.val();if(matchState&&!dhGameStarted)dhStartClientGame(matchState)};
- dhSharedMatchRef.child('state').on('value',dhSharedMatchListener);
+ dhSharedMatchRef=PlayoviaMultiplayer.match(dhDb,id);dhSharedMatchListener=ss=>{const v=ss.val();if(v&&!dhGameStarted)dhStartClientGame(v)};dhSharedMatchRef.child('state').on('value',dhSharedMatchListener);
 }
-function dhStartClientGame(matchState){
- if(dhGameStarted||!matchState)return;
- dhGameStarted=true;S.diff=Number.isInteger(matchState.difficulty)?matchState.difficulty:S.diff;
- const run={seed:matchState.seed,dd:[],ch:[],x:60,y:450,hp:mhp(),mp:mmp(),ck:0};
- play(matchState.world||0,run);dhSay('Hunt started · Room '+dhRoomId);
-}
-function dhSendEvent(type,data){
- if(!dhPlayersRef||!dhUser||state!=='play')return;
- dhPlayersRef.child(dhUser.uid).child('events').push({type,...data,at:Date.now()}).catch(e=>console.warn('Room event:',e));
-}
-async function dhLeaveRoom(show=true){
+function dhStartClientGame(v){if(dhGameStarted||!v)return;dhGameStarted=true;S.diff=Number.isInteger(v.difficulty)?v.difficulty:S.diff;const run={seed:v.seed,dd:[],ch:[],x:60,y:450,hp:mhp(),mp:mmp(),ck:0};play(v.world||0,run);dhSay('Hunt started · Room '+dhRoomId)}
+function dhSendEvent(type,data){if(!dhPlayersRef||!dhUser||state!=='play')return;dhPlayersRef.child(dhUser.uid).child('events').push({type,...data,at:Date.now()}).catch(e=>console.warn('Room event:',e))}
+function dhResetRoom(removeRemote){
  const ref=dhRoomRef,uid=dhUser?.uid,host=dhRoomHost;
- if(!ref){if(show)menu();return}
- if(dhSharedRoomListener)ref.off('value',dhSharedRoomListener);
+ if(ref&&dhSharedRoomListener)ref.off('value',dhSharedRoomListener);
  if(dhSharedMatchRef&&dhSharedMatchListener)dhSharedMatchRef.child('state').off('value',dhSharedMatchListener);
  for(const entry of Object.values(dhMemberEventQueries))entry.ref.off('child_added',entry.fn);
- dhMemberEventQueries={};
- if(dhHeartbeatTimer){clearInterval(dhHeartbeatTimer);dhHeartbeatTimer=null}
- try{await PlayoviaMultiplayer.leaveRoom({roomRef:ref,uid,isHost:host})}catch(e){console.warn('Leave room:',e)}
+ dhMemberEventQueries={};if(dhHeartbeatTimer){clearInterval(dhHeartbeatTimer);dhHeartbeatTimer=null}
  dhRoomRef=dhPlayersRef=dhSharedMatchRef=null;dhSharedRoomListener=dhSharedMatchListener=null;dhRoomId='';dhRoomMeta=null;dhRoomHost=false;dhGameStarted=false;dhRemotePlayers={};dhSeenEvents.clear();
- if(show){menu();dhSay('You left the room.')}
+ if(removeRemote&&ref&&uid)return PlayoviaMultiplayer.leaveRoom({roomRef:ref,uid,isHost:host}).catch(e=>{console.error('Leave room:',e);dhSay('Leave failed: '+e.message)});
 }
+async function dhLeaveRoom(show=true){await dhResetRoom(true);if(show){menu();dhSay('You left the room.')}}
 function dhPublishPlayer(){
- if(!dhPlayersRef||!dhUser||!P||state!=='play')return;
- const now=Date.now();if(now-dhLastPublish<120)return;dhLastPublish=now;
- dhPlayersRef.child(dhUser.uid).update({uid:dhUser.uid,name:String(dhProfile.username||dhUser.displayName||'Hunter').slice(0,32),lastSeen:now,cls:S.cls,x:P.x,y:P.y,hp:P.hp,mhp:P.mh,world:LV?.w||0,updatedAt:now}).catch(()=>{});
+ if(!dhPlayersRef||!dhUser||!P||state!=='play')return;const now=Date.now();if(now-dhLastPublish<500) return;dhLastPublish=now;
+ const p={uid:dhUser.uid,name:String(dhProfile.username||dhUser.displayName||'Hunter').slice(0,32),lastSeen:now,cls:S.cls,x:P.x,y:P.y,hp:P.hp,mhp:P.mh,world:LV?.w||0,updatedAt:now};
+ dhPlayersRef.child(dhUser.uid).update(p).catch(e=>console.warn('Player sync:',e));
 }
 function dhDrawRemotePlayers(add){
- for(const [uid,p] of Object.entries(dhRemotePlayers||{})){if(uid===dhUser?.uid||Date.now()-(p.lastSeen||p.updatedAt||0)>12000)continue;
-  const cls=CL[p.cls]||CL.w,wp=VZ[p.cls]||VZ.w;
+ for(const [uid,p] of Object.entries(dhRemotePlayers||{})){if(uid===dhUser?.uid||Date.now()-(p.lastSeen||p.updatedAt||0)>12000)continue;const cls=CL[p.cls]||CL.w,wp=VZ[p.cls]||VZ.w;
   add(p.y||450,()=>{shd(p.x||0,p.y||450);hum(p.x||0,(p.y||450)-28,1,{c:cls.col,cl:cls.cl,cp:sh(cls.cl,.85),pl:1,s:1,hd:wp[0],wt:wp[1],wc:'#ccd',ey:'#8cf',a:T*2,mv:false,ang:.6});tt(String(p.name||'Hunter').slice(0,16),p.x||0,(p.y||450)-88,'#8cf',12,'center')});
  }
 }
