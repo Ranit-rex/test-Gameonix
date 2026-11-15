@@ -1445,9 +1445,8 @@ function closeGame(fromHistory=false){if($('gameOverlay').classList.contains('hi
 window.addEventListener('pagehide',()=>{if(!$('gameOverlay').classList.contains('hidden')){if(playoviaLogGame){window.playoviaTrackGame?.('game_exit',playoviaLogGame.slug,playoviaLogGame.title);playoviaLogGame=null}finishGameSession();clearPlayingPresence()}});
 $('gameFrame').addEventListener('load',()=>{if($('gameOverlay').classList.contains('hidden'))return;if(gameLoadTimer){clearTimeout(gameLoadTimer);gameLoadTimer=null}try{const frameUrl=new URL($('gameFrame').contentWindow.location.href);if(frameUrl.href==='about:blank'){closeGame();return}$('gameLoading').classList.add('hidden');if(playoviaLogGame)window.playoviaTrackGame?.('game_play',playoviaLogGame.slug,playoviaLogGame.title);const hubUrl=new URL('./',location.href);if(frameUrl.origin===location.origin){const frameDoc=$('gameFrame').contentDocument;const isHubPath=frameUrl.pathname===hubUrl.pathname||frameUrl.pathname===hubUrl.pathname+'index.html'||frameUrl.pathname.endsWith('/index.html')&&!!frameDoc?.querySelector('#playhubApp');if(isHubPath)closeGame()}}catch(_){}});window.addEventListener('popstate',()=>{if(!$('gameOverlay').classList.contains('hidden'))closeGame(true);else gameHistoryPushed=false});$('closeGameBtn').addEventListener('click',closeGame);
 
-// Playovia second-phone controller pairing. The game iframe must implement the
-// PLAYOVIA_REMOTE_INPUT postMessage contract to consume remote button events.
-let remoteControllerSession=null,remoteControllerUnsub=null;
+// Playovia remote controller uses the Render API; no client-side Firestore rules required.
+let remoteControllerSession=null,remoteControllerPollTimer=null,remoteControllerPolling=false;
 function sendRemoteGameInput(payload){
  try{
   const frame=$('gameFrame'),win=frame?.contentWindow;if(!win)return;
@@ -1461,36 +1460,43 @@ function sendRemoteGameInput(payload){
 }
 async function startRemoteController(){
  if(!currentUser){$('remoteControllerStatus').textContent='Sign in to Playovia on this phone first.';return}
- if(!db){$('remoteControllerStatus').textContent='Playovia connection is still loading. Try again in a moment.';return}
  try{
-  $('remoteControllerStatus').textContent='Creating a secure pairing code…';
-  const ref=db.collection('remoteControlSessions').doc();
-  const code=String(Math.floor(100000+Math.random()*900000));
-  await ref.set({uid:currentUser.uid,code,gameTitle:$('playingTitle')?.textContent||'Game',status:'active',createdAt:firebase.firestore.FieldValue.serverTimestamp(),updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
-  remoteControllerSession=ref;
-  $('remoteControllerCode').textContent=code;
+  $('remoteControllerStatus').textContent='Creating a secure pairing code on Playovia server…';
+  const idToken=await currentUser.getIdToken();
+  const response=await fetch(PLAYOVIA_AI_ENDPOINT+'/api/controller/session',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+idToken},body:JSON.stringify({gameTitle:$('playingTitle')?.textContent||'Game'})});
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok)throw new Error(data.error||'Could not create controller session.');
+  remoteControllerSession={sessionId:data.sessionId,hostToken:data.hostToken};
+  $('remoteControllerCode').textContent=data.code;
   $('remoteControllerStatus').textContent='Waiting for your second phone to connect…';
-  const commands=ref.collection('commands').orderBy('createdAt','desc').limit(20);
-  remoteControllerUnsub=commands.onSnapshot(snap=>{
-   snap.docChanges().forEach(change=>{
-    if(change.type!=='added')return;
-    const d=change.doc.data();
-    if(!d||!['down','up'].includes(d.action)||!['up','down','left','right','a','b','x','y','start','select'].includes(d.button))return;
-    sendRemoteGameInput({action:d.action,button:d.button,at:Date.now()});
-   });
-  },err=>{$('remoteControllerStatus').textContent='Controller connection error: '+(err.message||'Please retry')});
-  ref.onSnapshot(doc=>{if(doc.exists&&doc.data().controllerConnected)$('remoteControllerStatus').textContent='🎮 Second phone connected!';});
+  remoteControllerPollTimer=setInterval(async()=>{
+   if(!remoteControllerSession||remoteControllerPolling)return;
+   remoteControllerPolling=true;
+   try{
+    const current=remoteControllerSession;
+    const r=await fetch(PLAYOVIA_AI_ENDPOINT+'/api/controller/commands?sessionId='+encodeURIComponent(current.sessionId),{headers:{'Authorization':'Bearer '+current.hostToken},cache:'no-store'});
+    const d=await r.json().catch(()=>({}));
+    if(!r.ok)throw new Error(d.error||'Controller connection interrupted.');
+    if(d.controllerConnected)$('remoteControllerStatus').textContent='🎮 Second phone connected! Use its buttons to play.';
+    (d.commands||[]).forEach(command=>{
+     if(!command||!['down','up'].includes(command.action)||!['up','down','left','right','a','b','x','y','start','select'].includes(command.button))return;
+     sendRemoteGameInput({action:command.action,button:command.button,at:command.at||Date.now()});
+    });
+   }catch(e){console.warn('Remote controller poll:',e);$('remoteControllerStatus').textContent='Controller connection issue: '+(e.message||'retrying…')}
+   finally{remoteControllerPolling=false}
+  },150);
  }catch(e){console.error('Remote controller setup:',e);$('remoteControllerStatus').textContent='Could not create controller: '+(e.message||'Please retry')}
 }
 async function stopRemoteController(){
- if(remoteControllerUnsub){remoteControllerUnsub();remoteControllerUnsub=null}
- if(remoteControllerSession){try{await remoteControllerSession.update({status:'closed',updatedAt:firebase.firestore.FieldValue.serverTimestamp()})}catch(e){console.warn('Controller close:',e)}remoteControllerSession=null}
+ if(remoteControllerPollTimer){clearInterval(remoteControllerPollTimer);remoteControllerPollTimer=null}
+ const session=remoteControllerSession;remoteControllerSession=null;
+ if(session){try{await fetch(PLAYOVIA_AI_ENDPOINT+'/api/controller/session?sessionId='+encodeURIComponent(session.sessionId),{method:'DELETE',headers:{'Authorization':'Bearer '+session.hostToken}})}catch(e){console.warn('Controller close:',e)}}
  $('remoteControllerCode').textContent='------';$('remoteControllerStatus').textContent='Controller disconnected.';
 }
 $('gameControllerBtn')?.addEventListener('click',()=>{$('remoteControllerModal').classList.remove('hidden');if(!remoteControllerSession)startRemoteController()});
 $('remoteControllerClose')?.addEventListener('click',()=>{$('remoteControllerModal').classList.add('hidden')});
 $('remoteControllerStop')?.addEventListener('click',stopRemoteController);
-$('remoteControllerCopy')?.addEventListener('click',async()=>{const code=$('remoteControllerCode').textContent;if(!/^\d{6}$/.test(code))return;const link=new URL('./controller.html',location.href).href;try{await navigator.clipboard.writeText(link+'?code='+code);$('remoteControllerStatus').textContent='Controller link copied. Open it on your second phone.'}catch(_){$('remoteControllerStatus').textContent='Open '+link+' on your second phone and enter code '+code}});
+$('remoteControllerCopy')?.addEventListener('click',async()=>{const code=$('remoteControllerCode').textContent;if(!/^\\d{6}$/.test(code))return;const link=new URL('./controller.html',location.href).href;try{await navigator.clipboard.writeText(link+'?code='+code);$('remoteControllerStatus').textContent='Controller link copied. Open it on your second phone.'}catch(_){$('remoteControllerStatus').textContent='Open '+link+' on your second phone and enter code '+code}});
 
 $('gameAiLiveBtn')?.addEventListener('click',()=>{const panel=$('playoviaAiPanel');if(!panel)return;$('gameOverlay').appendChild(panel);panel.classList.remove('hidden');panel.classList.add('game-overlay-ai');const gameName=$('playingTitle')?.textContent||'the current game';$('aiInput').value='I am playing '+gameName+'. Act as my live game assistant. Give me relevant tips and answer my questions using this game context.';aiSend($('aiInput').value);});$('fullscreenBtn').addEventListener('click',async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await $('gameFrame').requestFullscreen()}catch(e){status('Fullscreen unavailable: '+e.message,'error')}});document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('gameOverlay').classList.contains('hidden'))closeGame()});
 
