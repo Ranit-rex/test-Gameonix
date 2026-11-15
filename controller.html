@@ -47,7 +47,7 @@ async function connect(){
  let user=auth.currentUser;
  if(!user){try{const result=await auth.signInWithPopup(provider);user=result.user}catch(e){$('status').textContent='Google sign-in failed: '+e.message;return}}
  const code=$('pairCode').value.trim();
- if(!/^\\d{6}$/.test(code)){$('status').textContent='Enter the 6-digit pairing code from your gaming phone.';return}
+ if(!/^\d{6}$/.test(code)){$('status').textContent='Enter the 6-digit pairing code from your gaming phone.';return}
  $('connectBtn').disabled=true;$('status').textContent='Connecting securely to Playovia server…';
  try{
   const idToken=await user.getIdToken();
