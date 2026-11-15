@@ -33,6 +33,10 @@
       const loggedIn = !!current;
       let playerId = String(appIdentity.playerId || window.PlayHubPlayerId || '').trim().toUpperCase();
       const firestore = window.PlayHubFirebase?.firestore;
+      if (loggedIn && !/^[A-Z]{5}[0-9]{4}$/.test(playerId) && typeof window.ensurePlayHubPlayerId === 'function') {
+        try { playerId = String(await window.ensurePlayHubPlayerId() || '').trim().toUpperCase(); }
+        catch (error) { console.error('[Playovia game analytics] Could not create/retrieve Player ID:', error); }
+      }
       if (loggedIn && !/^[A-Z]{5}[0-9]{4}$/.test(playerId) && firestore) {
         for (let attempt = 0; attempt < 30 && !/^[A-Z]{5}[0-9]{4}$/.test(playerId); attempt++) {
           try {
