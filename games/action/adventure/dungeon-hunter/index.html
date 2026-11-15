@@ -298,7 +298,7 @@ P.x=cp(P.x,LV.lock||-280,LV.lock||!LV.el?LV.L+60:LV.L-1510);P.y=cp(P.y,90,LH-70)
 function dhCombatTargets(){
  const out=[];if(P&&P.hp>0&&!P.dead)out.push({uid:dhUser?.uid||'local-player',x:P.x,y:P.y,local:true});
  if(dhRoomRef)for(const [uid,p] of Object.entries(dhRemotePlayers||{})){if(uid===dhUser?.uid||Date.now()-(p.lastSeen||p.updatedAt||0)>8000||Number(p.hp)<=0||Number(p.world||0)!==(LV?.w||0))continue;out.push({uid,x:Number(p.x)||0,y:Number(p.y)||450,local:false})}
- if(!out.length&&P)out.push({uid:dhUser?.uid||'local-player',x:P.x,y:P.y,local:true});return out;
+ if(!out.length&&P)out.push({uid:dhUser?.uid||'local-player',x:P.x,y:P.y,local:true});return out.sort((a,b)=>String(a.uid).localeCompare(String(b.uid)));
 }
 function dhEnemyTarget(e){
  const a=dhCombatTargets();if(a.length===1)return a[0];
