@@ -2,7 +2,7 @@
    Every mapping below is taken from the game's own keyboard handlers. */
 (function(){
  const slots=['a','b','x','y','l1','r1','l2','r2','start','select'];
- const make=(name,actions)=>({name,actions:actions.map((a,i)=>({...a,slot:slots[i]}))});
+ const make=(name,actions)=>({name,actions:actions.map((a,i)=>({...a,slot:a.slot||slots[i]}))});
  window.PLAYOVIA_CONTROLLER_PROFILES={
   'dungeon-hunter':make('Dungeon Hunter',[
    {label:'Attack',key:'j',code:'KeyJ'},
@@ -32,12 +32,12 @@
   'last-lantern':make('Ghost Night',[
    {label:'Dash',key:' ',code:'Space'},
    {label:'Reroll',key:'r',code:'KeyR'},
-   {label:'Pause',key:'Escape',code:'Escape'}
+   {label:'Pause',key:'Escape',code:'Escape',slot:'start'}
   ]),
   'antarctic-the-last-signal':make('Antarctic: The Last Signal',[
    {label:'Flare',key:' ',code:'Space'},
    {label:'Interact',key:'e',code:'KeyE'},
-   {label:'Run',key:'Shift',code:'ShiftLeft'}
+   {label:'Run',key:'Shift',code:'ShiftLeft',slot:'l1'}
   ]),
   'bomb-tag':make('Bomb Tag',[])
  };
