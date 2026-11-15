@@ -268,7 +268,7 @@ const server = http.createServer(async (req, res) => {
 
   if (req.method === 'GET' && url.pathname === '/api/discord/game-activity') {
     const expected = String(process.env.DISCORD_INTEGRATION_TOKEN || '');
-    const supplied = String(req.headers.authorization || '').replace(/^Bearer\\s+/i, '');
+    const supplied = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '');
     const a = Buffer.from(expected), b = Buffer.from(supplied);
     if (!expected || a.length !== b.length || !crypto.timingSafeEqual(a, b)) return send(res, 401, { error: 'Unauthorized.' }, origin);
     const after = String(url.searchParams.get('after') || '');
