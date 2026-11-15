@@ -1590,7 +1590,7 @@ function toggleGameAiLiveListen(){
  if(gameAiLiveListening){stopGameAiLiveListen();return}
  if(!SpeechRecognition){$('gameAiGlassStatus').textContent='Live speech recognition is not supported in this browser. Use the mic or type instead.';return}
  gameAiLiveListening=true;$('gameAiListenBtn').classList.add('listening');$('gameAiListenBtn').textContent='■ Stop';
- $('gameAiGlassStatus').textContent='Listening to your microphone · Speak a question about the game';
+ $('gameAiGlassStatus').textContent='Listening to your microphone · Speak a question (game audio is not captured)';
  const start=()=>{
   if(!gameAiLiveListening)return;
   const rec=new SpeechRecognition();gameAiLiveRecognition=rec;rec.lang='en-IN';rec.continuous=true;rec.interimResults=true;
@@ -1795,7 +1795,7 @@ async function aiSend(message,options={}){
   playoviaAiHistory.push({role:'user',text:clean},{role:'model',text:answer});playoviaAiHistory=playoviaAiHistory.slice(-30);aiPersistChat();aiAddBubble(answer,'assistant');
   if(data.assistantName)aiAddBubble(data.assistantName+' · Ready','assistant','provider-note',false);
  }catch(err){const safeMessage=String(err.message||'').replace(/Gemini|Groq|OpenRouter|Google|HTTP\s*\d{3}|models\/[^\s]+/gi,'Playovia').slice(0,220);aiAddBubble(safeMessage||'Playovia could not process your message. Please try again.','assistant','error',false)}
- finally{aiSetBusy(false)}
+ finally{aiSetBusy(false);if(gameAiLiveListening&&$('gameAiGlassStatus'))$('gameAiGlassStatus').textContent='Listening to your microphone · Speak a question (game audio is not captured)'}
 }
 function syncAiTestModeAccess(){return false}
 function aiEngineModal(open){syncAiTestModeAccess();$('aiEngineModal')?.classList.toggle('hidden',!open)}
