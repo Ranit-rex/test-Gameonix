@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#0b1221"><title>Playovia Remote Controller</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#080e1b;color:#fff;font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;overscroll-behavior:none;touch-action:manipulation}body{min-height:100dvh;display:flex;justify-content:center;padding:18px}.app{width:min(520px,100%);display:flex;flex-direction:column;gap:14px}.head{text-align:center;padding:12px 0}.logo{font-size:11px;letter-spacing:3px;color:#7de7d1;font-weight:900}.head h1{font-size:24px;margin:8px 0}.muted{font-size:12px;line-height:1.6;color:#9eacc5}.panel{padding:18px;border:1px solid #293b58;border-radius:20px;background:linear-gradient(145deg,#17243a,#0d1525)}input{width:100%;padding:14px;border:1px solid #3b5274;border-radius:12px;background:#080f1e;color:#fff;font-size:20px;letter-spacing:5px;text-align:center;font-weight:900}button{color:#fff;border:1px solid #3b5274;background:#1b2b45;border-radius:13px;font-weight:850;touch-action:none;user-select:none;-webkit-user-select:none}button:active,.pressed{transform:scale(.96);background:#36517a!important;border-color:#86dcca!important}.primary{width:100%;padding:13px;background:linear-gradient(110deg,#226e65,#24527e);margin-top:10px}.status{text-align:center;min-height:22px;color:#80e7cb;font-size:12px}.hidden{display:none!important}.pad-wrap{display:flex;align-items:center;justify-content:space-between;gap:16px}.dpad{width:min(54vw,220px);height:min(54vw,220px);display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);gap:6px}.dpad button{font-size:24px;border-radius:15px}.dpad .empty{visibility:hidden}.actions{width:min(42vw,180px);height:min(42vw,180px);display:grid;grid-template:repeat(2,1fr)/repeat(2,1fr);gap:9px;transform:rotate(-8deg)}.actions button{border-radius:50%;font-size:22px;font-weight:950}.actions .a{background:#285c52}.actions .b{background:#713b4d}.actions .x{background:#31527d}.actions .y{background:#77602e}.utility{display:flex;gap:12px}.utility button{flex:1;padding:16px;font-size:12px}.foot{text-align:center;font-size:10px;line-height:1.6;color:#75849d;padding:6px}
+</style>
+</head>
+<body><main class="app">
+<header class="head"><div class="logo">PLAYOVIA REMOTE PLAY</div><h1>Phone Controller</h1><div class="muted">Use this phone as a wireless gamepad for your other device.</div></header>
+<section id="connectPanel" class="panel"><p class="muted">Sign in with the same Playovia account used on the gaming phone, then enter the 6-digit pairing code shown in the game.</p><input id="pairCode" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="000000"><button id="connectBtn" class="primary">Connect controller</button></section>
+<div id="status" class="status" role="status">Connecting to Playovia…</div>
+<section id="controllerPanel" class="panel hidden">
+<div class="pad-wrap">
+<div class="dpad">
+<button class="empty" tabindex="-1"></button><button data-button="up">▲</button><button class="empty" tabindex="-1"></button>
+<button data-button="left">◀</button><button data-button="down">▼</button><button data-button="right">▶</button>
+<button class="empty" tabindex="-1"></button><button class="empty" tabindex="-1"></button><button class="empty" tabindex="-1"></button>
+</div>
+<div class="actions"><button class="y" data-button="y">Y</button><button class="x" data-button="x">X</button><button class="b" data-button="b">B</button><button class="a" data-button="a">A</button></div>
+</div>
+<div class="utility"><button data-button="select">SELECT</button><button data-button="start">START</button></div>
+</section>
+<div class="foot">Keep this page open while playing. Both phones must be online and signed in to the same Playovia account. Some third-party games may not support external controls.</div>
+</main>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script>
+'use strict';
+const CONFIG={apiKey:'AIzaSyB_pZ9WfVSx2XHuDeSZ7VrwEr-Pz_m_2QM',authDomain:'play-hub-688e8.firebaseapp.com',projectId:'play-hub-688e8',storageBucket:'play-hub-688e8.firebasestorage.app',messagingSenderId:'195222206861',appId:'1:195222206861:web:828a8cf16991f982a925c4'};
+const $=id=>document.getElementById(id);let auth,db,sessionRef=null,connected=false;
+if(!firebase.apps.length)firebase.initializeApp(CONFIG);auth=firebase.auth();db=firebase.firestore();
+const provider=new firebase.auth.GoogleAuthProvider();
+auth.onAuthStateChanged(user=>{$('status').textContent=user?'Signed in. Enter the pairing code.':'Sign in to connect…';if(!user)auth.signInWithPopup(provider).catch(e=>{$('status').textContent='Google sign-in required: '+e.message})});
+$('pairCode').value=new URLSearchParams(location.search).get('code')||'';
+async function connect(){
+ const user=auth.currentUser,code=$('pairCode').value.trim();
+ if(!user){$('status').textContent='Please finish Google sign-in first.';return}
+ if(!/^\d{6}$/.test(code)){$('status').textContent='Enter the 6-digit code from your gaming phone.';return}
+ $('connectBtn').disabled=true;$('status').textContent='Finding your game session…';
+ try{
+  const q=await db.collection('remoteControlSessions').where('uid','==',user.uid).where('code','==',code).where('status','==','active').limit(1).get();
+  if(q.empty)throw new Error('No active session found. Check the code and make sure both phones use the same account.');
+  sessionRef=q.docs[0].ref;await sessionRef.update({controllerConnected:true,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+  $('connectPanel').classList.add('hidden');$('controllerPanel').classList.remove('hidden');$('status').textContent='Connected to '+(q.docs[0].data().gameTitle||'your game')+'. Hold buttons to control.';
+  connected=true;
+  sessionRef.onSnapshot(doc=>{if(!doc.exists||doc.data().status!=='active'){disconnect('The gaming phone ended this session.');}});
+ }catch(e){$('status').textContent=e.message||'Could not connect.'}
+ finally{$('connectBtn').disabled=false}
+}
+function disconnect(message){connected=false;$('controllerPanel').classList.add('hidden');$('connectPanel').classList.remove('hidden');$('status').textContent=message;sessionRef=null}
+async function send(button,action){if(!connected||!sessionRef)return;try{await sessionRef.collection('commands').add({button,action,createdAt:firebase.firestore.FieldValue.serverTimestamp()})}catch(e){$('status').textContent='Connection lost: '+(e.message||'retry')}}
+$('connectBtn').addEventListener('click',connect);
+document.querySelectorAll('[data-button]').forEach(btn=>{
+ const key=btn.dataset.button;
+ const down=e=>{e.preventDefault();if(btn.dataset.held==='1')return;btn.dataset.held='1';btn.classList.add('pressed');try{btn.setPointerCapture(e.pointerId)}catch(_){}send(key,'down')};
+ const up=e=>{if(btn.dataset.held!=='1')return;btn.dataset.held='0';btn.classList.remove('pressed');send(key,'up')};
+ btn.addEventListener('pointerdown',down);btn.addEventListener('pointerup',up);btn.addEventListener('pointercancel',up);btn.addEventListener('lostpointercapture',up);btn.addEventListener('contextmenu',e=>e.preventDefault());
+});
+document.addEventListener('visibilitychange',()=>{if(document.hidden)document.querySelectorAll('[data-button][data-held="1"]').forEach(b=>{b.dataset.held='0';b.classList.remove('pressed');send(b.dataset.button,'up')})});
+</script></body></html>
