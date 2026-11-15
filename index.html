@@ -1490,8 +1490,8 @@ function dispatchRemoteGameKey(button,action){
   if(frameUrl.origin!==location.origin){win.postMessage(payload,'*');return}
   const common={up:['ArrowUp','ArrowUp'],down:['ArrowDown','ArrowDown'],left:['ArrowLeft','ArrowLeft'],right:['ArrowRight','ArrowRight']};
   const profile=window.PLAYOVIA_CONTROLLER_PROFILES?.[activeRemoteGameSlug];
-  const action=profile?.actions?.find(item=>item.slot===button);
-  const pair=action?[action.key,action.code]:common[button];if(pair){
+  const mappedAction=profile?.actions?.find(item=>item.slot===button);
+  const pair=mappedAction?[mappedAction.key,mappedAction.code]:common[button];if(pair){
    try{frame.focus({preventScroll:true})}catch(_){try{frame.focus()}catch(__){}}
    try{win.focus()}catch(_){}
    const type=action==='down'?'keydown':'keyup';
