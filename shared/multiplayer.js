@@ -57,7 +57,7 @@
         createdAt: now, updatedAt: now
       };
       const result = await room(db, code).transaction(current => current === null ? payload : undefined);
-      if (result.committed) { showInviteButton({uid,name:playerName,gameId:String(gameId),gameTitle:String(gameTitle||gameId),roomId:code,gameUrl:location.pathname}); return { roomId: code, ref: room(db, code), data: payload }; }
+      if (result.committed) { if(String(gameId)!=='dungeon-hunter')showInviteButton({uid,name:playerName,gameId:String(gameId),gameTitle:String(gameTitle||gameId),roomId:code,gameUrl:location.pathname}); return { roomId: code, ref: room(db, code), data: payload }; }
     }
     throw new Error('Could not reserve a room code. Please retry.');
   }
@@ -79,7 +79,7 @@
       const joined = await ref.child('members/' + uid).transaction(current => current || member);
       if (!joined.committed) throw new Error('Could not join this room. Please retry.');
     }
-    showInviteButton({uid,name:clean(name),gameId:String(gameId),gameTitle:String(data.gameTitle||gameId),roomId:normalized,gameUrl:location.pathname});
+    if(String(gameId)!=='dungeon-hunter')showInviteButton({uid,name:clean(name),gameId:String(gameId),gameTitle:String(data.gameTitle||gameId),roomId:normalized,gameUrl:location.pathname});
     return { roomId: normalized, ref, data };
   }
 
