@@ -42,13 +42,13 @@ function send(res, status, data, origin) {
   res.end(JSON.stringify(data));
 }
 
-function rateLimited(ip) {
+function rateLimited(ip, limit = 20) {
   const now = Date.now();
   const bucket = rateBuckets.get(ip) || { start: now, count: 0 };
   if (now - bucket.start > 60_000) { bucket.start = now; bucket.count = 0; }
   bucket.count++;
   rateBuckets.set(ip, bucket);
-  return bucket.count > 20;
+  return bucket.count > limit;
 }
 
 // Keys stay on Render. Numbered slots make future key replacement/addition easy.
@@ -406,7 +406,7 @@ const server = http.createServer(async (req, res) => {
   if (url.pathname.startsWith('/api/controller/')) {
     cleanRemoteControllerSessions();
     const ip = String(req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
-    if (rateLimited('remote-controller:' + ip)) return send(res, 429, { error: 'Too many controller requests. Please retry shortly.' }, origin);
+    if (rateLimited('remote-controller:' + ip, 600)) return send(res, 429, { error: 'Too many controller requests. Please retry shortly.' }, origin);
     const route = url.pathname;
     if (req.method === 'POST' && route === '/api/controller/session') {
       const user = await verifyFirebaseUserToken(bearerToken(req));
