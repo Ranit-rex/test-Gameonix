@@ -33,11 +33,11 @@ const CONFIG={apiKey:'AIzaSyB_pZ9WfVSx2XHuDeSZ7VrwEr-Pz_m_2QM',authDomain:'play-
 const $=id=>document.getElementById(id);let auth,db,sessionRef=null,connected=false;
 if(!firebase.apps.length)firebase.initializeApp(CONFIG);auth=firebase.auth();db=firebase.firestore();
 const provider=new firebase.auth.GoogleAuthProvider();
-auth.onAuthStateChanged(user=>{$('status').textContent=user?'Signed in. Enter the pairing code.':'Sign in to connect…';if(!user)auth.signInWithPopup(provider).catch(e=>{$('status').textContent='Google sign-in required: '+e.message})});
+auth.onAuthStateChanged(user=>{$('status').textContent=user?'Signed in. Enter the pairing code.':'Tap Connect and sign in with Google.'});
 $('pairCode').value=new URLSearchParams(location.search).get('code')||'';
 async function connect(){
- const user=auth.currentUser,code=$('pairCode').value.trim();
- if(!user){$('status').textContent='Please finish Google sign-in first.';return}
+ let user=auth.currentUser;const code=$('pairCode').value.trim();
+ if(!user){try{const result=await auth.signInWithPopup(provider);user=result.user}catch(e){$('status').textContent='Google sign-in failed: '+e.message;return}}
  if(!/^\d{6}$/.test(code)){$('status').textContent='Enter the 6-digit code from your gaming phone.';return}
  $('connectBtn').disabled=true;$('status').textContent='Finding your game session…';
  try{
