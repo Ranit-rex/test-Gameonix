@@ -255,7 +255,14 @@ const server = http.createServer(async (req, res) => {
         durationSeconds: type === 'game_exit' && previous ? Math.max(0, Math.floor((now - previous.startedAt) / 1000)) : 0
       };
       if (type === 'game_heartbeat') {
-        if (previous) previous.lastSeen = now;
+        if (previous) {
+          previous.lastSeen = now;
+          // Refresh identity fields as soon as the website finishes loading/creating the Player ID.
+          if (event.playerId) previous.playerId = event.playerId;
+          if (event.loggedIn) previous.loggedIn = true;
+          if (event.user && (!previous.user || previous.user === 'Guest')) previous.user = event.user;
+          previous.device = event.device || previous.device;
+        }
         return send(res, 202, { ok: true }, origin);
       }
       if (type === 'game_open' || type === 'game_play') {
