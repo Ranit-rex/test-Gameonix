@@ -20,7 +20,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script>
 'use strict';
-const CONFIG={apiKey:'AIzaSyB_pZ9WfVSx2XHuDeSZ7VrwEr-Pz_2QM',authDomain:'play-hub-688e8.firebaseapp.com',projectId:'play-hub-688e8',storageBucket:'play-hub-688e8.firebasestorage.app',messagingSenderId:'195222206861',appId:'1:195222206861:web:828a8cf16991f982a925c4'},API='https://test-gameonix.onrender.com', $=id=>document.getElementById(id);
+const CONFIG={apiKey:'AIzaSyB_pZ9WfVSx2XHuDeSZ7VrwEr-Pz_m_2QM',authDomain:'play-hub-688e8.firebaseapp.com',projectId:'play-hub-688e8',storageBucket:'play-hub-688e8.firebasestorage.app',messagingSenderId:'195222206861',appId:'1:195222206861:web:828a8cf16991f982a925c4'},API='https://test-gameonix.onrender.com', $=id=>document.getElementById(id);
 let auth,sessionId='',controllerToken='',connected=false,gameReady=false,statusTimer=null,stickDirection='';
 if(!firebase.apps.length)firebase.initializeApp(CONFIG);auth=firebase.auth();const provider=new firebase.auth.GoogleAuthProvider();
 auth.onAuthStateChanged(user=>{$('connectStatus').textContent=user?'Signed in · Enter your pairing code':'Google sign-in required';});
