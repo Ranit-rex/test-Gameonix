@@ -19,6 +19,67 @@
     }).catch(() => {});
   };
 
+  const activeGames = new Map();
+  const deviceName = () => {
+    const platform = navigator.userAgentData?.platform || navigator.platform || 'Unknown platform';
+    const mobile = navigator.userAgentData?.mobile || /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent);
+    return (mobile ? 'Mobile · ' : 'Desktop · ') + String(platform).slice(0, 70);
+  };
+  const identity = () => {
+    let user = 'Guest', loggedIn = false;
+    try {
+      const current = window.firebase?.auth?.()?.currentUser || window.auth?.currentUser || null;
+      if (current) { user = current.displayName || current.email || 'Logged-in player'; loggedIn = true; }
+    } catch (_) {}
+    return { user: String(user).slice(0, 80), loggedIn };
+  };
+  const sendGameEvent = (type, game) => {
+    if (!game || !game.slug) return;
+    const who = identity();
+    fetch(API + '/api/analytics/game-event', {
+      method: 'POST', mode: 'cors', credentials: 'omit', keepalive: true,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type, sessionId, slug: game.slug, title: game.title || game.slug, user: who.user, loggedIn: who.loggedIn, device: deviceName() })
+    }).catch(() => {});
+  };
+  const slugFromElement = el => {
+    const link = el.closest('a[href*="/games/"], [data-game-slug], [data-game]');
+    if (!link) return null;
+    const href = link.getAttribute('href') || '';
+    const raw = link.dataset.gameSlug || link.dataset.game || (href.match(/\/games\/([^/?#]+)/) || [])[1] || '';
+    const slug = String(raw).replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 80);
+    if (!slug) return null;
+    const title = link.dataset.gameTitle || link.getAttribute('aria-label') || link.querySelector('h1,h2,h3,h4,.game-title')?.textContent?.trim() || link.textContent?.trim().replace(/\s+/g, ' ').slice(0, 90) || slug;
+    return { slug, title };
+  };
+  document.addEventListener('click', event => {
+    const game = slugFromElement(event.target);
+    if (!game) return;
+    sendGameEvent('game_open', game);
+    const startedAt = Date.now();
+    activeGames.set(game.slug, { ...game, startedAt });
+    setTimeout(() => {
+      if (activeGames.has(game.slug)) sendGameEvent('game_play', game);
+    }, 1200);
+  }, true);
+  const finishGame = slug => {
+    const game = activeGames.get(slug);
+    if (!game) return;
+    sendGameEvent('game_exit', game);
+    activeGames.delete(slug);
+  };
+  window.addEventListener('pagehide', () => { for (const slug of activeGames.keys()) finishGame(slug); });
+  document.addEventListener('keydown', event => {
+    if (event.key !== 'Escape' || !activeGames.size) return;
+    const top = [...activeGames.keys()].pop();
+    setTimeout(() => {
+      const stillOpen = [...document.querySelectorAll('iframe')].some(frame => {
+        try { return frame.contentWindow && frame.getClientRects().length; } catch (_) { return false; }
+      });
+      if (!stillOpen) finishGame(top);
+    }, 250);
+  });
+
   let notice;
   const checkMaintenance = async () => {
     try {
