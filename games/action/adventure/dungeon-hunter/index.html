@@ -169,6 +169,10 @@ function dhResetRoom(removeRemote){
  if(removeRemote&&ref&&uid)return PlayoviaMultiplayer.leaveRoom({roomRef:ref,uid,isHost:host}).catch(e=>{console.error('Leave room:',e);dhSay('Leave failed: '+e.message)});
 }
 async function dhLeaveRoom(show=true){await dhResetRoom(true);if(show){menu();dhSay('You left the room.')}}
+function dhHideInviteUI(){
+ const hide=doc=>{try{doc?.getElementById('playoviaInviteFriends')?.remove();doc?.getElementById('playoviaInviteModal')?.remove()}catch(_){}};
+ hide(document);try{if(window.parent&&window.parent!==window)hide(window.parent.document)}catch(_){}
+}
 function dhPublishPlayer(){
  if(!dhPlayersRef||!dhUser||!P||state!=='play')return;const now=Date.now();if(now-dhLastPublish<180) return;dhLastPublish=now;
  const p={uid:dhUser.uid,name:String(dhProfile.username||dhUser.displayName||'Hunter').slice(0,32),lastSeen:now,cls:S.cls,x:P.x,y:P.y,hp:P.hp,mhp:P.mh,world:LV?.w||0,updatedAt:now};
@@ -185,7 +189,7 @@ function dhApplyRemoteMembers(members){
 function dhDrawRemotePlayers(add){
  const now=performance.now();
  for(const [uid,p] of Object.entries(dhRemotePlayers||{})){
-  if(uid===dhUser?.uid||Date.now()-(p.lastSeen||p.updatedAt||0)>15000)continue;
+  if(uid===dhUser?.uid)continue;
   const cls=CL[p.cls]||CL.w,wp=VZ[p.cls]||VZ.w,k=cp((now-(p.receivedAt||now))/220,0,1),x=(p.fromX??p.toX??0)+((p.toX??p.x??0)-(p.fromX??p.toX??0))*k,y=(p.fromY??p.toY??450)+((p.toY??p.y??450)-(p.fromY??p.toY??450))*k;
   add(y,()=>{shd(x,y);hum(x,y-28,1,{c:cls.col,cl:cls.cl,cp:sh(cls.cl,.85),pl:1,s:1,hd:wp[0],wt:wp[1],wc:'#ccd',ey:'#8cf',a:T*2,mv:false,ang:.6});tt(String(p.name||'Hunter').slice(0,16),x,y-88,'#8cf',12,'center')});
  }
@@ -485,7 +489,7 @@ const gr=g.createRadialGradient(740,330,20,740,330,300);gr.addColorStop(0,'rgba(
 const c=CL[S.cls];shd(740,400,3);hum(740,400,1,{c:c.col,cl:c.cl,cp:sh(c.cl,.85),pl:1,s:2.4,hd:VZ[S.cls][0],wt:VZ[S.cls][1],wc:S.eq.wp?RC[S.eq.wp.r]:'#ccd',gl:S.eq.wp&&S.eq.wp.r>=2?RC[S.eq.wp.r]:0,ey:'#9cf',ang:.6+Math.sin(T*2)*.08});
 g.fillStyle='rgba(0,0,0,.3)';g.fillRect(0,0,W,H)}
 /* ---------- loop ---------- */
-let last=0,fa=.016;function loop(t){requestAnimationFrame(loop);const dt=Math.min(.05,(t-last)/1000||0);last=t;T+=dt;fa=fa*.96+dt*.04;if(!PERF&&state=='play'&&T>8&&fa>.026){PERF=1;rs()}if(state=='play'&&innerWidth>innerHeight){if(HS>0)HS-=dt;else update(dt)}if(state=='play'&&dhRoomRef)dhPublishPlayer();if(state=='play'&&touch)cdUI();
+let last=0,fa=.016;function loop(t){requestAnimationFrame(loop);const dt=Math.min(.05,(t-last)/1000||0);last=t;T+=dt;fa=fa*.96+dt*.04;if(!PERF&&state=='play'&&T>8&&fa>.026){PERF=1;rs()}if(state=='play'&&innerWidth>innerHeight){if(HS>0)HS-=dt;else update(dt)}if(state=='play'&&dhRoomRef){dhPublishPlayer();dhHideInviteUI()}if(state=='play'&&touch)cdUI();
 g.setTransform(1,0,0,1,0,0);g.fillStyle='#000';g.fillRect(0,0,cv.width,cv.height);g.setTransform(sc,0,0,sc,ox,oy);g.save();g.beginPath();g.rect(0,0,W,H);g.clip();
 LV&&(state=='play'||state=='pause'||state=='win'||(state=='edit'&&ret=='pause'))?scene():mscene();g.restore();Q={}}
 /* ---------- menus ---------- */
