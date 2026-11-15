@@ -242,7 +242,8 @@ const server = http.createServer(async (req, res) => {
       const slug = String(input.slug || '').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 80);
       if (!allowed.has(type) || !/^[a-zA-Z0-9_-]{8,100}$/.test(sessionId) || !slug) return send(res, 400, { error: 'Invalid game event.' }, origin);
       const now = Date.now();
-      const sessionKey = sessionId + ':' + slug;\n      const previous = gameSessions.get(sessionKey);
+      const sessionKey = sessionId + ':' + slug;
+      const previous = gameSessions.get(sessionKey);
       const event = {
         id: 'ge-' + now.toString(36) + '-' + crypto.randomBytes(4).toString('hex'),
         at: new Date(now).toISOString(), type, sessionId, slug,
@@ -252,9 +253,13 @@ const server = http.createServer(async (req, res) => {
         device: String(input.device || 'Unknown device').replace(/[<>]/g, '').slice(0, 100),
         durationSeconds: type === 'game_exit' && previous ? Math.max(0, Math.floor((now - previous.startedAt) / 1000)) : 0
       };
+      if (type === 'game_heartbeat') {
+        if (previous) previous.lastSeen = now;
+        return send(res, 202, { ok: true }, origin);
+      }
       if (type === 'game_open' || type === 'game_play') {
-        if (!previous || type === 'game_play') gameSessions.set(sessionId, { ...event, startedAt: previous?.startedAt || now });
-      } else if (type === 'game_exit') gameSessions.delete(sessionId);
+        if (!previous || type === 'game_play') gameSessions.set(sessionKey, { ...event, startedAt: previous?.startedAt || now, lastSeen: now });
+      } else if (type === 'game_exit') gameSessions.delete(sessionKey);
       gameEvents.push(event);
       if (gameEvents.length > 500) gameEvents.splice(0, gameEvents.length - 500);
       return send(res, 202, { ok: true, eventId: event.id }, origin);
