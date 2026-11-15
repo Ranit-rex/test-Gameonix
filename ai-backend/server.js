@@ -212,6 +212,39 @@ async function callProvider(provider, system, history, message, slot = 1, modelO
   return requestOpenAICompatible(provider, key, system, history, message, slot, modelOverride, testMode ? 8 : 700);
 }
 
+
+const remoteControllerSessions = new Map();
+function cleanRemoteControllerSessions() {
+  const now = Date.now();
+  for (const [id, session] of remoteControllerSessions) if (session.expiresAt <= now || session.status !== 'active') remoteControllerSessions.delete(id);
+}
+async function readJsonBody(req, maxBytes = 4096) {
+  let raw = '';
+  for await (const chunk of req) {
+    raw += chunk;
+    if (Buffer.byteLength(raw) > maxBytes) throw new Error('Request too large.');
+  }
+  return JSON.parse(raw || '{}');
+}
+async function verifyFirebaseUserToken(idToken) {
+  const apiKey = process.env.FIREBASE_WEB_API_KEY;
+  if (!apiKey || !idToken) return null;
+  try {
+    const response = await fetch('https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=' + encodeURIComponent(apiKey), {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ idToken }), signal: AbortSignal.timeout(10000)
+    });
+    const data = await response.json().catch(() => ({}));
+    const user = data?.users?.[0];
+    return response.ok && user?.localId ? { uid: user.localId, email: String(user.email || '') } : null;
+  } catch (_) { return null; }
+}
+function bearerToken(req) { return String(req.headers.authorization || '').replace(/^Bearer\\s+/i, '').trim(); }
+function safeTokenEqual(a, b) {
+  const x = Buffer.from(String(a || '')), y = Buffer.from(String(b || ''));
+  return x.length > 0 && x.length === y.length && crypto.timingSafeEqual(x, y);
+}
+
 const server = http.createServer(async (req, res) => {
   const origin = req.headers.origin || '';
   if (origin && !ALLOWED_ORIGINS.has(origin)) return send(res, 403, { error: 'Origin not allowed.' }, 'https://ranit-rex.github.io');
@@ -367,6 +400,86 @@ const server = http.createServer(async (req, res) => {
       maintenanceMode
     }, origin);
   }
+
+  // Remote game controller API. Pairing and input are handled by this Render service,
+  // so browser clients never need direct Firestore permissions for controller traffic.
+  if (url.pathname.startsWith('/api/controller/')) {
+    cleanRemoteControllerSessions();
+    const ip = String(req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
+    if (rateLimited('remote-controller:' + ip)) return send(res, 429, { error: 'Too many controller requests. Please retry shortly.' }, origin);
+    const route = url.pathname;
+    if (req.method === 'POST' && route === '/api/controller/session') {
+      const user = await verifyFirebaseUserToken(bearerToken(req));
+      if (!user) return send(res, 401, { error: 'Please sign in again on the gaming phone.' }, origin);
+      try {
+        const input = await readJsonBody(req, 2048);
+        const gameTitle = String(input.gameTitle || 'Game').replace(/[<>]/g, '').slice(0, 100);
+        let code = '';
+        for (let attempt = 0; attempt < 12; attempt++) {
+          const candidate = String(crypto.randomInt(100000, 1000000));
+          if (![...remoteControllerSessions.values()].some(s => s.code === candidate && s.status === 'active')) { code = candidate; break; }
+        }
+        if (!code) return send(res, 503, { error: 'Could not create a pairing code. Please retry.' }, origin);
+        const sessionId = crypto.randomBytes(18).toString('hex');
+        const session = {
+          id: sessionId, uid: user.uid, code, gameTitle,
+          hostToken: crypto.randomBytes(32).toString('hex'),
+          controllerToken: '', controllerConnected: false,
+          commands: [], status: 'active', createdAt: Date.now(),
+          expiresAt: Date.now() + 60 * 60 * 1000
+        };
+        remoteControllerSessions.set(sessionId, session);
+        return send(res, 201, { ok: true, sessionId, code, hostToken: session.hostToken, expiresAt: session.expiresAt }, origin);
+      } catch (error) { return send(res, 400, { error: error.message || 'Invalid request.' }, origin); }
+    }
+    if (req.method === 'POST' && route === '/api/controller/connect') {
+      const user = await verifyFirebaseUserToken(bearerToken(req));
+      if (!user) return send(res, 401, { error: 'Please sign in again on the controller phone.' }, origin);
+      try {
+        const input = await readJsonBody(req, 2048);
+        const code = String(input.code || '').trim();
+        if (!/^\\d{6}$/.test(code)) return send(res, 400, { error: 'Enter the 6-digit pairing code.' }, origin);
+        const session = [...remoteControllerSessions.values()].find(s => s.code === code && s.uid === user.uid && s.status === 'active' && s.expiresAt > Date.now());
+        if (!session) return send(res, 404, { error: 'No active session found. Check the code and use the same Playovia account on both phones.' }, origin);
+        session.controllerToken = crypto.randomBytes(32).toString('hex');
+        session.controllerConnected = true;
+        session.connectedAt = Date.now();
+        return send(res, 200, { ok: true, sessionId: session.id, controllerToken: session.controllerToken, gameTitle: session.gameTitle }, origin);
+      } catch (error) { return send(res, 400, { error: error.message || 'Invalid request.' }, origin); }
+    }
+    const sessionId = String(url.searchParams.get('sessionId') || '');
+    const session = remoteControllerSessions.get(sessionId);
+    if (!session || session.status !== 'active' || session.expiresAt <= Date.now()) return send(res, 404, { error: 'This controller session has ended. Create a new code.' }, origin);
+    if (req.method === 'GET' && route === '/api/controller/commands') {
+      if (!safeTokenEqual(bearerToken(req), session.hostToken)) return send(res, 401, { error: 'Invalid gaming-phone session.' }, origin);
+      const commands = session.commands.splice(0, 100);
+      return send(res, 200, { ok: true, controllerConnected: session.controllerConnected, commands }, origin);
+    }
+    if (req.method === 'POST' && route === '/api/controller/input') {
+      if (!safeTokenEqual(bearerToken(req), session.controllerToken) || !session.controllerConnected) return send(res, 401, { error: 'Controller is not connected.' }, origin);
+      try {
+        const input = await readJsonBody(req, 1024);
+        const button = String(input.button || '');
+        const action = String(input.action || '');
+        if (!['up','down','left','right','a','b','x','y','start','select'].includes(button) || !['down','up'].includes(action)) return send(res, 400, { error: 'Invalid controller input.' }, origin);
+        if (session.commands.length >= 100) session.commands.splice(0, session.commands.length - 80);
+        session.commands.push({ button, action, at: Date.now() });
+        return send(res, 202, { ok: true }, origin);
+      } catch (error) { return send(res, 400, { error: error.message || 'Invalid request.' }, origin); }
+    }
+    if (req.method === 'GET' && route === '/api/controller/status') {
+      if (!safeTokenEqual(bearerToken(req), session.controllerToken)) return send(res, 401, { error: 'Invalid controller session.' }, origin);
+      return send(res, 200, { ok: true, active: true, gameTitle: session.gameTitle }, origin);
+    }
+    if (req.method === 'DELETE' && route === '/api/controller/session') {
+      if (!safeTokenEqual(bearerToken(req), session.hostToken)) return send(res, 401, { error: 'Invalid gaming-phone session.' }, origin);
+      session.status = 'closed';
+      remoteControllerSessions.delete(session.id);
+      return send(res, 200, { ok: true }, origin);
+    }
+    return send(res, 404, { error: 'Controller endpoint not found.' }, origin);
+  }
+
   if (req.method === 'GET' && url.pathname === '/health') {
     return send(res, 200, { ok: true, service: 'Playovia AI', providers: ['gemini', 'groq', 'openrouter'] }, origin);
   }
