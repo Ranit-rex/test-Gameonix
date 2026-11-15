@@ -1543,7 +1543,7 @@ async function startRemoteController(){
     });
    }catch(e){console.warn('Remote controller poll:',e);$('remoteControllerStatus').textContent='Controller connection issue: '+(e.message||'retrying…')}
    finally{remoteControllerPolling=false}
-  },100);
+  },60);
  }catch(e){console.error('Remote controller setup:',e);$('remoteControllerStatus').textContent='Could not create controller: '+(e.message||'Please retry')}
 }
 async function stopRemoteController(){
