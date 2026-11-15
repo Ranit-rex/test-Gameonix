@@ -25,36 +25,44 @@
     const mobile = navigator.userAgentData?.mobile || /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent);
     return (mobile ? 'Mobile · ' : 'Desktop · ') + String(platform).slice(0, 70);
   };
-  const identity = () => {
+  const identity = async () => {
     try {
       const appIdentity = window.playoviaGetIdentity?.() || {};
-      const current = window.PlayHubFirebase?.auth?.currentUser || window.firebase?.auth?.()?.currentUser || null;
-      const userId = String(appIdentity.userId || current?.uid || '').trim();
-      const loggedIn = !!userId;
+      const auth = window.PlayHubFirebase?.auth || window.firebase?.auth?.();
+      const current = auth?.currentUser || null;
+      const loggedIn = !!current;
+      let playerId = String(appIdentity.playerId || '').trim().toUpperCase();
+      const firestore = window.PlayHubFirebase?.firestore;
+      if (loggedIn && !/^[A-Z]{5}[0-9]{4}$/.test(playerId) && firestore) {
+        try {
+          const profile = await firestore.collection('users').doc(current.uid).get();
+          playerId = String(profile.data()?.playerId || '').trim().toUpperCase();
+        } catch (error) { console.warn('[Playovia game analytics] Could not read Player ID:', error); }
+      }
+      if (!/^[A-Z]{5}[0-9]{4}$/.test(playerId)) playerId = '';
       return {
         user: String(appIdentity.username || current?.displayName || current?.email?.split('@')[0] || (loggedIn ? 'Playovia member' : 'Guest')).slice(0, 80),
-        userId: userId.slice(0, 100),
+        playerId,
         loggedIn
       };
     } catch (_) {}
-    return { user: 'Guest', userId: '', loggedIn: false };
+    return { user: 'Guest', playerId: '', loggedIn: false };
   };
   const sendGameEvent = async (type, game) => {
     if (!game || !game.slug) return;
-    // Wait for Firebase's first auth-state callback so restored Google sessions
-    // have a real UID before the first game_open/game_play event is sent.
+    // Wait for Firebase auth and Firestore profile readiness so the permanent 9-character Playovia Player ID is available.
     try {
       const ready = window.PlayHubFirebase?.ready;
-      if (ready && typeof ready.then === 'function') {
-        await Promise.race([ready, new Promise(resolve => setTimeout(resolve, 5000))]);
-      }
+      if (ready && typeof ready.then === 'function') await Promise.race([ready, new Promise(resolve => setTimeout(resolve, 5000))]);
+      const firestoreReady = window.PlayHubFirebase?.firestoreReady;
+      if (firestoreReady && typeof firestoreReady.then === 'function') await Promise.race([firestoreReady, new Promise(resolve => setTimeout(resolve, 5000))]);
     } catch (_) {}
-    const who = identity();
-    if (who.loggedIn && !who.userId) console.warn('[Playovia game analytics] Authenticated user has no Firebase UID; event will be marked guest.');
+    const who = await identity();
+    if (who.loggedIn && !who.playerId) console.warn('[Playovia game analytics] Signed-in user has no valid 9-character Playovia Player ID yet.');
     fetch(API + '/api/analytics/game-event', {
       method: 'POST', mode: 'cors', credentials: 'omit', keepalive: true,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type, sessionId, slug: game.slug, title: game.title || game.slug, user: who.user, userId: who.userId, loggedIn: who.loggedIn, device: deviceName() })
+      body: JSON.stringify({ type, sessionId, slug: game.slug, title: game.title || game.slug, user: who.user, playerId: who.playerId, loggedIn: who.loggedIn, device: deviceName() })
     }).then(response => { if (!response.ok) console.warn('[Playovia game analytics] Event rejected:', response.status); }).catch(error => console.warn('[Playovia game analytics] Network error:', error));
   };
   const slugFromElement = el => {
