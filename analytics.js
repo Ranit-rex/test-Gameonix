@@ -34,10 +34,16 @@
       let playerId = String(appIdentity.playerId || '').trim().toUpperCase();
       const firestore = window.PlayHubFirebase?.firestore;
       if (loggedIn && !/^[A-Z]{5}[0-9]{4}$/.test(playerId) && firestore) {
-        try {
-          const profile = await firestore.collection('users').doc(current.uid).get();
-          playerId = String(profile.data()?.playerId || '').trim().toUpperCase();
-        } catch (error) { console.warn('[Playovia game analytics] Could not read Player ID:', error); }
+        for (let attempt = 0; attempt < 8 && !/^[A-Z]{5}[0-9]{4}$/.test(playerId); attempt++) {
+          try {
+            const profile = await firestore.collection('users').doc(current.uid).get();
+            playerId = String(profile.data()?.playerId || '').trim().toUpperCase();
+          } catch (error) {
+            console.warn('[Playovia game analytics] Could not read Player ID:', error);
+            break;
+          }
+          if (!/^[A-Z]{5}[0-9]{4}$/.test(playerId)) await new Promise(resolve => setTimeout(resolve, 400));
+        }
       }
       if (!/^[A-Z]{5}[0-9]{4}$/.test(playerId)) playerId = '';
       return {
