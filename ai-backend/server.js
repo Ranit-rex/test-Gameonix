@@ -455,7 +455,7 @@ const server = http.createServer(async (req, res) => {
     if (!session || session.status !== 'active' || session.expiresAt <= Date.now()) return send(res, 404, { error: 'This controller session has ended. Create a new code.' }, origin);
     if (req.method === 'GET' && route === '/api/controller/host-status') {
       if (!safeTokenEqual(bearerToken(req), session.hostToken)) return send(res, 401, { error: 'Invalid gaming-phone session.' }, origin);
-      return send(res, 200, { ok: true, active: true, controllerConnected: !!session.controllerConnected, gameReady: !!session.gameReady, gameTitle: session.gameTitle }, origin);
+      return send(res, 200, { ok: true, active: true, controllerConnected: !!session.controllerConnected, gameReady: !!session.gameReady, gameTitle: session.gameTitle, gameSlug: session.gameSlug }, origin);
     }
     if (req.method === 'POST' && route === '/api/controller/disconnect') {
       if (!safeTokenEqual(bearerToken(req), session.controllerToken) || !session.controllerConnected) return send(res, 401, { error: 'Controller is not connected.' }, origin);
