@@ -252,6 +252,8 @@ const server = http.createServer(async (req, res) => {
         playerId: /^[A-Z]{5}[0-9]{4}$/.test(String(input.playerId || '').trim().toUpperCase()) ? String(input.playerId).trim().toUpperCase() : '',
         loggedIn: !!input.loggedIn,
         device: String(input.device || 'Unknown device').replace(/[<>]/g, '').slice(0, 100),
+        deviceModel: String(input.deviceModel || '').replace(/[<>]/g, '').slice(0, 80),
+        deviceId: /^DEV-[A-F0-9]{12}$/.test(String(input.deviceId || '').toUpperCase()) ? String(input.deviceId).toUpperCase() : '',
         durationSeconds: type === 'game_exit' && previous ? Math.max(0, Math.floor((now - previous.startedAt) / 1000)) : 0
       };
       if (type === 'game_heartbeat') {
@@ -262,6 +264,8 @@ const server = http.createServer(async (req, res) => {
           if (event.loggedIn) previous.loggedIn = true;
           if (event.user && (!previous.user || previous.user === 'Guest')) previous.user = event.user;
           previous.device = event.device || previous.device;
+          if (event.deviceModel) previous.deviceModel = event.deviceModel;
+          if (event.deviceId) previous.deviceId = event.deviceId;
         }
         return send(res, 202, { ok: true }, origin);
       }
