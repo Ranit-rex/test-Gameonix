@@ -19,7 +19,7 @@
   'city-rush':make('City Rush',[
    {label:'Jump',key:' ',code:'Space'},
    {label:'Slide',key:'ArrowDown',code:'ArrowDown'},
-   {label:'Pause',key:'Escape',code:'Escape'}
+   {label:'Pause',key:'Escape',code:'Escape',slot:'start'}
   ]),
   'obby-rush':make('Obby Rush',[
    {label:'Jump',key:' ',code:'Space'},
