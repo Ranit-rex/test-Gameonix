@@ -56,6 +56,7 @@ button:active,.pressed{transform:scale(.94);filter:brightness(1.3);border-color:
 <button type="button" id="disconnectBtn" class="disconnect-btn hidden">Disconnect controller</button><div id="status" class="status">Sign in to connect</div><div class="foot">Keep this screen open · Both phones must stay online</div>
 </main>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="./controller-profiles.js"></script>
 <script>
 'use strict';
 const CONFIG={apiKey:'AIzaSyB_pZ9WfVSx2XHuDeSZ7VrwEr-Pz_m_2QM',authDomain:'play-hub-688e8.firebaseapp.com',projectId:'play-hub-688e8',storageBucket:'play-hub-688e8.firebasestorage.app',messagingSenderId:'195222206861',appId:'1:195222206861:web:828a8cf16991f982a925c4'},API='https://test-gameonix.onrender.com', $=id=>document.getElementById(id);
@@ -73,25 +74,23 @@ let reconnectTimer=null,reconnectAttempt=0;
 function scheduleControllerReconnect(){if(!connected||reconnectTimer)return;const delay=Math.min(6000,500*Math.pow(1.7,reconnectAttempt++));reconnectTimer=setTimeout(()=>{reconnectTimer=null;openControllerSocket()},delay)}
 function openControllerSocket(){if(!connected||!sessionId||!controllerToken)return;if(controllerSocket&&controllerSocket.readyState<2)return;try{const wsUrl=API.replace(/^http/,'ws')+'/api/controller/socket?sessionId='+encodeURIComponent(sessionId)+'&role=controller&token='+encodeURIComponent(controllerToken);const ws=new WebSocket(wsUrl);controllerSocket=ws;ws.onopen=()=>{if(controllerSocket!==ws){ws.close();return}reconnectAttempt=0;clearInterval(socketHeartbeat);socketHeartbeat=setInterval(()=>{if(ws.readyState===1)try{ws.send(JSON.stringify({type:'ping'}))}catch(_){}},12000);$('status').textContent=gameReady?'🎮 Controls connected':'Connected · Waiting for game'};ws.onclose=()=>{if(controllerSocket===ws)controllerSocket=null;clearInterval(socketHeartbeat);socketHeartbeat=null;if(connected)scheduleControllerReconnect()};ws.onerror=()=>{try{ws.close()}catch(_){}}}catch(_){scheduleControllerReconnect()}}
 function disconnect(msg){releaseAllButtons();connected=false;clearTimeout(reconnectTimer);reconnectTimer=null;reconnectAttempt=0;clearInterval(statusTimer);statusTimer=null;clearInterval(socketHeartbeat);socketHeartbeat=null;try{controllerSocket&&controllerSocket.close()}catch(_){}controllerSocket=null;$('controllerPanel').classList.add('hidden');$('waitPanel').classList.add('hidden');$('disconnectBtn').classList.add('hidden');$('connectPanel').classList.remove('hidden');$('connectBtn').disabled=false;$('status').textContent=msg;sessionId='';controllerToken='';localStorage.removeItem('playovia_remote_controller_v1')}
-const ACTIONS={
- 'dungeon-hunter':{a:'Attack',b:'Heavy',x:'Special',y:'Jump',l1:'Dash',r1:'Block',l2:'Parry',r2:'Mana',start:'Pause',select:'Inventory'},
- 'city-rush':{a:'Jump',b:'Slide',x:'Left',y:'Right',l1:'Slide',r1:'Jump',start:'Pause'},
- 'obby-rush':{a:'Jump',b:'Slide',l1:'Slide',r1:'Jump'},
- 'ashgrave':{a:'Attack',b:'Dash',l1:'Dash',r1:'Attack'},
- 'last-lantern':{a:'Dash',start:'Pause'},
- 'antarctic-the-last-signal':{a:'Flare',b:'Interact',l1:'Run'},
- 'bomb-tag':{}
-};
 function setControllerActionLabels(slug){
- const fallback={a:'Space',b:'Shift',x:'E',y:'Q',l1:'Shift',r1:'E',l2:'Ctrl',r2:'Alt',start:'Esc',select:'Tab'};
- const map=ACTIONS[slug]||{};
+ const profile=window.PLAYOVIA_CONTROLLER_PROFILES?.[slug];
+ const actions=profile?.actions||[];
+ const bySlot=new Map(actions.map(item=>[item.slot,item]));
  document.querySelectorAll('[data-button]').forEach(btn=>{
-  const label=map[btn.dataset.button]||fallback[btn.dataset.button]||'';
-  const small=btn.querySelector('.action-label');if(small)small.textContent=label;
+  const item=bySlot.get(btn.dataset.button);
+  btn.classList.toggle('hidden',!item);
+  btn.disabled=!item;
+  const small=btn.querySelector('.action-label');if(small)small.textContent=item?item.label:'';
   btn.classList.remove('is-unsupported');
-  btn.title=btn.dataset.button.toUpperCase()+' · '+label;
-  btn.setAttribute('aria-label',btn.dataset.button.toUpperCase()+' '+label);
+  btn.title=item?btn.dataset.button.toUpperCase()+' · '+item.label:'';
+  btn.setAttribute('aria-label',item?btn.dataset.button.toUpperCase()+' '+item.label:'');
  });
+ document.querySelectorAll('.shoulders').forEach(group=>group.classList.toggle('hidden',[...group.querySelectorAll('[data-button]')].every(btn=>btn.classList.contains('hidden'))));
+ const faces=document.querySelector('.faces');if(faces)faces.classList.toggle('hidden',[...faces.querySelectorAll('[data-button]')].every(btn=>btn.classList.contains('hidden')));
+ const center=document.querySelector('.center-buttons');if(center)center.classList.toggle('hidden',[...center.querySelectorAll('[data-button]')].every(btn=>btn.classList.contains('hidden')));
+ const hint=document.querySelector('.center .hint');if(hint)hint.textContent=profile?.name?profile.name.toUpperCase()+' · GAME CONTROLS':'GAME CONTROLS';
 }
 const heldButtons=new Set();
 function transmitInput(key,action){
