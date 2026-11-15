@@ -236,13 +236,13 @@ const server = http.createServer(async (req, res) => {
       let raw = '';
       for await (const chunk of req) { raw += chunk; if (Buffer.byteLength(raw) > 4096) return send(res, 413, { error: 'Event too large.' }, origin); }
       const input = JSON.parse(raw || '{}');
-      const allowed = new Set(['game_open', 'game_play', 'game_exit']);
+      const allowed = new Set(['game_open', 'game_play', 'game_exit', 'game_heartbeat']);
       const type = String(input.type || '');
       const sessionId = String(input.sessionId || '').slice(0, 100);
       const slug = String(input.slug || '').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 80);
       if (!allowed.has(type) || !/^[a-zA-Z0-9_-]{8,100}$/.test(sessionId) || !slug) return send(res, 400, { error: 'Invalid game event.' }, origin);
       const now = Date.now();
-      const previous = gameSessions.get(sessionId);
+      const sessionKey = sessionId + ':' + slug;\n      const previous = gameSessions.get(sessionKey);
       const event = {
         id: 'ge-' + now.toString(36) + '-' + crypto.randomBytes(4).toString('hex'),
         at: new Date(now).toISOString(), type, sessionId, slug,
@@ -269,7 +269,7 @@ const server = http.createServer(async (req, res) => {
     const after = String(url.searchParams.get('after') || '');
     const fresh = after ? gameEvents.filter(event => event.id > after).slice(-100) : gameEvents.slice(-30);
     const now = Date.now();
-    const active = [...gameSessions.values()].map(session => ({
+    const active = [...gameSessions.values()].filter(session => now - Number(session.lastSeen || session.startedAt) < 75000).map(session => ({
       ...session, elapsedSeconds: Math.max(0, Math.floor((now - session.startedAt) / 1000))
     }));
     return send(res, 200, { events: fresh, active, livePlayers: active.length, generatedAt: new Date(now).toISOString() }, origin);
