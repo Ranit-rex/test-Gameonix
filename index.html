@@ -1493,7 +1493,8 @@ async function startRemoteController(){
   },250);
  }catch(e){console.error('Remote controller setup:',e);$('remoteControllerStatus').textContent='Could not create controller: '+(e.message||'Please retry')}
 }
-async function stopRemoteController(){\n releaseAllRemoteGameInputs();try{remoteControllerSocket&&remoteControllerSocket.close()}catch(_){}remoteControllerSocket=null;
+async function stopRemoteController(){
+ releaseAllRemoteGameInputs();try{remoteControllerSocket&&remoteControllerSocket.close()}catch(_){}remoteControllerSocket=null;
  if(remoteControllerPollTimer){clearInterval(remoteControllerPollTimer);remoteControllerPollTimer=null}
  const session=remoteControllerSession;remoteControllerSession=null;remoteControllerGameReady=false;
  if(session){try{await fetch(PLAYOVIA_AI_ENDPOINT+'/api/controller/session?sessionId='+encodeURIComponent(session.sessionId),{method:'DELETE',headers:{'Authorization':'Bearer '+session.hostToken}})}catch(e){console.warn('Controller close:',e)}}
