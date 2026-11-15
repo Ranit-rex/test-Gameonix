@@ -31,10 +31,10 @@
       const auth = window.PlayHubFirebase?.auth || window.firebase?.auth?.();
       const current = auth?.currentUser || null;
       const loggedIn = !!current;
-      let playerId = String(appIdentity.playerId || '').trim().toUpperCase();
+      let playerId = String(appIdentity.playerId || window.PlayHubPlayerId || '').trim().toUpperCase();
       const firestore = window.PlayHubFirebase?.firestore;
       if (loggedIn && !/^[A-Z]{5}[0-9]{4}$/.test(playerId) && firestore) {
-        for (let attempt = 0; attempt < 8 && !/^[A-Z]{5}[0-9]{4}$/.test(playerId); attempt++) {
+        for (let attempt = 0; attempt < 30 && !/^[A-Z]{5}[0-9]{4}$/.test(playerId); attempt++) {
           try {
             const profile = await firestore.collection('users').doc(current.uid).get();
             playerId = String(profile.data()?.playerId || '').trim().toUpperCase();
@@ -42,7 +42,7 @@
             console.warn('[Playovia game analytics] Could not read Player ID:', error);
             break;
           }
-          if (!/^[A-Z]{5}[0-9]{4}$/.test(playerId)) await new Promise(resolve => setTimeout(resolve, 400));
+          if (!/^[A-Z]{5}[0-9]{4}$/.test(playerId)) { playerId = String(window.PlayHubPlayerId || '').trim().toUpperCase(); if (!/^[A-Z]{5}[0-9]{4}$/.test(playerId)) await new Promise(resolve => setTimeout(resolve, 500)); }
         }
       }
       if (!/^[A-Z]{5}[0-9]{4}$/.test(playerId)) playerId = '';
