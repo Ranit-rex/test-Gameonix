@@ -774,4 +774,40 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-server.listen(PORT, '0.0.0.0', () => console.log('Playovia AI backend listening on port ' + PORT));
+
+function wsFrame(data, opcode = 1) {
+ const payload=Buffer.from(data);let header;
+ if(payload.length<126)header=Buffer.from([0x80|opcode,payload.length]);
+ else if(payload.length<65536){header=Buffer.alloc(4);header[0]=0x80|opcode;header[1]=126;header.writeUInt16BE(payload.length,2)}
+ else{header=Buffer.alloc(10);header[0]=0x80|opcode;header[1]=127;header.writeBigUInt64BE(BigInt(payload.length),2)}
+ return Buffer.concat([header,payload]);
+}
+function attachControllerSocket(socket,session,role){
+ let buffer=Buffer.alloc(0),closed=false;
+ const close=()=>{if(closed)return;closed=true;if(role==='host'&&session.hostSocket===socket)session.hostSocket=null;if(role==='controller'&&session.controllerSocket===socket)session.controllerSocket=null};
+ socket.on('data',chunk=>{
+  if(closed)return;buffer=Buffer.concat([buffer,chunk]);
+  while(buffer.length>=2){const first=buffer[0],second=buffer[1],opcode=first&15,masked=!!(second&128);let length=second&127,offset=2;
+   if(length===126){if(buffer.length<4)return;length=buffer.readUInt16BE(2);offset=4}
+   else if(length===127){if(buffer.length<10)return;const n=buffer.readBigUInt64BE(2);if(n>4096n){socket.destroy();return}length=Number(n);offset=10}
+   if(masked)offset+=4;if(buffer.length<offset+length)return;let payload=buffer.subarray(offset,offset+length);
+   if(masked){const mask=buffer.subarray(offset-4,offset);payload=Buffer.from(payload);for(let i=0;i<payload.length;i++)payload[i]^=mask[i%4]}
+   buffer=buffer.subarray(offset+length);if(opcode===8){socket.end(wsFrame('',8));close();return}if(opcode===9){try{socket.write(wsFrame(payload,10))}catch(_){};continue}if(opcode!==1)continue;
+   let message;try{message=JSON.parse(payload.toString('utf8'))}catch(_){continue}
+   if(message.type==='ping'){try{socket.write(wsFrame(JSON.stringify({type:'pong',at:Date.now()})))}catch(_){};continue}
+   if(role==='controller'&&message.type==='input'){const button=String(message.button||''),action=String(message.action||'');if(!['up','down','left','right','a','b','x','y','start','select','l1','r1','l2','r2'].includes(button)||!['down','up'].includes(action))continue;if(session.hostSocket&&session.hostSocket.writable){try{session.hostSocket.write(wsFrame(JSON.stringify({type:'input',button,action,at:Date.now()})))}catch(_){}}}
+  }
+ });
+ socket.on('close',close);socket.on('error',close);
+}
+server.on('upgrade',(req,socket)=>{
+ try{const requestUrl=new URL(req.url,'http://localhost');if(requestUrl.pathname!=='/api/controller/socket'){socket.destroy();return}
+  const origin=req.headers.origin||'';if(origin&&!ALLOWED_ORIGINS.has(origin)){socket.destroy();return}
+  const session=remoteControllerSessions.get(String(requestUrl.searchParams.get('sessionId')||''));const role=String(requestUrl.searchParams.get('role')||''),token=String(requestUrl.searchParams.get('token')||'');
+  if(!session||session.status!=='active'||session.expiresAt<=Date.now()||!['host','controller'].includes(role)||!(role==='host'?safeTokenEqual(token,session.hostToken):(session.controllerConnected&&safeTokenEqual(token,session.controllerToken)))){socket.write('HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n');socket.destroy();return}
+  const key=req.headers['sec-websocket-key'];if(!key){socket.destroy();return}const accept=crypto.createHash('sha1').update(key+'258EAFA5-E914-47DA-95CA-C5AB0DC85B11').digest('base64');
+  socket.write('HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: '+accept+'\r\n\r\n');
+  if(role==='host'){if(session.hostSocket)session.hostSocket.destroy();session.hostSocket=socket}else{if(session.controllerSocket)session.controllerSocket.destroy();session.controllerSocket=socket}attachControllerSocket(socket,session,role);
+ }catch(_){socket.destroy()}
+});
+\nserver.listen(PORT, '0.0.0.0', () => console.log('Playovia AI backend listening on port ' + PORT));
