@@ -27,17 +27,14 @@
   };
   const identity = () => {
     try {
-      const appIdentity = window.playoviaGetIdentity?.();
-      if (appIdentity) return {
-        user: String(appIdentity.username || 'Guest').slice(0, 80),
-        userId: String(appIdentity.userId || '').slice(0, 100),
-        loggedIn: !!appIdentity.loggedIn
-      };
+      const appIdentity = window.playoviaGetIdentity?.() || {};
       const current = window.PlayHubFirebase?.auth?.currentUser || window.firebase?.auth?.()?.currentUser || null;
-      if (current) return {
-        user: String(current.displayName || current.email?.split('@')[0] || 'Player').slice(0, 80),
-        userId: String(current.uid || '').slice(0, 100),
-        loggedIn: true
+      const userId = appIdentity.userId || current?.uid || '';
+      const loggedIn = !!(appIdentity.loggedIn || current || userId);
+      return {
+        user: String(appIdentity.username || current?.displayName || current?.email?.split('@')[0] || (loggedIn ? 'Playovia member' : 'Guest')).slice(0, 80),
+        userId: String(userId).slice(0, 100),
+        loggedIn
       };
     } catch (_) {}
     return { user: 'Guest', userId: '', loggedIn: false };
