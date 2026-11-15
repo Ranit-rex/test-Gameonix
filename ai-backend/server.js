@@ -241,7 +241,7 @@ async function verifyFirebaseUserToken(idToken) {
     return response.ok && user?.localId ? { uid: user.localId, email: String(user.email || '') } : null;
   } catch (_) { return null; }
 }
-function bearerToken(req) { return String(req.headers.authorization || '').replace(/^Bearer\\s+/i, '').trim(); }
+function bearerToken(req) { return String(req.headers.authorization || '').replace(/^Bearer\s+/i, '').trim(); }
 function safeTokenEqual(a, b) {
   const x = Buffer.from(String(a || '')), y = Buffer.from(String(b || ''));
   return x.length > 0 && x.length === y.length && crypto.timingSafeEqual(x, y);
