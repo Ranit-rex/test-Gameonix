@@ -31,14 +31,11 @@ button:active,.pressed{transform:scale(.94);filter:brightness(1.3);border-color:
 @media(orientation:portrait){.pad{grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:2px;padding:0}.center{position:absolute;top:27px;left:50%;transform:translateX(-50%);z-index:2;flex-direction:row;gap:5px}.center .hint{display:none}.side{justify-content:space-around}.stick,.faces{width:min(39vw,21vh,145px);height:min(39vw,21vh,145px)}.faces button{width:clamp(36px,10vw,48px);height:clamp(36px,10vw,48px)}.shoulders button{width:42px;height:27px}.pad{padding-top:22px}}
 @media(max-height:370px) and (orientation:landscape){.app{gap:2px;padding-top:3px;padding-bottom:3px}.head{height:18px;flex-basis:18px}.pad{gap:4px}.stick,.faces{width:min(25vw,23vh,112px);height:min(25vw,23vh,112px)}.faces button{width:34px;height:34px}.shoulders button{height:24px}.foot{font-size:7px}}
 .center-buttons{display:flex;align-items:center;justify-content:center;gap:5px;flex-wrap:wrap}.center-buttons button{white-space:nowrap}
-#keyGuideBtn{font-size:8px;padding:8px 9px;background:linear-gradient(145deg,#315b70,#193447);border-color:#477c91}
-.key-guide{position:fixed;z-index:50;left:50%;bottom:max(34px,env(safe-area-inset-bottom));transform:translateX(-50%);width:min(94vw,390px);max-height:72dvh;overflow:auto;padding:12px;border:1px solid #52718f;border-radius:14px;background:#101d30;box-shadow:0 12px 40px #000c;text-align:left;touch-action:pan-y}
-.key-guide-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;font-size:11px;letter-spacing:.7px;color:#8ce7d2}
-.key-guide-head button{width:28px;height:28px;font-size:18px}
-.key-guide-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
-.key-guide-grid>div{display:flex;flex-direction:column;gap:3px;padding:8px;border:1px solid #2d4260;border-radius:8px;background:#182941}
-.key-guide-grid b{font-size:10px;color:#fff}.key-guide-grid span{font-size:9px;line-height:1.35;color:#a9bad0}
-.key-guide p{font-size:9px;line-height:1.4;color:#8498b2;margin:9px 0 0}
+.action-label{display:block;font-size:6px;line-height:7px;font-weight:800;letter-spacing:0;color:#d5e5f7;white-space:nowrap;pointer-events:none}
+[data-button]{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0}
+[data-button].is-unsupported{opacity:.28;filter:grayscale(1);pointer-events:none}
+.faces button{line-height:16px}
+@media(orientation:portrait){.action-label{font-size:6px;line-height:6px}}
 .disconnect-btn{align-self:center;flex:0 0 auto;width:min(220px,80%);padding:8px 12px;border:1px solid #8b4658;border-radius:10px;background:linear-gradient(145deg,#54283a,#321b2a);color:#ffd0d8;font-size:11px;font-weight:900;box-shadow:0 3px 10px #0006}
 .disconnect-btn:active{filter:brightness(1.25)}
 @media(orientation:portrait){.center-buttons{gap:3px}.center-buttons button{padding:7px 8px;font-size:8px}}
@@ -49,51 +46,55 @@ button:active,.pressed{transform:scale(.94);filter:brightness(1.3);border-color:
 <section id="connectPanel" class="connect"><h2>Connect your controller</h2><p style="font-size:12px;color:#9eacc5;line-height:1.6">Sign in with the same Playovia account and enter the 6-digit code from your gaming phone.</p><input id="pairCode" inputmode="numeric" maxlength="6" placeholder="000000"><button id="connectBtn" class="primary">Connect automatically</button><div id="connectStatus" class="status" style="margin-top:12px"></div></section>
 <div id="waitPanel" class="wait hidden"><b>⌛ Waiting for controls to work…</b>Controller connected. Controls will activate automatically<br>when the game is ready on your main phone.</div>
 <section id="controllerPanel" class="pad hidden">
-<div class="side"><div class="shoulders"><button data-button="l1">L1</button><button data-button="l2">L2</button></div>
+<div class="side"><div class="shoulders"><button data-button="l1">L1<small class="action-label"></small></button><button data-button="l2">L2<small class="action-label"></small></button></div>
 <div class="stick" id="analogStick" aria-label="Analog joystick"><div class="stick-label">MOVE</div><div class="stick-knob" id="stickKnob"></div></div></div>
-<div class="center"><div class="center-buttons"><button data-button="select">SELECT</button><button data-button="start">START</button><button type="button" id="keyGuideBtn">KEY GUIDE</button></div><div class="hint" style="text-align:center;color:#7188a5;font-size:9px;letter-spacing:1.3px">PLAYOVIA GAMEPAD</div></div>
-<div class="side"><div class="shoulders"><button data-button="r2">R2</button><button data-button="r1">R1</button></div>
-<div class="faces"><button class="tri" data-button="y">△</button><button class="circle" data-button="b">○</button><button class="cross" data-button="a">×</button><button class="square" data-button="x">□</button></div></div>
+<div class="center"><div class="center-buttons"><button data-button="select">SELECT<small class="action-label"></small></button><button data-button="start">START<small class="action-label"></small></button></div><div class="hint" style="text-align:center;color:#7188a5;font-size:9px;letter-spacing:1.3px">PLAYOVIA GAMEPAD</div></div>
+<div class="side"><div class="shoulders"><button data-button="r2">R2<small class="action-label"></small></button><button data-button="r1">R1<small class="action-label"></small></button></div>
+<div class="faces"><button class="tri" data-button="y">△<small class="action-label"></small></button><button class="circle" data-button="b">○<small class="action-label"></small></button><button class="cross" data-button="a">×<small class="action-label"></small></button><button class="square" data-button="x">□<small class="action-label"></small></button></div></div>
 </section>
-<section id="keyGuide" class="key-guide hidden" role="dialog" aria-modal="true" aria-label="Controller key guide">
-<div class="key-guide-head"><strong>WHAT EACH BUTTON DOES</strong><button type="button" id="keyGuideClose" aria-label="Close key guide">×</button></div>
-<div class="key-guide-grid">
-<div><b>Joystick</b><span>Move character · 8 directions</span></div>
-<div><b>× Cross</b><span>Z key · Primary action</span></div>
-<div><b>○ Circle</b><span>X key · Secondary action</span></div>
-<div><b>△ Triangle</b><span>V key · Action 3</span></div>
-<div><b>□ Square</b><span>C key · Action 4</span></div>
-<div><b>L1 / R1</b><span>Q / E keys</span></div>
-<div><b>L2 / R2</b><span>Ctrl / Alt keys</span></div>
-<div><b>START</b><span>Enter key</span></div>
-<div><b>SELECT</b><span>Shift key</span></div>
-</div><p>Button actions depend on the game. These are the keyboard keys sent by Playovia.</p>
-</section>
+
 <button type="button" id="disconnectBtn" class="disconnect-btn hidden">Disconnect controller</button><div id="status" class="status">Sign in to connect</div><div class="foot">Keep this screen open · Both phones must stay online</div>
 </main>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script>
 'use strict';
 const CONFIG={apiKey:'AIzaSyB_pZ9WfVSx2XHuDeSZ7VrwEr-Pz_m_2QM',authDomain:'play-hub-688e8.firebaseapp.com',projectId:'play-hub-688e8',storageBucket:'play-hub-688e8.firebasestorage.app',messagingSenderId:'195222206861',appId:'1:195222206861:web:828a8cf16991f982a925c4'},API='https://test-gameonix.onrender.com', $=id=>document.getElementById(id);
-let auth,sessionId='',controllerToken='',connected=false,gameReady=false,statusTimer=null,stickDirection='',controllerSocket=null,socketHeartbeat=null;
+let auth,sessionId='',controllerToken='',connected=false,gameReady=false,statusTimer=null,stickDirection='',controllerSocket=null,socketHeartbeat=null,controllerGameSlug='';
 if(!firebase.apps.length)firebase.initializeApp(CONFIG);auth=firebase.auth();const provider=new firebase.auth.GoogleAuthProvider();
 auth.onAuthStateChanged(async user=>{$('connectStatus').textContent=user?'Signed in · Enter your pairing code':'Google sign-in required';if(!user||connected)return;try{const saved=JSON.parse(localStorage.getItem('playovia_remote_controller_v1')||'null');if(saved&&saved.userUid===user.uid&&Date.now()-saved.at<3600000){sessionId=saved.sessionId;controllerToken=saved.controllerToken;connected=true;$('connectPanel').classList.add('hidden');$('waitPanel').classList.remove('hidden');$('disconnectBtn').classList.remove('hidden');$('gameTitle').textContent='Reconnecting…';await checkStatus();if(connected){openControllerSocket();statusTimer=setInterval(checkStatus,5000)}}}catch(_){}});
 $('pairCode').value=new URLSearchParams(location.search).get('code')||'';
 async function connect(){let user=auth.currentUser;if(!user){try{user=(await auth.signInWithPopup(provider)).user}catch(e){$('connectStatus').textContent='Sign-in failed: '+e.message;return}}
 const code=$('pairCode').value.trim();if(!/^\d{6}$/.test(code)){$('connectStatus').textContent='Enter the 6-digit code';return}
 $('connectBtn').disabled=true;$('connectStatus').textContent='Connecting…';
-try{const token=await user.getIdToken(),r=await fetch(API+'/api/controller/connect',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({code}),cache:'no-store'}),d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||'Could not connect');sessionId=d.sessionId;controllerToken=d.controllerToken;connected=true;try{localStorage.setItem('playovia_remote_controller_v1',JSON.stringify({sessionId,controllerToken,code,userUid:user.uid,at:Date.now()}))}catch(_){}$('connectPanel').classList.add('hidden');$('waitPanel').classList.remove('hidden');$('disconnectBtn').classList.remove('hidden');$('gameTitle').textContent=d.gameTitle||'Connected';$('status').textContent='Connected · Waiting for game';await checkStatus();openControllerSocket();statusTimer=setInterval(checkStatus,5000)}catch(e){$('connectStatus').textContent=e.message;$('connectBtn').disabled=false}}
+try{const token=await user.getIdToken(),r=await fetch(API+'/api/controller/connect',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({code}),cache:'no-store'}),d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||'Could not connect');sessionId=d.sessionId;controllerToken=d.controllerToken;controllerGameSlug=d.gameSlug||'';setControllerActionLabels(controllerGameSlug);connected=true;try{localStorage.setItem('playovia_remote_controller_v1',JSON.stringify({sessionId,controllerToken,code,userUid:user.uid,at:Date.now()}))}catch(_){}$('connectPanel').classList.add('hidden');$('waitPanel').classList.remove('hidden');$('disconnectBtn').classList.remove('hidden');$('gameTitle').textContent=d.gameTitle||'Connected';$('status').textContent='Connected · Waiting for game';await checkStatus();openControllerSocket();statusTimer=setInterval(checkStatus,5000)}catch(e){$('connectStatus').textContent=e.message;$('connectBtn').disabled=false}}
 let statusFailures=0;
-async function checkStatus(){if(!connected)return;try{const r=await fetch(API+'/api/controller/status?sessionId='+encodeURIComponent(sessionId),{headers:{'Authorization':'Bearer '+controllerToken},cache:'no-store',signal:AbortSignal.timeout(8000)}),d=await r.json().catch(()=>({}));if(r.status===401||r.status===404||r.status===410||d.active===false){disconnect(d.error||'Gaming phone session ended. Reconnect with a new code.');return}if(!r.ok){statusFailures++;$('status').textContent='Reconnecting… ('+statusFailures+')';if(statusFailures>=3&&(!controllerSocket||controllerSocket.readyState>=2))scheduleControllerReconnect();return}statusFailures=0;gameReady=!!d.gameReady;$('waitPanel').classList.toggle('hidden',gameReady);$('controllerPanel').classList.toggle('hidden',!gameReady);$('status').textContent=gameReady?'🎮 Controls ready · '+(d.gameTitle||'Game'):'⌛ Waiting for controls to work…';if(!controllerSocket||controllerSocket.readyState>=2)scheduleControllerReconnect()}catch(_){statusFailures++;$('status').textContent='Network hiccup · reconnecting…';if(!controllerSocket||controllerSocket.readyState>=2)scheduleControllerReconnect()}}
+async function checkStatus(){if(!connected)return;try{const r=await fetch(API+'/api/controller/status?sessionId='+encodeURIComponent(sessionId),{headers:{'Authorization':'Bearer '+controllerToken},cache:'no-store',signal:AbortSignal.timeout(8000)}),d=await r.json().catch(()=>({}));if(r.status===401||r.status===404||r.status===410||d.active===false){disconnect(d.error||'Gaming phone session ended. Reconnect with a new code.');return}if(!r.ok){statusFailures++;$('status').textContent='Reconnecting… ('+statusFailures+')';if(statusFailures>=3&&(!controllerSocket||controllerSocket.readyState>=2))scheduleControllerReconnect();return}statusFailures=0;gameReady=!!d.gameReady;controllerGameSlug=d.gameSlug||controllerGameSlug;setControllerActionLabels(controllerGameSlug);$('waitPanel').classList.toggle('hidden',gameReady);$('controllerPanel').classList.toggle('hidden',!gameReady);$('status').textContent=gameReady?'🎮 Controls ready · '+(d.gameTitle||'Game'):'⌛ Waiting for controls to work…';if(!controllerSocket||controllerSocket.readyState>=2)scheduleControllerReconnect()}catch(_){statusFailures++;$('status').textContent='Network hiccup · reconnecting…';if(!controllerSocket||controllerSocket.readyState>=2)scheduleControllerReconnect()}}
 let reconnectTimer=null,reconnectAttempt=0;
 function scheduleControllerReconnect(){if(!connected||reconnectTimer)return;const delay=Math.min(6000,500*Math.pow(1.7,reconnectAttempt++));reconnectTimer=setTimeout(()=>{reconnectTimer=null;openControllerSocket()},delay)}
 function openControllerSocket(){if(!connected||!sessionId||!controllerToken)return;if(controllerSocket&&controllerSocket.readyState<2)return;try{const wsUrl=API.replace(/^http/,'ws')+'/api/controller/socket?sessionId='+encodeURIComponent(sessionId)+'&role=controller&token='+encodeURIComponent(controllerToken);const ws=new WebSocket(wsUrl);controllerSocket=ws;ws.onopen=()=>{if(controllerSocket!==ws){ws.close();return}reconnectAttempt=0;clearInterval(socketHeartbeat);socketHeartbeat=setInterval(()=>{if(ws.readyState===1)try{ws.send(JSON.stringify({type:'ping'}))}catch(_){}},12000);$('status').textContent=gameReady?'🎮 Controls connected':'Connected · Waiting for game'};ws.onclose=()=>{if(controllerSocket===ws)controllerSocket=null;clearInterval(socketHeartbeat);socketHeartbeat=null;if(connected)scheduleControllerReconnect()};ws.onerror=()=>{try{ws.close()}catch(_){}}}catch(_){scheduleControllerReconnect()}}
 function disconnect(msg){releaseAllButtons();connected=false;clearTimeout(reconnectTimer);reconnectTimer=null;reconnectAttempt=0;clearInterval(statusTimer);statusTimer=null;clearInterval(socketHeartbeat);socketHeartbeat=null;try{controllerSocket&&controllerSocket.close()}catch(_){}controllerSocket=null;$('controllerPanel').classList.add('hidden');$('waitPanel').classList.add('hidden');$('disconnectBtn').classList.add('hidden');$('connectPanel').classList.remove('hidden');$('connectBtn').disabled=false;$('status').textContent=msg;sessionId='';controllerToken='';localStorage.removeItem('playovia_remote_controller_v1')}
+const ACTIONS={
+ 'dungeon-hunter':{a:'Attack',b:'Skill',x:'Special',y:'Jump',l1:'Dash',r1:'Block',l2:'Heal',r2:'Mana',start:'Pause',select:'Inventory'},
+ 'city-rush':{a:'Jump',b:'Slide',x:'Left',y:'Right',l1:'Slide',r1:'Jump',start:'Pause'},
+ 'obby-rush':{a:'Jump',b:'Slide',l1:'Slide',r1:'Jump'},
+ 'ashgrave':{a:'Attack',b:'Dash',l1:'Dash',r1:'Attack'},
+ 'bomb-tag':{}
+};
+function setControllerActionLabels(slug){
+ const map=ACTIONS[slug]||{};
+ document.querySelectorAll('[data-button]').forEach(btn=>{
+  const label=map[btn.dataset.button]||'';
+  const small=btn.querySelector('.action-label');if(small)small.textContent=label;
+  btn.classList.toggle('is-unsupported',!label);
+  btn.title=label?btn.dataset.button.toUpperCase()+' · '+label:'Not used in this game';
+  btn.setAttribute('aria-label',label?btn.dataset.button.toUpperCase()+' '+label:'Not used in this game');
+ });
+}
 const heldButtons=new Set();
 function transmitInput(key,action){const payload={type:'input',button:key,action};if(controllerSocket&&controllerSocket.readyState===1){try{controllerSocket.send(JSON.stringify(payload));return}catch(_){}}fetch(API+'/api/controller/input?sessionId='+encodeURIComponent(sessionId),{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+controllerToken},body:JSON.stringify({button:key,action}),cache:'no-store',keepalive:true}).catch(()=>{})}
 function send(button,action){if(!connected||!gameReady||!sessionId)return;const key=String(button||'');if(action==='down'){if(heldButtons.has(key))return;heldButtons.add(key)}else{if(!heldButtons.has(key))return;heldButtons.delete(key)}transmitInput(key,action)}
 // Repeat held state as a heartbeat so the host can safely release stale keys.
-const holdHeartbeat=setInterval(()=>{if(connected&&gameReady)for(const key of heldButtons)transmitInput(key,'down')},600);
+const holdHeartbeat=setInterval(()=>{if(connected&&gameReady)for(const key of heldButtons)transmitInput(key,'down')},350);
 function releaseAllButtons(){for(const key of [...heldButtons]){heldButtons.delete(key);transmitInput(key,'up')}updateStickDirections(new Set());knob.style.transform='translate(-50%,-50%)'}
 
 // Analog joystick: emit stable directional down/up events, including diagonals.
