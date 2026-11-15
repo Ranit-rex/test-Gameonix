@@ -120,9 +120,6 @@ async function manualDisconnect(){
 }
 $('disconnectBtn').addEventListener('click',manualDisconnect);
 $('connectBtn').addEventListener('click',connect);
-$('keyGuideBtn').addEventListener('click',()=>{$('keyGuide').classList.toggle('hidden')});
-$('keyGuideClose').addEventListener('click',()=>$('keyGuide').classList.add('hidden'));
-document.addEventListener('keydown',e=>{if(e.key==='Escape')$('keyGuide').classList.add('hidden')});
 document.addEventListener('touchstart',e=>{if(e.touches&&e.touches.length>1)e.preventDefault()},{passive:false});
 document.addEventListener('touchmove',e=>{if(e.touches&&e.touches.length>1)e.preventDefault()},{passive:false});
 document.addEventListener('gesturestart',e=>e.preventDefault(),{passive:false});
