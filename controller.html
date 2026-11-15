@@ -74,7 +74,7 @@ function scheduleControllerReconnect(){if(!connected||reconnectTimer)return;cons
 function openControllerSocket(){if(!connected||!sessionId||!controllerToken)return;if(controllerSocket&&controllerSocket.readyState<2)return;try{const wsUrl=API.replace(/^http/,'ws')+'/api/controller/socket?sessionId='+encodeURIComponent(sessionId)+'&role=controller&token='+encodeURIComponent(controllerToken);const ws=new WebSocket(wsUrl);controllerSocket=ws;ws.onopen=()=>{if(controllerSocket!==ws){ws.close();return}reconnectAttempt=0;clearInterval(socketHeartbeat);socketHeartbeat=setInterval(()=>{if(ws.readyState===1)try{ws.send(JSON.stringify({type:'ping'}))}catch(_){}},12000);$('status').textContent=gameReady?'🎮 Controls connected':'Connected · Waiting for game'};ws.onclose=()=>{if(controllerSocket===ws)controllerSocket=null;clearInterval(socketHeartbeat);socketHeartbeat=null;if(connected)scheduleControllerReconnect()};ws.onerror=()=>{try{ws.close()}catch(_){}}}catch(_){scheduleControllerReconnect()}}
 function disconnect(msg){releaseAllButtons();connected=false;clearTimeout(reconnectTimer);reconnectTimer=null;reconnectAttempt=0;clearInterval(statusTimer);statusTimer=null;clearInterval(socketHeartbeat);socketHeartbeat=null;try{controllerSocket&&controllerSocket.close()}catch(_){}controllerSocket=null;$('controllerPanel').classList.add('hidden');$('waitPanel').classList.add('hidden');$('disconnectBtn').classList.add('hidden');$('connectPanel').classList.remove('hidden');$('connectBtn').disabled=false;$('status').textContent=msg;sessionId='';controllerToken='';localStorage.removeItem('playovia_remote_controller_v1')}
 const ACTIONS={
- 'dungeon-hunter':{a:'Attack',b:'Skill',x:'Special',y:'Jump',l1:'Dash',r1:'Block',l2:'Heal',r2:'Mana',start:'Pause',select:'Inventory'},
+ 'dungeon-hunter':{a:'Attack',b:'Heavy',x:'Special',y:'Jump',l1:'Dash',r1:'Block',l2:'Parry',r2:'Mana',start:'Pause',select:'Inventory'},
  'city-rush':{a:'Jump',b:'Slide',x:'Left',y:'Right',l1:'Slide',r1:'Jump',start:'Pause'},
  'obby-rush':{a:'Jump',b:'Slide',l1:'Slide',r1:'Jump'},
  'ashgrave':{a:'Attack',b:'Dash',l1:'Dash',r1:'Attack'},
@@ -93,7 +93,13 @@ function setControllerActionLabels(slug){
  });
 }
 const heldButtons=new Set();
-function transmitInput(key,action){const payload={type:'input',button:key,action};if(controllerSocket&&controllerSocket.readyState===1){try{controllerSocket.send(JSON.stringify(payload));return}catch(_){}}fetch(API+'/api/controller/input?sessionId='+encodeURIComponent(sessionId),{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+controllerToken},body:JSON.stringify({button:key,action}),cache:'no-store',keepalive:true}).catch(()=>{})}
+function transmitInput(key,action){
+ const payload={type:'input',button:key,action};
+ if(controllerSocket&&controllerSocket.readyState===1){
+  try{controllerSocket.send(JSON.stringify(payload));return}catch(_){}
+ }
+ fetch(API+'/api/controller/input?sessionId='+encodeURIComponent(sessionId),{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+controllerToken},body:JSON.stringify({button:key,action}),cache:'no-store',keepalive:true}).catch(()=>{});
+}
 function send(button,action){if(!connected||!gameReady||!sessionId)return;const key=String(button||'');if(action==='down'){if(heldButtons.has(key))return;heldButtons.add(key)}else{if(!heldButtons.has(key))return;heldButtons.delete(key)}transmitInput(key,action)}
 // Repeat held state as a heartbeat so the host can safely release stale keys.
 const holdHeartbeat=setInterval(()=>{if(connected&&gameReady)for(const key of heldButtons)transmitInput(key,'down')},350);
