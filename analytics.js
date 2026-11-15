@@ -43,8 +43,8 @@
       model = String(hints?.model || '').trim();
     } catch (_) {}
     if (!model && /Android/i.test(ua)) {
-      const match = ua.match(/Android[^;)]*;\\s*([^;)]+?)(?:\\s+Build|\\))/i);
-      if (match) model = match[1].replace(/\\s+/g, ' ').trim();
+      const match = ua.match(/Android[^;)]*;\s*([^;)]+?)(?:\s+Build|\\))/i);
+      if (match) model = match[1].replace(/\s+/g, ' ').trim();
     }
     if (!model && /iPhone/i.test(ua)) model = 'iPhone (exact model not exposed by iOS)';
     if (!model && /iPad/i.test(ua)) model = 'iPad (exact model not exposed by iOS)';
