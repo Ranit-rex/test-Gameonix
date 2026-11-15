@@ -440,7 +440,7 @@ const server = http.createServer(async (req, res) => {
       try {
         const input = await readJsonBody(req, 2048);
         const code = String(input.code || '').trim();
-        if (!/^\\d{6}$/.test(code)) return send(res, 400, { error: 'Enter the 6-digit pairing code.' }, origin);
+        if (!/^\d{6}$/.test(code)) return send(res, 400, { error: 'Enter the 6-digit pairing code.' }, origin);
         const session = [...remoteControllerSessions.values()].find(s => s.code === code && s.uid === user.uid && s.status === 'active' && s.expiresAt > Date.now());
         if (!session) return send(res, 404, { error: 'No active session found. Check the code and use the same Playovia account on both phones.' }, origin);
         session.controllerToken = crypto.randomBytes(32).toString('hex');
