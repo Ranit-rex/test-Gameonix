@@ -40,7 +40,7 @@
       method: 'POST', mode: 'cors', credentials: 'omit', keepalive: true,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ type, sessionId, slug: game.slug, title: game.title || game.slug, user: who.user, loggedIn: who.loggedIn, device: deviceName() })
-    }).catch(() => {});
+    }).then(response => { if (!response.ok) console.warn('[Playovia game analytics] Event rejected:', response.status); }).catch(error => console.warn('[Playovia game analytics] Network error:', error));
   };
   const slugFromElement = el => {
     const link = el.closest('a[href*="/games/"], [data-game-slug], [data-game]');
