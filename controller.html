@@ -78,19 +78,20 @@ function setControllerActionLabels(slug){
  const profile=window.PLAYOVIA_CONTROLLER_PROFILES?.[slug];
  const actions=profile?.actions||[];
  const bySlot=new Map(actions.map(item=>[item.slot,item]));
+ const hasProfile=!!profile;
  document.querySelectorAll('[data-button]').forEach(btn=>{
   const item=bySlot.get(btn.dataset.button);
-  btn.classList.toggle('hidden',!item);
-  btn.disabled=!item;
-  const small=btn.querySelector('.action-label');if(small)small.textContent=item?item.label:'';
-  btn.classList.remove('is-unsupported');
-  btn.title=item?btn.dataset.button.toUpperCase()+' · '+item.label:'';
-  btn.setAttribute('aria-label',item?btn.dataset.button.toUpperCase()+' '+item.label:'');
+  btn.classList.remove('hidden');
+  btn.disabled=hasProfile?!item:false;
+  const small=btn.querySelector('.action-label');
+  if(small)small.textContent=item?item.label:'';
+  btn.classList.toggle('is-unsupported',hasProfile&&!item);
+  btn.title=item?btn.dataset.button.toUpperCase()+' · '+item.label:(hasProfile?'No action in this game profile':'Game action mapping unavailable');
+  btn.setAttribute('aria-label',item?btn.dataset.button.toUpperCase()+' '+item.label:btn.dataset.button.toUpperCase()+' unmapped');
  });
- document.querySelectorAll('.shoulders').forEach(group=>group.classList.toggle('hidden',[...group.querySelectorAll('[data-button]')].every(btn=>btn.classList.contains('hidden'))));
- const faces=document.querySelector('.faces');if(faces)faces.classList.toggle('hidden',[...faces.querySelectorAll('[data-button]')].every(btn=>btn.classList.contains('hidden')));
- const center=document.querySelector('.center-buttons');if(center)center.classList.toggle('hidden',[...center.querySelectorAll('[data-button]')].every(btn=>btn.classList.contains('hidden')));
- const hint=document.querySelector('.center .hint');if(hint)hint.textContent=profile?.name?profile.name.toUpperCase()+' · GAME CONTROLS':'GAME CONTROLS';
+ document.querySelectorAll('.shoulders,.faces,.center-buttons').forEach(group=>group.classList.remove('hidden'));
+ const hint=document.querySelector('.center .hint');
+ if(hint)hint.textContent=profile?.name?profile.name.toUpperCase()+' · GAME CONTROLS':(hasProfile?'MOVEMENT ONLY':'GAME PROFILE NOT DETECTED');
 }
 const heldButtons=new Set();
 function transmitInput(key,action){
