@@ -62,6 +62,7 @@
       if (activeGames.has(game.slug)) sendGameEvent('game_play', game);
     }, 1200);
   }, true);
+  setInterval(() => { for (const game of activeGames.values()) sendGameEvent('game_heartbeat', game); }, 30000);
   const finishGame = slug => {
     const game = activeGames.get(slug);
     if (!game) return;
