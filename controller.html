@@ -26,32 +26,52 @@
 </main>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 <script>
 'use strict';
 const CONFIG={apiKey:'AIzaSyB_pZ9WfVSx2XHuDeSZ7VrwEr-Pz_m_2QM',authDomain:'play-hub-688e8.firebaseapp.com',projectId:'play-hub-688e8',storageBucket:'play-hub-688e8.firebasestorage.app',messagingSenderId:'195222206861',appId:'1:195222206861:web:828a8cf16991f982a925c4'};
-const $=id=>document.getElementById(id);let auth,db,sessionRef=null,connected=false;
-if(!firebase.apps.length)firebase.initializeApp(CONFIG);auth=firebase.auth();db=firebase.firestore();
+const API='https://test-gameonix.onrender.com';
+const $=id=>document.getElementById(id);let auth,sessionId='',controllerToken='',connected=false,statusTimer=null;
+if(!firebase.apps.length)firebase.initializeApp(CONFIG);auth=firebase.auth();
 const provider=new firebase.auth.GoogleAuthProvider();
 auth.onAuthStateChanged(user=>{$('status').textContent=user?'Signed in. Enter the pairing code.':'Tap Connect and sign in with Google.'});
 $('pairCode').value=new URLSearchParams(location.search).get('code')||'';
+async function api(path,options={}){
+ const user=auth.currentUser;if(!user)throw new Error('Please sign in with your Playovia Google account.');
+ const token=await user.getIdToken();
+ const response=await fetch(API+path,{...options,headers:{'Content-Type':'application/json','Authorization':'Bearer '+(options.controllerToken||token),...(options.headers||{})},cache:'no-store'});
+ const data=await response.json().catch(()=>({}));
+ if(!response.ok)throw new Error(data.error||'Controller server request failed.');
+ return data;
+}
 async function connect(){
- let user=auth.currentUser;const code=$('pairCode').value.trim();
+ let user=auth.currentUser;
  if(!user){try{const result=await auth.signInWithPopup(provider);user=result.user}catch(e){$('status').textContent='Google sign-in failed: '+e.message;return}}
- if(!/^\d{6}$/.test(code)){$('status').textContent='Enter the 6-digit code from your gaming phone.';return}
- $('connectBtn').disabled=true;$('status').textContent='Finding your game session…';
+ const code=$('pairCode').value.trim();
+ if(!/^\\d{6}$/.test(code)){$('status').textContent='Enter the 6-digit pairing code from your gaming phone.';return}
+ $('connectBtn').disabled=true;$('status').textContent='Connecting securely to Playovia server…';
  try{
-  const q=await db.collection('remoteControlSessions').where('uid','==',user.uid).where('code','==',code).where('status','==','active').limit(1).get();
-  if(q.empty)throw new Error('No active session found. Check the code and make sure both phones use the same account.');
-  sessionRef=q.docs[0].ref;await sessionRef.update({controllerConnected:true,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
-  $('connectPanel').classList.add('hidden');$('controllerPanel').classList.remove('hidden');$('status').textContent='Connected to '+(q.docs[0].data().gameTitle||'your game')+'. Hold buttons to control.';
-  connected=true;
-  sessionRef.onSnapshot(doc=>{if(!doc.exists||doc.data().status!=='active'){disconnect('The gaming phone ended this session.');}});
+  const idToken=await user.getIdToken();
+  const response=await fetch(API+'/api/controller/connect',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+idToken},body:JSON.stringify({code}),cache:'no-store'});
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok)throw new Error(data.error||'Could not connect to this game.');
+  sessionId=data.sessionId;controllerToken=data.controllerToken;connected=true;
+  $('connectPanel').classList.add('hidden');$('controllerPanel').classList.remove('hidden');$('status').textContent='Connected to '+(data.gameTitle||'your game')+'. Hold buttons to control.';
+  statusTimer=setInterval(async()=>{
+   if(!connected)return;
+   try{const r=await fetch(API+'/api/controller/status?sessionId='+encodeURIComponent(sessionId),{headers:{'Authorization':'Bearer '+controllerToken},cache:'no-store'});const d=await r.json().catch(()=>({}));if(!r.ok||!d.active)disconnect(d.error||'The gaming phone ended this session.')}
+   catch(_){}
+  },2000);
  }catch(e){$('status').textContent=e.message||'Could not connect.'}
  finally{$('connectBtn').disabled=false}
 }
-function disconnect(message){connected=false;$('controllerPanel').classList.add('hidden');$('connectPanel').classList.remove('hidden');$('status').textContent=message;sessionRef=null}
-async function send(button,action){if(!connected||!sessionRef)return;try{await sessionRef.collection('commands').add({button,action,createdAt:firebase.firestore.FieldValue.serverTimestamp()})}catch(e){$('status').textContent='Connection lost: '+(e.message||'retry')}}
+function disconnect(message){connected=false;if(statusTimer){clearInterval(statusTimer);statusTimer=null}$('controllerPanel').classList.add('hidden');$('connectPanel').classList.remove('hidden');$('status').textContent=message;sessionId='';controllerToken=''}
+async function send(button,action){
+ if(!connected||!sessionId||!controllerToken)return;
+ try{
+  const response=await fetch(API+'/api/controller/input?sessionId='+encodeURIComponent(sessionId),{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+controllerToken},body:JSON.stringify({button,action}),cache:'no-store'});
+  if(!response.ok){const d=await response.json().catch(()=>({}));throw new Error(d.error||'Connection lost.')}
+ }catch(e){$('status').textContent='Connection issue: '+(e.message||'retry')}
+}
 $('connectBtn').addEventListener('click',connect);
 document.querySelectorAll('[data-button]').forEach(btn=>{
  const key=btn.dataset.button;
