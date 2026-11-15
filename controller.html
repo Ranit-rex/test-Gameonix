@@ -1,83 +1,40 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<meta name="theme-color" content="#0b1221"><title>Playovia Remote Controller</title>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#080e1b"><title>Playovia PS5 Remote</title>
 <style>
-*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#080e1b;color:#fff;font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;overscroll-behavior:none;touch-action:manipulation}body{min-height:100dvh;display:flex;justify-content:center;padding:18px}.app{width:min(520px,100%);display:flex;flex-direction:column;gap:14px}.head{text-align:center;padding:12px 0}.logo{font-size:11px;letter-spacing:3px;color:#7de7d1;font-weight:900}.head h1{font-size:24px;margin:8px 0}.muted{font-size:12px;line-height:1.6;color:#9eacc5}.panel{padding:18px;border:1px solid #293b58;border-radius:20px;background:linear-gradient(145deg,#17243a,#0d1525)}input{width:100%;padding:14px;border:1px solid #3b5274;border-radius:12px;background:#080f1e;color:#fff;font-size:20px;letter-spacing:5px;text-align:center;font-weight:900}button{color:#fff;border:1px solid #3b5274;background:#1b2b45;border-radius:13px;font-weight:850;touch-action:none;user-select:none;-webkit-user-select:none}button:active,.pressed{transform:scale(.96);background:#36517a!important;border-color:#86dcca!important}.primary{width:100%;padding:13px;background:linear-gradient(110deg,#226e65,#24527e);margin-top:10px}.status{text-align:center;min-height:22px;color:#80e7cb;font-size:12px}.hidden{display:none!important}.pad-wrap{display:flex;align-items:center;justify-content:space-between;gap:16px}.dpad{width:min(54vw,220px);height:min(54vw,220px);display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);gap:6px}.dpad button{font-size:24px;border-radius:15px}.dpad .empty{visibility:hidden}.actions{width:min(42vw,180px);height:min(42vw,180px);display:grid;grid-template:repeat(2,1fr)/repeat(2,1fr);gap:9px;transform:rotate(-8deg)}.actions button{border-radius:50%;font-size:22px;font-weight:950}.actions .a{background:#285c52}.actions .b{background:#713b4d}.actions .x{background:#31527d}.actions .y{background:#77602e}.utility{display:flex;gap:12px}.utility button{flex:1;padding:16px;font-size:12px}.foot{text-align:center;font-size:10px;line-height:1.6;color:#75849d;padding:6px}
-</style>
-</head>
-<body><main class="app">
-<header class="head"><div class="logo">PLAYOVIA REMOTE PLAY</div><h1>Phone Controller</h1><div class="muted">Use this phone as a wireless gamepad for your other device.</div></header>
-<section id="connectPanel" class="panel"><p class="muted">Sign in with the same Playovia account used on the gaming phone, then enter the 6-digit pairing code shown in the game.</p><input id="pairCode" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="000000"><button id="connectBtn" class="primary">Connect controller</button></section>
-<div id="status" class="status" role="status">Connecting to Playovia…</div>
-<section id="controllerPanel" class="panel hidden">
-<div class="pad-wrap">
-<div class="dpad">
-<button class="empty" tabindex="-1"></button><button data-button="up">▲</button><button class="empty" tabindex="-1"></button>
-<button data-button="left">◀</button><button data-button="down">▼</button><button data-button="right">▶</button>
-<button class="empty" tabindex="-1"></button><button class="empty" tabindex="-1"></button><button class="empty" tabindex="-1"></button>
-</div>
-<div class="actions"><button class="y" data-button="y">Y</button><button class="x" data-button="x">X</button><button class="b" data-button="b">B</button><button class="a" data-button="a">A</button></div>
-</div>
-<div class="utility"><button data-button="select">SELECT</button><button data-button="start">START</button></div>
-</section>
-<div class="foot">Keep this page open while playing. Both phones must be online and signed in to the same Playovia account. Some third-party games may not support external controls.</div>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#080e1b;color:#fff;font-family:Inter,system-ui,sans-serif;overscroll-behavior:none;touch-action:none}button{color:#fff;border:1px solid #3b5274;background:linear-gradient(145deg,#243958,#14243c);border-radius:14px;font-weight:900;user-select:none;-webkit-user-select:none;touch-action:none}button:active,.pressed{transform:scale(.94);filter:brightness(1.35);border-color:#8cf5df!important}.hidden{display:none!important}.app{width:100vw;height:100dvh;padding:clamp(8px,2vw,20px);display:flex;flex-direction:column;gap:8px}.head{display:flex;justify-content:space-between;align-items:center;gap:10px;min-height:34px}.brand{font-size:11px;letter-spacing:2px;color:#7de7d1;font-weight:950}.game-title{font-size:12px;color:#c7d4eb;max-width:50vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.status{font-size:11px;color:#80e7cb;text-align:center;min-height:18px}.connect{width:min(440px,100%);margin:auto;padding:24px;border:1px solid #293b58;border-radius:22px;background:#142139;text-align:center}.connect input{width:100%;padding:14px;border:1px solid #3b5274;border-radius:12px;background:#080f1e;color:#fff;font-size:22px;letter-spacing:7px;text-align:center;font-weight:900}.primary{width:100%;padding:14px;margin-top:10px;background:linear-gradient(110deg,#226e65,#24527e)}.wait{margin:auto;text-align:center;color:#9eacc5;font-size:13px;line-height:1.8}.wait b{display:block;color:#7de7d1;font-size:17px;margin-bottom:6px}.pad{flex:1;min-height:0;display:grid;grid-template-columns:1fr minmax(180px,1.15fr) 1fr;align-items:center;gap:clamp(8px,3vw,34px)}.left-side,.right-side{height:100%;display:flex;flex-direction:column;justify-content:space-around;align-items:center;min-width:0}.shoulders{display:flex;gap:8px;width:100%;justify-content:center}.shoulders button{min-width:58px;padding:10px 12px;font-size:12px}.dpad{width:min(27vw,190px);height:min(27vw,190px);display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);gap:5px}.dpad button{font-size:clamp(16px,3vw,24px);border-radius:12px}.empty{visibility:hidden}.stick-zone{display:grid;place-items:center;width:min(31vw,220px);height:min(31vw,220px)}.stick{position:relative;width:100%;height:100%;border-radius:50%;border:2px solid #47617f;background:radial-gradient(circle,#263e5d,#101b2c 70%);box-shadow:inset 0 0 25px #000a,0 10px 30px #0008;touch-action:none}.stick:before{content:'L';position:absolute;inset:12%;border:1px dashed #54708f;border-radius:50%;display:grid;place-items:center;color:#8ea5c1;font-weight:900;font-size:12px}.knob{position:absolute;left:50%;top:50%;width:42%;height:42%;transform:translate(-50%,-50%);border-radius:50%;border:2px solid #91b7d6;background:linear-gradient(145deg,#54799c,#1b304b);box-shadow:0 5px 15px #000a;pointer-events:none}.faces{width:min(29vw,200px);height:min(29vw,200px);display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);align-items:center;justify-items:center}.faces button{width:clamp(42px,8vw,62px);height:clamp(42px,8vw,62px);border-radius:50%;font-size:20px}.tri{grid-area:1/2;background:linear-gradient(145deg,#287a55,#164a38)}.circle{grid-area:2/3;background:linear-gradient(145deg,#a43d62,#5d203b)}.cross{grid-area:3/2;background:linear-gradient(145deg,#326eb7,#1c3d70)}.square{grid-area:2/1;background:linear-gradient(145deg,#8351b5,#48256e)}.center-buttons{display:flex;justify-content:center;gap:10px}.center-buttons button{padding:9px 15px;font-size:10px}.foot{text-align:center;font-size:9px;color:#71839d;padding-bottom:2px}@media(orientation:portrait){.app{display:none}.rotate{display:flex!important;position:fixed;inset:0;align-items:center;justify-content:center;text-align:center;padding:30px;color:#b9c9df;font-weight:800;background:#080e1b}.rotate span{font-size:44px;display:block;margin-bottom:15px}}.rotate{display:none}
+</style></head>
+<body><div class="rotate"><div><span>↻</span>Rotate your phone to landscape<br><small style="color:#8293ad;font-weight:500">Playovia controller is designed for wide-screen play</small></div></div>
+<main class="app">
+<header class="head"><div class="brand">PLAYOVIA · REMOTE PLAY</div><div class="game-title" id="gameTitle">Not connected</div></header>
+<section id="connectPanel" class="connect"><h2>Connect your controller</h2><p style="font-size:12px;color:#9eacc5;line-height:1.6">Sign in with the same Playovia account and enter the 6-digit code from your gaming phone.</p><input id="pairCode" inputmode="numeric" maxlength="6" placeholder="000000"><button id="connectBtn" class="primary">Connect automatically</button><div id="connectStatus" class="status" style="margin-top:12px"></div></section>
+<div id="waitPanel" class="wait hidden"><b>⌛ Waiting for controls to work…</b>Controller connected. Controls will activate automatically<br>when the game is ready on your main phone.</div>
+<section id="controllerPanel" class="pad hidden">
+<div class="left-side"><div class="shoulders"><button data-button="l1">L1</button><button data-button="l2">L2</button></div><div class="dpad"><button class="empty"></button><button data-button="up">▲</button><button class="empty"></button><button data-button="left">◀</button><button data-button="down">▼</button><button data-button="right">▶</button><button class="empty"></button><button class="empty"></button><button class="empty"></button></div><div class="stick-zone"><div class="stick" id="stick"><div class="knob" id="knob"></div></div></div></div>
+<div class="center-side"><div class="center-buttons"><button data-button="select">SELECT</button><button data-button="start">OPTIONS</button></div><div style="text-align:center;color:#7188a5;font-size:10px;letter-spacing:2px">DUAL TOUCH GAMEPAD</div></div>
+<div class="right-side"><div class="shoulders"><button data-button="r2">R2</button><button data-button="r1">R1</button></div><div class="faces"><button class="tri" data-button="y">△</button><button class="circle" data-button="b">○</button><button class="cross" data-button="a">×</button><button class="square" data-button="x">□</button></div><div class="center-buttons"><button data-button="select">SHARE</button></div></div>
+</section><div id="status" class="status">Sign in to connect</div><div class="foot">Keep this screen open · Both phones must stay online</div>
 </main>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script>
 'use strict';
-const CONFIG={apiKey:'AIzaSyB_pZ9WfVSx2XHuDeSZ7VrwEr-Pz_m_2QM',authDomain:'play-hub-688e8.firebaseapp.com',projectId:'play-hub-688e8',storageBucket:'play-hub-688e8.firebasestorage.app',messagingSenderId:'195222206861',appId:'1:195222206861:web:828a8cf16991f982a925c4'};
-const API='https://test-gameonix.onrender.com';
-const $=id=>document.getElementById(id);let auth,sessionId='',controllerToken='',connected=false,statusTimer=null;
-if(!firebase.apps.length)firebase.initializeApp(CONFIG);auth=firebase.auth();
-const provider=new firebase.auth.GoogleAuthProvider();
-auth.onAuthStateChanged(user=>{$('status').textContent=user?'Signed in. Enter the pairing code.':'Tap Connect and sign in with Google.'});
+const CONFIG={apiKey:'AIzaSyB_pZ9WfVSx2XHuDeSZ7VrwEr-Pz_2QM',authDomain:'play-hub-688e8.firebaseapp.com',projectId:'play-hub-688e8',storageBucket:'play-hub-688e8.firebasestorage.app',messagingSenderId:'195222206861',appId:'1:195222206861:web:828a8cf16991f982a925c4'},API='https://test-gameonix.onrender.com', $=id=>document.getElementById(id);
+let auth,sessionId='',controllerToken='',connected=false,gameReady=false,statusTimer=null,stickDirection='';
+if(!firebase.apps.length)firebase.initializeApp(CONFIG);auth=firebase.auth();const provider=new firebase.auth.GoogleAuthProvider();
+auth.onAuthStateChanged(user=>{$('connectStatus').textContent=user?'Signed in · Enter your pairing code':'Google sign-in required';});
 $('pairCode').value=new URLSearchParams(location.search).get('code')||'';
-async function api(path,options={}){
- const user=auth.currentUser;if(!user)throw new Error('Please sign in with your Playovia Google account.');
- const token=await user.getIdToken();
- const response=await fetch(API+path,{...options,headers:{'Content-Type':'application/json','Authorization':'Bearer '+(options.controllerToken||token),...(options.headers||{})},cache:'no-store'});
- const data=await response.json().catch(()=>({}));
- if(!response.ok)throw new Error(data.error||'Controller server request failed.');
- return data;
-}
-async function connect(){
- let user=auth.currentUser;
- if(!user){try{const result=await auth.signInWithPopup(provider);user=result.user}catch(e){$('status').textContent='Google sign-in failed: '+e.message;return}}
- const code=$('pairCode').value.trim();
- if(!/^\d{6}$/.test(code)){$('status').textContent='Enter the 6-digit pairing code from your gaming phone.';return}
- $('connectBtn').disabled=true;$('status').textContent='Connecting securely to Playovia server…';
- try{
-  const idToken=await user.getIdToken();
-  const response=await fetch(API+'/api/controller/connect',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+idToken},body:JSON.stringify({code}),cache:'no-store'});
-  const data=await response.json().catch(()=>({}));
-  if(!response.ok)throw new Error(data.error||'Could not connect to this game.');
-  sessionId=data.sessionId;controllerToken=data.controllerToken;connected=true;
-  $('connectPanel').classList.add('hidden');$('controllerPanel').classList.remove('hidden');$('status').textContent='Connected to '+(data.gameTitle||'your game')+'. Hold buttons to control.';
-  statusTimer=setInterval(async()=>{
-   if(!connected)return;
-   try{const r=await fetch(API+'/api/controller/status?sessionId='+encodeURIComponent(sessionId),{headers:{'Authorization':'Bearer '+controllerToken},cache:'no-store'});const d=await r.json().catch(()=>({}));if(!r.ok||!d.active)disconnect(d.error||'The gaming phone ended this session.')}
-   catch(_){}
-  },2000);
- }catch(e){$('status').textContent=e.message||'Could not connect.'}
- finally{$('connectBtn').disabled=false}
-}
-function disconnect(message){connected=false;if(statusTimer){clearInterval(statusTimer);statusTimer=null}$('controllerPanel').classList.add('hidden');$('connectPanel').classList.remove('hidden');$('status').textContent=message;sessionId='';controllerToken=''}
-async function send(button,action){
- if(!connected||!sessionId||!controllerToken)return;
- try{
-  const response=await fetch(API+'/api/controller/input?sessionId='+encodeURIComponent(sessionId),{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+controllerToken},body:JSON.stringify({button,action}),cache:'no-store'});
-  if(!response.ok){const d=await response.json().catch(()=>({}));throw new Error(d.error||'Connection lost.')}
- }catch(e){$('status').textContent='Connection issue: '+(e.message||'retry')}
-}
-$('connectBtn').addEventListener('click',connect);
-document.querySelectorAll('[data-button]').forEach(btn=>{
- const key=btn.dataset.button;
- const down=e=>{e.preventDefault();if(btn.dataset.held==='1')return;btn.dataset.held='1';btn.classList.add('pressed');try{btn.setPointerCapture(e.pointerId)}catch(_){}send(key,'down')};
- const up=e=>{if(btn.dataset.held!=='1')return;btn.dataset.held='0';btn.classList.remove('pressed');send(key,'up')};
- btn.addEventListener('pointerdown',down);btn.addEventListener('pointerup',up);btn.addEventListener('pointercancel',up);btn.addEventListener('lostpointercapture',up);btn.addEventListener('contextmenu',e=>e.preventDefault());
-});
-document.addEventListener('visibilitychange',()=>{if(document.hidden)document.querySelectorAll('[data-button][data-held="1"]').forEach(b=>{b.dataset.held='0';b.classList.remove('pressed');send(b.dataset.button,'up')})});
+async function connect(){let user=auth.currentUser;if(!user){try{user=(await auth.signInWithPopup(provider)).user}catch(e){$('connectStatus').textContent='Sign-in failed: '+e.message;return}}
+const code=$('pairCode').value.trim();if(!/^\d{6}$/.test(code)){$('connectStatus').textContent='Enter the 6-digit code';return}
+$('connectBtn').disabled=true;$('connectStatus').textContent='Connecting…';
+try{const token=await user.getIdToken(),r=await fetch(API+'/api/controller/connect',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({code}),cache:'no-store'}),d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||'Could not connect');sessionId=d.sessionId;controllerToken=d.controllerToken;connected=true;$('connectPanel').classList.add('hidden');$('waitPanel').classList.remove('hidden');$('gameTitle').textContent=d.gameTitle||'Connected';$('status').textContent='Connected · Waiting for game';await checkStatus();statusTimer=setInterval(checkStatus,1000)}catch(e){$('connectStatus').textContent=e.message;$('connectBtn').disabled=false}}
+async function checkStatus(){if(!connected)return;try{const r=await fetch(API+'/api/controller/status?sessionId='+encodeURIComponent(sessionId),{headers:{'Authorization':'Bearer '+controllerToken},cache:'no-store'}),d=await r.json();if(!r.ok||!d.active){disconnect(d.error||'Gaming phone disconnected');return}gameReady=!!d.gameReady;$('waitPanel').classList.toggle('hidden',gameReady);$('controllerPanel').classList.toggle('hidden',!gameReady);$('status').textContent=gameReady?'🎮 Controls ready · '+(d.gameTitle||'Game'):'⌛ Waiting for controls to work…'}catch(_){}}
+function disconnect(msg){connected=false;clearInterval(statusTimer);statusTimer=null;$('controllerPanel').classList.add('hidden');$('waitPanel').classList.add('hidden');$('connectPanel').classList.remove('hidden');$('connectBtn').disabled=false;$('status').textContent=msg;sessionId='';controllerToken=''}
+async function send(button,action){if(!connected||!gameReady||!sessionId)return;try{await fetch(API+'/api/controller/input?sessionId='+encodeURIComponent(sessionId),{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+controllerToken},body:JSON.stringify({button,action}),cache:'no-store'})}catch(_){}}
+document.querySelectorAll('[data-button]').forEach(btn=>{const key=btn.dataset.button;const down=e=>{e.preventDefault();if(btn.dataset.held==='1')return;btn.dataset.held='1';btn.classList.add('pressed');try{btn.setPointerCapture(e.pointerId)}catch(_){}send(key,'down')},up=e=>{if(btn.dataset.held!=='1')return;btn.dataset.held='0';btn.classList.remove('pressed');send(key,'up')};btn.addEventListener('pointerdown',down);btn.addEventListener('pointerup',up);btn.addEventListener('pointercancel',up);btn.addEventListener('lostpointercapture',up)});
+const stick=$('stick'),knob=$('knob');function updateStick(e){const r=stick.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,dx=e.clientX-cx,dy=e.clientY-cy,max=r.width*.31,len=Math.hypot(dx,dy),scale=Math.min(1,max/(len||1)),x=dx*scale,y=dy*scale;knob.style.left='calc(50% + '+x+'px)';knob.style.top='calc(50% + '+y+'px)';let dir='';if(len>max*.28){const angle=Math.atan2(dy,dx)*180/Math.PI;if(angle>=-22.5&&angle<22.5)dir='right';else if(angle>=22.5&&angle<67.5)dir='downright';else if(angle>=67.5&&angle<112.5)dir='down';else if(angle>=112.5&&angle<157.5)dir='downleft';else if(angle>=157.5||angle< -157.5)dir='left';else if(angle>=-157.5&&angle< -112.5)dir='upleft';else if(angle>=-112.5&&angle< -67.5)dir='up';else dir='upright'}if(dir!==stickDirection){if(stickDirection)stickDirection.split('').forEach(k=>send(({u:'up',d:'down',l:'left',r:'right'})[k],'up'));stickDirection=dir.replace('up','u').replace('down','d').replace('left','l').replace('right','r');if(stickDirection)stickDirection.split('').forEach(k=>send(({u:'up',d:'down',l:'left',r:'right'})[k],'down'))}}
+function resetStick(){knob.style.left='50%';knob.style.top='50%';if(stickDirection)stickDirection.split('').forEach(k=>send(({u:'up',d:'down',l:'left',r:'right'})[k],'up'));stickDirection=''}
+stick.addEventListener('pointerdown',e=>{e.preventDefault();stick.setPointerCapture(e.pointerId);updateStick(e)});stick.addEventListener('pointermove',e=>{if(e.buttons)updateStick(e)});stick.addEventListener('pointerup',resetStick);stick.addEventListener('pointercancel',resetStick);
+$('connectBtn').addEventListener('click',connect);document.addEventListener('visibilitychange',()=>{if(document.hidden)document.querySelectorAll('[data-button][data-held="1"]').forEach(b=>{b.dataset.held='0';b.classList.remove('pressed');send(b.dataset.button,'up')})});
 </script></body></html>
