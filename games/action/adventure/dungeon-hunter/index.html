@@ -92,7 +92,7 @@ function dhRefreshRooms(){
  PlayoviaMultiplayer.listRooms({db:dhDb,gameId:'dungeon-hunter'}).then(rooms=>{
   if(!$('#dhRoomList'))return;
   const uid=dhAuth?.currentUser?.uid||dhUser?.uid;
-  const joinable=rooms.filter(r=>!uid||!r.members?.[uid]);
+  const joinable=uid?rooms.filter(r=>r.hostUid!==uid&&!r.members?.[uid]):[];
   box.innerHTML=joinable.length?joinable.map(r=>'<div class="dh-room-item"><span><b>'+dhEsc(r.hostName||'Hunter')+'</b><small>'+Object.keys(r.members||{}).length+'/'+(r.maxPlayers||4)+' players · '+dhEsc(r.mode||'Normal')+'</small></span><button class="b" onclick="dhJoinRoom(\''+dhEsc(r.roomId)+'\')">Join</button></div>').join(''):'<small>No other public rooms yet. Create one or share your room code!</small>';
  }).catch(e=>{box.textContent='Could not load rooms: '+e.message});
 }
@@ -113,9 +113,10 @@ async function dhCreateRoom(){
   const name=String(dhProfile.username||user.displayName||user.email?.split('@')[0]||'Hunter').slice(0,32);
   const mode=$('#dhMode')?.value||'Normal',visibility=$('#dhVisibility')?.value||'public';
   const made=await PlayoviaMultiplayer.createRoom({db:dhDb,uid:user.uid,name,gameId:'dungeon-hunter',mode,gameTitle:'Dungeon Hunter',maxPlayers:4,visibility});
-  await dhEnterRoom(made.roomId);
+  try{await dhEnterRoom(made.roomId)}
+  catch(enterError){dhSay('Room '+made.roomId+' was created, but lobby setup failed: '+(enterError?.message||enterError));console.error('Dungeon Hunter room lobby setup:',enterError);return}
   dhSay('Room created · share the 8-character code with friends.');
- }catch(e){dhSay('Could not create room: '+(e?.message||'Unknown error'));console.error('Dungeon Hunter create room:',e)}
+ }catch(e){dhSay('Room creation failed: '+(e?.message||'Unknown error'));console.error('Dungeon Hunter create room:',e)}
  finally{if(button)button.disabled=false}
 }
 async function dhJoinByCode(){
@@ -129,6 +130,14 @@ async function dhJoinRoom(code){
  if(dhRoomRef&&dhRoomId===code){dhShowRoomLobby();dhSay('You are already in this room. Share the code with friends.');return}
   try{
   dhUser=user;
+  const ref=PlayoviaMultiplayer.room(dhDb,code),snap=await ref.once('value'),room=snap.val();
+  if(!room)throw Error('Room no longer exists.');
+  if(room.gameId!=='dungeon-hunter'||room.status!=='waiting')throw Error('This room is no longer waiting.');
+  if(room.hostUid===user.uid||room.members?.[user.uid]){
+   await dhEnterRoom(code);
+   dhSay('You are already in this room.');
+   return;
+  }
   const joined=await PlayoviaMultiplayer.joinRoom({db:dhDb,uid:user.uid,name:String(dhProfile.username||user.displayName||user.email?.split('@')[0]||'Hunter'),gameId:'dungeon-hunter',code});
   await dhEnterRoom(joined.roomId);
   dhSay('Joined room · waiting for the host.');
@@ -145,6 +154,7 @@ function dhWatchMemberEvents(members){
 }
 async function dhEnterRoom(id){
  if(!dhUser||!dhDb)throw Error('Sign in on Playovia first.');
+ if(dhRoomRef&&dhRoomId===id){dhShowRoomLobby();return}
  if(dhRoomRef)await dhLeaveRoom(false);
  const ref=PlayoviaMultiplayer.room(dhDb,id),snap=await ref.once('value');
  if(!snap.exists())throw Error('Room no longer exists.');
