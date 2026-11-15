@@ -301,7 +301,7 @@ P.x=cp(P.x,LV.lock||-280,LV.lock||!LV.el?LV.L+60:LV.L-1510);P.y=cp(P.y,90,LH-70)
 /* ---------- enemies ---------- */
 function dhCombatTargets(){
  const out=[];if(P&&P.hp>0&&!P.dead)out.push({uid:dhUser?.uid||'local-player',x:P.x,y:P.y,local:true});
- if(dhRoomRef)for(const [uid,p] of Object.entries(dhRemotePlayers||{})){if(uid===dhUser?.uid||Date.now()-(p.lastSeen||p.updatedAt||0)>8000||Number(p.hp)<=0||Number(p.world||0)!==(LV?.w||0))continue;out.push({uid,x:Number(p.x)||0,y:Number(p.y)||450,local:false})}
+ if(dhRoomRef)for(const [uid,p] of Object.entries(dhRemotePlayers||{})){if(uid===dhUser?.uid||Number(p.hp)<=0||Number(p.world||0)!==(LV?.w||0))continue;out.push({uid,x:Number(p.x)||0,y:Number(p.y)||450,local:false})}
  if(!out.length&&P)out.push({uid:dhUser?.uid||'local-player',x:P.x,y:P.y,local:true});return out.sort((a,b)=>String(a.uid).localeCompare(String(b.uid)));
 }
 function dhEnemyTarget(e){
@@ -375,7 +375,7 @@ for(const a of LV.aoe){a.t-=dt;if(a.t<=0){a.x1=1;burst(a.x,a.y,'#f63',16,5);SHK=
 PR=PR.filter(p=>p.l>0);
 fxu(dt,f);for(const r of RG){r.r+=(r.mr-r.r)*.25*f+2;r.l-=dt}RG=RG.filter(r=>r.l>0);for(const p of FX){p.x+=p.vx*f;p.y+=p.vy*f;p.vy+=.15*f;p.l-=dt}FX=FX.filter(p=>p.l>0);
 for(const t of TX){t.y-=.7*f;t.l-=dt*.8}TX=TX.filter(t=>t.l>0);
-const k=.1*Math.min(f,2);CAM+=(cp(P.x-W/2+P.ax*60,-420,LV.L-540)-CAM)*k;CY+=(cp(P.y-H/2,0,LH-H)-CY)*k;
+const k=.1*Math.min(f,2),party=dhRoomRef?dhCombatTargets():[{x:P.x,y:P.y}],cx=party.reduce((v,p)=>v+p.x,0)/Math.max(1,party.length),cy=party.reduce((v,p)=>v+p.y,0)/Math.max(1,party.length);CAM+=(cp(cx-W/2+P.ax*60,-420,LV.L-540)-CAM)*k;CY+=(cp(cy-H/2,0,LH-H)-CY)*k;
 if(LV.wt>0&&(LV.wt+=dt)>3.5)victory()}
 function modsU(dt){const m=LV.mods;LV.mt=(LV.mt||0)+dt;
 if(m.includes('rain')&&LV.mt%3.5<dt&&!LV.lock)LV.aoe.push({x:P.x+rnd(-200,200),y:cp(P.y+rnd(-120,120),90,LH-70),r:42,t:1.1,d:8+LV.w*3});
