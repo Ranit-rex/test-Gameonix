@@ -249,6 +249,7 @@ const server = http.createServer(async (req, res) => {
         at: new Date(now).toISOString(), type, sessionId, slug,
         title: String(input.title || slug).replace(/[<>]/g, '').slice(0, 100),
         user: String(input.user || 'Guest').replace(/[<>]/g, '').slice(0, 80),
+        userId: String(input.userId || '').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 100),
         loggedIn: !!input.loggedIn,
         device: String(input.device || 'Unknown device').replace(/[<>]/g, '').slice(0, 100),
         durationSeconds: type === 'game_exit' && previous ? Math.max(0, Math.floor((now - previous.startedAt) / 1000)) : 0
