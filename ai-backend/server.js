@@ -795,7 +795,7 @@ function attachControllerSocket(socket,session,role){
    buffer=buffer.subarray(offset+length);if(opcode===8){socket.end(wsFrame('',8));close();return}if(opcode===9){try{socket.write(wsFrame(payload,10))}catch(_){};continue}if(opcode!==1)continue;
    let message;try{message=JSON.parse(payload.toString('utf8'))}catch(_){continue}
    if(message.type==='ping'){try{socket.write(wsFrame(JSON.stringify({type:'pong',at:Date.now()})))}catch(_){};continue}
-   if(role==='controller'&&message.type==='input'){const button=String(message.button||''),action=String(message.action||'');if(!['up','down','left','right','a','b','x','y','start','select','l1','r1','l2','r2'].includes(button)||!['down','up'].includes(action))continue;if(session.hostSocket&&session.hostSocket.writable){try{session.hostSocket.write(wsFrame(JSON.stringify({type:'input',button,action,at:Date.now()})))}catch(_){}}}
+   if(role==='controller'&&message.type==='input'){const button=String(message.button||''),action=String(message.action||'');if(!['up','down','left','right','a','b','x','y','start','select','l1','r1','l2','r2'].includes(button)||!['down','up'].includes(action))continue;const event={button,action,at:Date.now()};if(session.hostSocket&&session.hostSocket.writable){try{session.hostSocket.write(wsFrame(JSON.stringify({type:'input',...event})));continue}catch(_){}}if(session.commands.length>=100)session.commands.splice(0,session.commands.length-80);session.commands.push(event);}
   }
  });
  socket.on('close',close);socket.on('error',close);
