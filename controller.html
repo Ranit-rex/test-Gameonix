@@ -18,15 +18,18 @@ button:active,.pressed{transform:scale(.94);filter:brightness(1.3);border-color:
 .pad{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) minmax(80px,.55fr) minmax(0,1fr);align-items:center;gap:clamp(6px,2vw,18px);padding:0 1vw}
 .side{height:100%;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:space-evenly;gap:clamp(4px,1vh,10px)}
 .shoulders{display:flex;gap:6px;justify-content:center;width:100%}.shoulders button{width:clamp(40px,8vw,58px);height:clamp(27px,5vh,36px);font-size:10px}
-.dpad{width:min(29vw,29vh,156px);height:min(29vw,29vh,156px);display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);gap:4px}
-.dpad button{font-size:clamp(16px,3vw,22px);border-radius:9px}.blank{visibility:hidden;box-shadow:none}
+.stick{position:relative;width:min(34vw,34vh,174px);height:min(34vw,34vh,174px);border-radius:50%;border:2px solid #344c6c;background:radial-gradient(circle at 50% 45%,#1c2c45,#0b1425 72%);box-shadow:inset 0 0 24px #0009,0 8px 22px #0006;touch-action:none;user-select:none}
+.stick:before{content:"";position:absolute;inset:13%;border:1px dashed #405777;border-radius:50%;opacity:.8}
+.stick-knob{position:absolute;left:50%;top:50%;width:42%;height:42%;border-radius:50%;transform:translate(-50%,-50%);background:linear-gradient(145deg,#58799f,#203957);border:2px solid #8bb8d7;box-shadow:0 5px 14px #0009,inset 0 2px 5px #ffffff35;pointer-events:none}
+.stick-label{position:absolute;inset:0;display:grid;place-items:center;color:#9db4ce;font-size:9px;font-weight:900;letter-spacing:1px;pointer-events:none}
+
 .center{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px}.center button{font-size:9px;padding:8px 10px}
 .faces{width:min(29vw,29vh,156px);height:min(29vw,29vh,156px);display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);align-items:center;justify-items:center}
 .faces button{width:clamp(37px,8vw,54px);height:clamp(37px,8vw,54px);border-radius:50%;font-size:18px;padding:0}
 .tri{grid-area:1/2;background:linear-gradient(145deg,#287a55,#164a38)}.circle{grid-area:2/3;background:linear-gradient(145deg,#a43d62,#5d203b)}.cross{grid-area:3/2;background:linear-gradient(145deg,#326eb7,#1c3d70)}.square{grid-area:2/1;background:linear-gradient(145deg,#8351b5,#48256e)}
 .foot{text-align:center;font-size:8px;color:#71839d;line-height:12px;flex:0 0 12px}
-@media(orientation:portrait){.pad{grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:2px;padding:0}.center{position:absolute;top:27px;left:50%;transform:translateX(-50%);z-index:2;flex-direction:row;gap:5px}.center .hint{display:none}.side{justify-content:space-around}.dpad,.faces{width:min(39vw,21vh,145px);height:min(39vw,21vh,145px)}.faces button{width:clamp(36px,10vw,48px);height:clamp(36px,10vw,48px)}.shoulders button{width:42px;height:27px}.pad{padding-top:22px}}
-@media(max-height:370px) and (orientation:landscape){.app{gap:2px;padding-top:3px;padding-bottom:3px}.head{height:18px;flex-basis:18px}.pad{gap:4px}.dpad,.faces{width:min(25vw,23vh,112px);height:min(25vw,23vh,112px)}.faces button{width:34px;height:34px}.shoulders button{height:24px}.foot{font-size:7px}}
+@media(orientation:portrait){.pad{grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:2px;padding:0}.center{position:absolute;top:27px;left:50%;transform:translateX(-50%);z-index:2;flex-direction:row;gap:5px}.center .hint{display:none}.side{justify-content:space-around}.stick,.faces{width:min(39vw,21vh,145px);height:min(39vw,21vh,145px)}.faces button{width:clamp(36px,10vw,48px);height:clamp(36px,10vw,48px)}.shoulders button{width:42px;height:27px}.pad{padding-top:22px}}
+@media(max-height:370px) and (orientation:landscape){.app{gap:2px;padding-top:3px;padding-bottom:3px}.head{height:18px;flex-basis:18px}.pad{gap:4px}.stick,.faces{width:min(25vw,23vh,112px);height:min(25vw,23vh,112px)}.faces button{width:34px;height:34px}.shoulders button{height:24px}.foot{font-size:7px}}
 </style></head>
 <body>
 <main class="app">
@@ -35,7 +38,7 @@ button:active,.pressed{transform:scale(.94);filter:brightness(1.3);border-color:
 <div id="waitPanel" class="wait hidden"><b>⌛ Waiting for controls to work…</b>Controller connected. Controls will activate automatically<br>when the game is ready on your main phone.</div>
 <section id="controllerPanel" class="pad hidden">
 <div class="side"><div class="shoulders"><button data-button="l1">L1</button><button data-button="l2">L2</button></div>
-<div class="dpad"><button class="blank"></button><button data-button="up">▲</button><button class="blank"></button><button data-button="left">◀</button><button class="blank"></button><button data-button="right">▶</button><button class="blank"></button><button data-button="down">▼</button><button class="blank"></button></div></div>
+<div class="stick" id="analogStick" aria-label="Analog joystick"><div class="stick-label">MOVE</div><div class="stick-knob" id="stickKnob"></div></div></div>
 <div class="center"><div class="center-buttons"><button data-button="select">SELECT</button><button data-button="start">START</button></div><div class="hint" style="text-align:center;color:#7188a5;font-size:9px;letter-spacing:1.3px">PLAYOVIA GAMEPAD</div></div>
 <div class="side"><div class="shoulders"><button data-button="r2">R2</button><button data-button="r1">R1</button></div>
 <div class="faces"><button class="tri" data-button="y">△</button><button class="circle" data-button="b">○</button><button class="cross" data-button="a">×</button><button class="square" data-button="x">□</button></div></div>
@@ -60,21 +63,25 @@ function scheduleControllerReconnect(){if(!connected||reconnectTimer)return;cons
 function openControllerSocket(){if(!connected||!sessionId||!controllerToken)return;if(controllerSocket&&controllerSocket.readyState<2)return;try{const wsUrl=API.replace(/^http/,'ws')+'/api/controller/socket?sessionId='+encodeURIComponent(sessionId)+'&role=controller&token='+encodeURIComponent(controllerToken);const ws=new WebSocket(wsUrl);controllerSocket=ws;ws.onopen=()=>{if(controllerSocket!==ws){ws.close();return}reconnectAttempt=0;clearInterval(socketHeartbeat);socketHeartbeat=setInterval(()=>{if(ws.readyState===1)try{ws.send(JSON.stringify({type:'ping'}))}catch(_){}},12000);$('status').textContent=gameReady?'🎮 Controls connected':'Connected · Waiting for game'};ws.onclose=()=>{if(controllerSocket===ws)controllerSocket=null;clearInterval(socketHeartbeat);socketHeartbeat=null;if(connected)scheduleControllerReconnect()};ws.onerror=()=>{try{ws.close()}catch(_){}}}catch(_){scheduleControllerReconnect()}}
 function disconnect(msg){releaseAllButtons();connected=false;clearTimeout(reconnectTimer);reconnectTimer=null;reconnectAttempt=0;clearInterval(statusTimer);statusTimer=null;clearInterval(socketHeartbeat);socketHeartbeat=null;try{controllerSocket&&controllerSocket.close()}catch(_){}controllerSocket=null;$('controllerPanel').classList.add('hidden');$('waitPanel').classList.add('hidden');$('connectPanel').classList.remove('hidden');$('connectBtn').disabled=false;$('status').textContent=msg;sessionId='';controllerToken='';localStorage.removeItem('playovia_remote_controller_v1')}
 const heldButtons=new Set();
-function send(button,action){
- if(!connected||!gameReady||!sessionId)return;
- const key=String(button||'');
- if(action==='down'){if(heldButtons.has(key))return;heldButtons.add(key)}
- else{if(!heldButtons.has(key))return;heldButtons.delete(key)}
- const payload={type:'input',button:key,action};
- if(controllerSocket&&controllerSocket.readyState===1){try{controllerSocket.send(JSON.stringify(payload));return}catch(_){}}
- fetch(API+'/api/controller/input?sessionId='+encodeURIComponent(sessionId),{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+controllerToken},body:JSON.stringify({button:key,action}),cache:'no-store',keepalive:true}).catch(()=>{});
-}
-function releaseAllButtons(){for(const key of [...heldButtons])send(key,'up')}
+function transmitInput(key,action){const payload={type:'input',button:key,action};if(controllerSocket&&controllerSocket.readyState===1){try{controllerSocket.send(JSON.stringify(payload));return}catch(_){}}fetch(API+'/api/controller/input?sessionId='+encodeURIComponent(sessionId),{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+controllerToken},body:JSON.stringify({button:key,action}),cache:'no-store',keepalive:true}).catch(()=>{})}
+function send(button,action){if(!connected||!gameReady||!sessionId)return;const key=String(button||'');if(action==='down'){if(heldButtons.has(key))return;heldButtons.add(key)}else{if(!heldButtons.has(key))return;heldButtons.delete(key)}transmitInput(key,action)}
+// Repeat held state as a heartbeat so the host can safely release stale keys.
+const holdHeartbeat=setInterval(()=>{if(connected&&gameReady)for(const key of heldButtons)transmitInput(key,'down')},600);
+function releaseAllButtons(){for(const key of [...heldButtons]){heldButtons.delete(key);transmitInput(key,'up')}updateStickDirections(new Set());knob.style.transform='translate(-50%,-50%)'}
+
+// Analog joystick: emit stable directional down/up events, including diagonals.
+const stick=$('analogStick'),knob=$('stickKnob');let stickPointer=null,stickDirs=new Set();
+function updateStickDirections(next){for(const d of stickDirs)if(!next.has(d))send(d,'up');for(const d of next)if(!stickDirs.has(d))send(d,'down');stickDirs=next}
+function moveStick(e){if(stickPointer!==e.pointerId)return;const r=stick.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,dx=e.clientX-cx,dy=e.clientY-cy,max=r.width*.31,len=Math.hypot(dx,dy),scale=len>max?max/len:1,x=dx*scale,y=dy*scale;knob.style.transform='translate(calc(-50% + '+x+'px),calc(-50% + '+y+'px))';const nx=x/max,ny=y/max,next=new Set();if(Math.hypot(nx,ny)>.23){if(ny<-.35)next.add('up');if(ny>.35)next.add('down');if(nx<-.35)next.add('left');if(nx>.35)next.add('right');if(!next.size){if(Math.abs(nx)>Math.abs(ny))next.add(nx<0?'left':'right');else next.add(ny<0?'up':'down')}}updateStickDirections(next)}
+function releaseStick(e){if(stickPointer!==null&&(e.pointerId===undefined||e.pointerId===stickPointer)){stickPointer=null;updateStickDirections(new Set());knob.style.transform='translate(-50%,-50%)'}}
+stick.addEventListener('pointerdown',e=>{e.preventDefault();stickPointer=e.pointerId;try{stick.setPointerCapture(e.pointerId)}catch(_){}moveStick(e)});
+stick.addEventListener('pointermove',e=>{if(stickPointer===e.pointerId){e.preventDefault();moveStick(e)}});
+stick.addEventListener('pointerup',releaseStick);stick.addEventListener('pointercancel',releaseStick);stick.addEventListener('lostpointercapture',releaseStick);
 document.querySelectorAll('[data-button]').forEach(btn=>{
  const key=btn.dataset.button;
  const down=e=>{e.preventDefault();if(btn.dataset.held==='1')return;btn.dataset.held='1';btn.classList.add('pressed');try{btn.setPointerCapture(e.pointerId)}catch(_){}send(key,'down')};
  const up=e=>{if(btn.dataset.held!=='1')return;btn.dataset.held='0';btn.classList.remove('pressed');send(key,'up')};
  btn.addEventListener('pointerdown',down);btn.addEventListener('pointerup',up);btn.addEventListener('pointercancel',up);btn.addEventListener('lostpointercapture',up);
 });
-$('connectBtn').addEventListener('click',connect);document.addEventListener('visibilitychange',()=>{if(document.hidden){releaseAllButtons();document.querySelectorAll('[data-button]').forEach(b=>{b.dataset.held='0';b.classList.remove('pressed')})}});
+$('connectBtn').addEventListener('click',connect);document.addEventListener('visibilitychange',()=>{if(document.hidden){releaseAllButtons();releaseStick();document.querySelectorAll('[data-button]').forEach(b=>{b.dataset.held='0';b.classList.remove('pressed')})}});window.addEventListener('pagehide',releaseAllButtons);
 </script></body></html>
