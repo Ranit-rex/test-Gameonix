@@ -1448,7 +1448,17 @@ $('gameFrame').addEventListener('load',()=>{if($('gameOverlay').classList.contai
 // Playovia second-phone controller pairing. The game iframe must implement the
 // PLAYOVIA_REMOTE_INPUT postMessage contract to consume remote button events.
 let remoteControllerSession=null,remoteControllerUnsub=null;
-function sendRemoteGameInput(payload){try{$('gameFrame')?.contentWindow?.postMessage({type:'PLAYOVIA_REMOTE_INPUT',...payload},'*')}catch(e){console.warn('Remote controller bridge:',e)}}
+function sendRemoteGameInput(payload){
+ try{
+  const frame=$('gameFrame'),win=frame?.contentWindow;if(!win)return;
+  win.postMessage({type:'PLAYOVIA_REMOTE_INPUT',...payload},'*');
+  const frameUrl=new URL(frame.src,location.href);
+  if(frameUrl.origin===location.origin){
+   const keys={up:['ArrowUp','ArrowUp'],down:['ArrowDown','ArrowDown'],left:['ArrowLeft','ArrowLeft'],right:['ArrowRight','ArrowRight'],a:['z','KeyZ'],b:['x','KeyX'],x:['c','KeyC'],y:['v','KeyV'],start:['Enter','Enter'],select:['Shift','Shift']};
+   const pair=keys[payload.button];if(pair){const type=payload.action==='down'?'keydown':'keyup';const event=new KeyboardEvent(type,{key:pair[0],code:pair[1],bubbles:true,cancelable:true});win.dispatchEvent(event);try{frame.contentDocument?.dispatchEvent(new KeyboardEvent(type,{key:pair[0],code:pair[1],bubbles:true,cancelable:true}))}catch(_){}}
+  }
+ }catch(e){console.warn('Remote controller bridge:',e)}
+}
 async function startRemoteController(){
  if(!currentUser){$('remoteControllerStatus').textContent='Sign in to Playovia on this phone first.';return}
  if(!db){$('remoteControllerStatus').textContent='Playovia connection is still loading. Try again in a moment.';return}
