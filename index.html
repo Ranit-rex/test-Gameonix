@@ -1489,7 +1489,11 @@ function dispatchRemoteGameKey(button,action){
    'bomb-tag':{...common}
   };
   const gameMap=maps[activeRemoteGameSlug]||common;
-  const pair=gameMap[button];if(pair){const target=frame.contentDocument||win;target.dispatchEvent(new KeyboardEvent(action==='down'?'keydown':'keyup',{key:pair[0],code:pair[1],bubbles:true,cancelable:true,composed:true}));}
+  const pair=gameMap[button];if(pair){
+   try{frame.focus({preventScroll:true})}catch(_){try{frame.focus()}catch(__){}}
+   const event=new KeyboardEvent(action==='down'?'keydown':'keyup',{key:pair[0],code:pair[1],bubbles:true,cancelable:true,composed:true});
+   win.dispatchEvent(event);
+  }
  }catch(e){console.warn('Remote controller bridge:',e)}
 }
 function sendRemoteGameInput(payload){
