@@ -227,8 +227,10 @@ async function readJsonBody(req, maxBytes = 4096) {
   return JSON.parse(raw || '{}');
 }
 async function verifyFirebaseUserToken(idToken) {
-  const apiKey = process.env.FIREBASE_WEB_API_KEY;
-  if (!apiKey || !idToken) return null;
+  // Firebase Web API keys are public client identifiers. Keep this project-key fallback
+  // so controller pairing still works if the Render env var has not been configured.
+  const apiKey = process.env.FIREBASE_WEB_API_KEY || 'AIzaSyB_pZ9WfVSx2XHuDeSZ7VrwEr-Pz_m_2QM';
+  if (!idToken) return null;
   try {
     const response = await fetch('https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=' + encodeURIComponent(apiKey), {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
