@@ -91,7 +91,9 @@ function dhRefreshRooms(){
  const box=$('#dhRoomList');if(!box)return;
  PlayoviaMultiplayer.listRooms({db:dhDb,gameId:'dungeon-hunter'}).then(rooms=>{
   if(!$('#dhRoomList'))return;
-  box.innerHTML=rooms.length?rooms.map(r=>'<div class="dh-room-item"><span><b>'+dhEsc(r.hostName||'Hunter')+'</b><small>'+Object.keys(r.members||{}).length+'/'+(r.maxPlayers||4)+' players · '+dhEsc(r.mode||'Normal')+'</small></span><button class="b" onclick="dhJoinRoom(\''+dhEsc(r.roomId)+'\')">Join</button></div>').join(''):'<small>No public rooms yet. Create one!</small>';
+  const uid=dhAuth?.currentUser?.uid||dhUser?.uid;
+  const joinable=rooms.filter(r=>!uid||!r.members?.[uid]);
+  box.innerHTML=joinable.length?joinable.map(r=>'<div class="dh-room-item"><span><b>'+dhEsc(r.hostName||'Hunter')+'</b><small>'+Object.keys(r.members||{}).length+'/'+(r.maxPlayers||4)+' players · '+dhEsc(r.mode||'Normal')+'</small></span><button class="b" onclick="dhJoinRoom(\\''+dhEsc(r.roomId)+'\\')">Join</button></div>').join(''):'<small>No other public rooms yet. Create one or share your room code!</small>';
  }).catch(e=>{box.textContent='Could not load rooms: '+e.message});
 }
 function dhWatchRooms(){
@@ -124,7 +126,8 @@ async function dhJoinByCode(){
 async function dhJoinRoom(code){
  const user=dhAuth?.currentUser||dhUser;
  if(!dhDb||!user){dhSay('Please sign in on Playovia first.');return}
- try{
+ if(dhRoomRef&&dhRoomId===code){dhShowRoomLobby();dhSay('You are already in this room. Share the code with friends.');return}
+  try{
   dhUser=user;
   const joined=await PlayoviaMultiplayer.joinRoom({db:dhDb,uid:user.uid,name:String(dhProfile.username||user.displayName||user.email?.split('@')[0]||'Hunter'),gameId:'dungeon-hunter',code});
   await dhEnterRoom(joined.roomId);
@@ -151,9 +154,10 @@ async function dhEnterRoom(id){
  dhRoomId=id;dhRoomRef=ref;dhPlayersRef=ref.child('members');dhRoomMeta=data;dhRoomHost=data.hostUid===dhUser.uid;dhGameStarted=false;dhSeenEvents.clear();dhRemotePlayers=members;
  const now=Date.now(),name=String(dhProfile.username||dhUser.displayName||'Hunter').slice(0,32);
  const own=dhPlayersRef.child(dhUser.uid),old=members[dhUser.uid]||{};
- await own.update({uid:dhUser.uid,name,joinedAt:old.joinedAt||now,lastSeen:now,cls:S.cls,x:old.x??60,y:old.y??450,hp:old.hp??mhp(),mhp:mhp(),world:old.world??0,updatedAt:now});
- await own.onDisconnect().remove();
- if(dhRoomHost)await ref.onDisconnect().remove();
+ try{await own.update({uid:dhUser.uid,name,joinedAt:old.joinedAt||now,lastSeen:now,cls:S.cls,x:old.x??60,y:old.y??450,hp:old.hp??mhp(),mhp:mhp(),world:old.world??0,updatedAt:now})}
+ catch(e){throw Error('Player data write failed: '+(e?.message||e))}
+ try{await own.onDisconnect().remove()}catch(e){console.warn('Player disconnect cleanup permission unavailable; heartbeat remains active:',e)}
+ if(dhRoomHost)try{await ref.onDisconnect().remove()}catch(e){console.warn('Host disconnect cleanup permission unavailable; server cleanup will handle stale rooms:',e)}
  dhSharedRoomListener=ss=>{
   const room=ss.val();
   if(!room){dhLeaveRoom(false).then(()=>{menu();dhSay('Room closed by host.')});return}
