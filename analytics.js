@@ -29,19 +29,28 @@
     try {
       const appIdentity = window.playoviaGetIdentity?.() || {};
       const current = window.PlayHubFirebase?.auth?.currentUser || window.firebase?.auth?.()?.currentUser || null;
-      const userId = appIdentity.userId || current?.uid || '';
-      const loggedIn = !!(appIdentity.loggedIn || current || userId);
+      const userId = String(appIdentity.userId || current?.uid || '').trim();
+      const loggedIn = !!userId;
       return {
         user: String(appIdentity.username || current?.displayName || current?.email?.split('@')[0] || (loggedIn ? 'Playovia member' : 'Guest')).slice(0, 80),
-        userId: String(userId).slice(0, 100),
+        userId: userId.slice(0, 100),
         loggedIn
       };
     } catch (_) {}
     return { user: 'Guest', userId: '', loggedIn: false };
   };
-  const sendGameEvent = (type, game) => {
+  const sendGameEvent = async (type, game) => {
     if (!game || !game.slug) return;
+    // Wait for Firebase's first auth-state callback so restored Google sessions
+    // have a real UID before the first game_open/game_play event is sent.
+    try {
+      const ready = window.PlayHubFirebase?.ready;
+      if (ready && typeof ready.then === 'function') {
+        await Promise.race([ready, new Promise(resolve => setTimeout(resolve, 5000))]);
+      }
+    } catch (_) {}
     const who = identity();
+    if (who.loggedIn && !who.userId) console.warn('[Playovia game analytics] Authenticated user has no Firebase UID; event will be marked guest.');
     fetch(API + '/api/analytics/game-event', {
       method: 'POST', mode: 'cors', credentials: 'omit', keepalive: true,
       headers: { 'Content-Type': 'application/json' },
