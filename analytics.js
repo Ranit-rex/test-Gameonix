@@ -20,40 +20,10 @@
   };
 
   const activeGames = new Map();
-  const deviceId = () => {
-    const key = 'playovia_device_id';
-    try {
-      let id = localStorage.getItem(key) || '';
-      if (!/^DEV-[A-F0-9]{12}$/.test(id)) {
-        const bytes = new Uint8Array(6);
-        crypto.getRandomValues(bytes);
-        id = 'DEV-' + Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
-        localStorage.setItem(key, id);
-      }
-      return id;
-    } catch (_) { return 'DEV-' + Math.random().toString(36).slice(2, 14).toUpperCase(); }
-  };
-  const deviceDetails = async () => {
-    const ua = navigator.userAgent || '';
+  const deviceName = () => {
     const platform = navigator.userAgentData?.platform || navigator.platform || 'Unknown platform';
-    const mobile = navigator.userAgentData?.mobile || /Android|iPhone|iPad|Mobile/i.test(ua);
-    let model = '';
-    try {
-      const hints = await navigator.userAgentData?.getHighEntropyValues?.(['model']);
-      model = String(hints?.model || '').trim();
-    } catch (_) {}
-    if (!model && /Android/i.test(ua)) {
-      const match = ua.match(/Android[^;)]*;\s*([^;)]+?)(?:\s+Build|\\))/i);
-      if (match) model = match[1].replace(/\s+/g, ' ').trim();
-    }
-    if (!model && /iPhone/i.test(ua)) model = 'iPhone (exact model not exposed by iOS)';
-    if (!model && /iPad/i.test(ua)) model = 'iPad (exact model not exposed by iOS)';
-    if (!model) model = String(platform);
-    return {
-      device: (mobile ? 'Mobile · ' : 'Desktop · ') + String(platform).slice(0, 45),
-      deviceModel: String(model).slice(0, 80) || 'Model unavailable',
-      deviceId: deviceId()
-    };
+    const mobile = navigator.userAgentData?.mobile || /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent);
+    return (mobile ? 'Mobile · ' : 'Desktop · ') + String(platform).slice(0, 70);
   };
   const identity = async () => {
     try {
@@ -98,12 +68,11 @@
       if (firestoreReady && typeof firestoreReady.then === 'function') await Promise.race([firestoreReady, new Promise(resolve => setTimeout(resolve, 5000))]);
     } catch (_) {}
     const who = await identity();
-    const device = await deviceDetails();
     if (who.loggedIn && !who.playerId) console.warn('[Playovia game analytics] Signed-in user has no valid 9-character Playovia Player ID yet.');
     fetch(API + '/api/analytics/game-event', {
       method: 'POST', mode: 'cors', credentials: 'omit', keepalive: true,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type, sessionId, slug: game.slug, title: game.title || game.slug, user: who.user, playerId: who.playerId, loggedIn: who.loggedIn, ...device })
+      body: JSON.stringify({ type, sessionId, slug: game.slug, title: game.title || game.slug, user: who.user, playerId: who.playerId, loggedIn: who.loggedIn, device: deviceName() })
     }).then(response => { if (!response.ok) console.warn('[Playovia game analytics] Event rejected:', response.status); }).catch(error => console.warn('[Playovia game analytics] Network error:', error));
   };
   const slugFromElement = el => {
