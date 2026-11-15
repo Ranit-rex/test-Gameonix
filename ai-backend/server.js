@@ -426,7 +426,7 @@ const server = http.createServer(async (req, res) => {
         const session = {
           id: sessionId, uid: user.uid, code, gameTitle,
           hostToken: crypto.randomBytes(32).toString('hex'),
-          controllerToken: '', controllerConnected: false,
+          controllerToken: '', controllerConnected: false, gameReady: false,
           commands: [], status: 'active', createdAt: Date.now(),
           expiresAt: Date.now() + 60 * 60 * 1000
         };
@@ -455,7 +455,12 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'GET' && route === '/api/controller/commands') {
       if (!safeTokenEqual(bearerToken(req), session.hostToken)) return send(res, 401, { error: 'Invalid gaming-phone session.' }, origin);
       const commands = session.commands.splice(0, 100);
-      return send(res, 200, { ok: true, controllerConnected: session.controllerConnected, commands }, origin);
+      return send(res, 200, { ok: true, controllerConnected: session.controllerConnected, gameReady: session.gameReady, commands }, origin);
+    }
+    if (req.method === 'POST' && route === '/api/controller/ready') {
+      if (!safeTokenEqual(bearerToken(req), session.hostToken)) return send(res, 401, { error: 'Invalid gaming-phone session.' }, origin);
+      try { const input = await readJsonBody(req, 1024); session.gameReady = input.ready === true; return send(res, 200, { ok: true, gameReady: session.gameReady }, origin); }
+      catch (error) { return send(res, 400, { error: error.message || 'Invalid request.' }, origin); }
     }
     if (req.method === 'POST' && route === '/api/controller/input') {
       if (!safeTokenEqual(bearerToken(req), session.controllerToken) || !session.controllerConnected) return send(res, 401, { error: 'Controller is not connected.' }, origin);
@@ -463,7 +468,7 @@ const server = http.createServer(async (req, res) => {
         const input = await readJsonBody(req, 1024);
         const button = String(input.button || '');
         const action = String(input.action || '');
-        if (!['up','down','left','right','a','b','x','y','start','select'].includes(button) || !['down','up'].includes(action)) return send(res, 400, { error: 'Invalid controller input.' }, origin);
+        if (!['up','down','left','right','a','b','x','y','start','select','l1','r1','l2','r2'].includes(button) || !['down','up'].includes(action)) return send(res, 400, { error: 'Invalid controller input.' }, origin);
         if (session.commands.length >= 100) session.commands.splice(0, session.commands.length - 80);
         session.commands.push({ button, action, at: Date.now() });
         return send(res, 202, { ok: true }, origin);
@@ -471,7 +476,7 @@ const server = http.createServer(async (req, res) => {
     }
     if (req.method === 'GET' && route === '/api/controller/status') {
       if (!safeTokenEqual(bearerToken(req), session.controllerToken)) return send(res, 401, { error: 'Invalid controller session.' }, origin);
-      return send(res, 200, { ok: true, active: true, gameTitle: session.gameTitle }, origin);
+      return send(res, 200, { ok: true, active: true, gameTitle: session.gameTitle, gameReady: session.gameReady }, origin);
     }
     if (req.method === 'DELETE' && route === '/api/controller/session') {
       if (!safeTokenEqual(bearerToken(req), session.hostToken)) return send(res, 401, { error: 'Invalid gaming-phone session.' }, origin);
