@@ -810,4 +810,4 @@ server.on('upgrade',(req,socket)=>{
   if(role==='host'){if(session.hostSocket)session.hostSocket.destroy();session.hostSocket=socket}else{if(session.controllerSocket)session.controllerSocket.destroy();session.controllerSocket=socket}attachControllerSocket(socket,session,role);
  }catch(_){socket.destroy()}
 });
-\nserver.listen(PORT, '0.0.0.0', () => console.log('Playovia AI backend listening on port ' + PORT));
+server.listen(PORT, '0.0.0.0', () => console.log('Playovia AI backend listening on port ' + PORT));
