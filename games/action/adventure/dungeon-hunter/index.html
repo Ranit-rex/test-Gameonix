@@ -93,7 +93,7 @@ function dhRefreshRooms(){
   if(!$('#dhRoomList'))return;
   const uid=dhAuth?.currentUser?.uid||dhUser?.uid;
   const joinable=rooms.filter(r=>!uid||!r.members?.[uid]);
-  box.innerHTML=joinable.length?joinable.map(r=>'<div class="dh-room-item"><span><b>'+dhEsc(r.hostName||'Hunter')+'</b><small>'+Object.keys(r.members||{}).length+'/'+(r.maxPlayers||4)+' players · '+dhEsc(r.mode||'Normal')+'</small></span><button class="b" onclick="dhJoinRoom(\\''+dhEsc(r.roomId)+'\\')">Join</button></div>').join(''):'<small>No other public rooms yet. Create one or share your room code!</small>';
+  box.innerHTML=joinable.length?joinable.map(r=>'<div class="dh-room-item"><span><b>'+dhEsc(r.hostName||'Hunter')+'</b><small>'+Object.keys(r.members||{}).length+'/'+(r.maxPlayers||4)+' players · '+dhEsc(r.mode||'Normal')+'</small></span><button class="b" onclick="dhJoinRoom(\''+dhEsc(r.roomId)+'\')">Join</button></div>').join(''):'<small>No other public rooms yet. Create one or share your room code!</small>';
  }).catch(e=>{box.textContent='Could not load rooms: '+e.message});
 }
 function dhWatchRooms(){
