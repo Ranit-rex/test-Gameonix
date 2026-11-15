@@ -26,12 +26,12 @@
     return (mobile ? 'Mobile · ' : 'Desktop · ') + String(platform).slice(0, 70);
   };
   const identity = () => {
-    let user = 'Guest', loggedIn = false;
+    let user = 'Guest', loggedIn = false, userId = '';
     try {
       const current = window.firebase?.auth?.()?.currentUser || window.auth?.currentUser || null;
-      if (current) { user = current.displayName || current.email || 'Logged-in player'; loggedIn = true; }
+      if (current) { user = current.displayName || current.email || 'Logged-in player'; userId = current.uid || ''; loggedIn = true; }
     } catch (_) {}
-    return { user: String(user).slice(0, 80), loggedIn };
+    return { user: String(user).slice(0, 80), userId: String(userId).slice(0, 100), loggedIn };
   };
   const sendGameEvent = (type, game) => {
     if (!game || !game.slug) return;
@@ -39,7 +39,7 @@
     fetch(API + '/api/analytics/game-event', {
       method: 'POST', mode: 'cors', credentials: 'omit', keepalive: true,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type, sessionId, slug: game.slug, title: game.title || game.slug, user: who.user, loggedIn: who.loggedIn, device: deviceName() })
+      body: JSON.stringify({ type, sessionId, slug: game.slug, title: game.title || game.slug, user: who.user, userId: who.userId, loggedIn: who.loggedIn, device: deviceName() })
     }).then(response => { if (!response.ok) console.warn('[Playovia game analytics] Event rejected:', response.status); }).catch(error => console.warn('[Playovia game analytics] Network error:', error));
   };
   const slugFromElement = el => {
