@@ -1448,20 +1448,33 @@ $('gameFrame').addEventListener('load',()=>{if($('gameOverlay').classList.contai
 // Playovia remote controller uses the Render API; no client-side Firestore rules required.
 let remoteControllerSession=null,remoteControllerPollTimer=null,remoteControllerPolling=false,remoteControllerGameReady=false,remoteControllerSocket=null;
 async function setControllerGameReady(ready){remoteControllerGameReady=!!ready;const session=remoteControllerSession;if(!session)return;try{await fetch(PLAYOVIA_AI_ENDPOINT+'/api/controller/ready?sessionId='+encodeURIComponent(session.sessionId),{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.hostToken},body:JSON.stringify({ready:!!ready}),cache:'no-store'})}catch(e){console.warn('Controller ready state:',e)}}
-const remotePressedButtons=new Set();
-function sendRemoteGameInput(payload){
+const remotePressedButtons=new Set(),remoteButtonReleaseTimers=new Map();
+function dispatchRemoteGameKey(button,action){
  try{
   const frame=$('gameFrame'),win=frame?.contentWindow;if(!win)return;
-  const button=String(payload.button||''),action=payload.action;
-  if(action==='down'){if(remotePressedButtons.has(button))return;remotePressedButtons.add(button)}
-  else{if(!remotePressedButtons.has(button))return;remotePressedButtons.delete(button)}
+  const payload={type:'PLAYOVIA_REMOTE_INPUT',button,action,at:Date.now()};
   const frameUrl=new URL(frame.src,location.href);
-  if(frameUrl.origin!==location.origin){win.postMessage({type:'PLAYOVIA_REMOTE_INPUT',...payload},'*');return}
+  if(frameUrl.origin!==location.origin){win.postMessage(payload,'*');return}
   const keys={up:['ArrowUp','ArrowUp'],down:['ArrowDown','ArrowDown'],left:['ArrowLeft','ArrowLeft'],right:['ArrowRight','ArrowRight'],a:['z','KeyZ'],b:['x','KeyX'],x:['c','KeyC'],y:['v','KeyV'],start:['Enter','Enter'],select:['Shift','Shift'],l1:['q','KeyQ'],r1:['e','KeyE'],l2:['Control','ControlLeft'],r2:['Alt','AltLeft']};
-  const pair=keys[button];if(pair){const type=action==='down'?'keydown':'keyup';const target=frame.contentDocument||win;target.dispatchEvent(new KeyboardEvent(type,{key:pair[0],code:pair[1],bubbles:true,cancelable:true}));}
+  const pair=keys[button];if(pair){const target=frame.contentDocument||win;target.dispatchEvent(new KeyboardEvent(action==='down'?'keydown':'keyup',{key:pair[0],code:pair[1],bubbles:true,cancelable:true,composed:true}));}
  }catch(e){console.warn('Remote controller bridge:',e)}
 }
-function releaseAllRemoteGameInputs(){for(const button of [...remotePressedButtons])sendRemoteGameInput({button,action:'up'})}
+function sendRemoteGameInput(payload){
+ const button=String(payload.button||''),action=payload.action;if(!button||!['down','up'].includes(action))return;
+ if(action==='down'){
+  if(remotePressedButtons.has(button)){clearTimeout(remoteButtonReleaseTimers.get(button));remoteButtonReleaseTimers.set(button,setTimeout(()=>sendRemoteGameInput({button,action:'up'}),1800));return}
+  remotePressedButtons.add(button);dispatchRemoteGameKey(button,'down');
+  remoteButtonReleaseTimers.set(button,setTimeout(()=>sendRemoteGameInput({button,action:'up'}),1800));
+ }else{
+  remotePressedButtons.delete(button);clearTimeout(remoteButtonReleaseTimers.get(button));remoteButtonReleaseTimers.delete(button);
+  dispatchRemoteGameKey(button,'up');
+ }
+}
+function releaseAllRemoteGameInputs(){
+ const held=[...remotePressedButtons];remotePressedButtons.clear();
+ for(const [button,timer] of remoteButtonReleaseTimers){clearTimeout(timer)}remoteButtonReleaseTimers.clear();
+ for(const button of held)dispatchRemoteGameKey(button,'up');
+}
 let remoteSocketRetryTimer=null,remoteSocketRetryCount=0;
 function connectRemoteControllerSocket(){try{const session=remoteControllerSession;if(!session)return;if(remoteControllerSocket&&remoteControllerSocket.readyState<2)return;const ws=new WebSocket(PLAYOVIA_AI_ENDPOINT.replace(/^http/,'ws')+'/api/controller/socket?sessionId='+encodeURIComponent(session.sessionId)+'&role=host&token='+encodeURIComponent(session.hostToken));remoteControllerSocket=ws;ws.onmessage=event=>{try{const data=JSON.parse(event.data);if(data.type==='input')sendRemoteGameInput({action:data.action,button:data.button,at:data.at||Date.now()})}catch(_){}};ws.onopen=()=>{if(remoteControllerSession!==session){ws.close();return}remoteSocketRetryCount=0;remoteControllerSocket=ws};ws.onclose=()=>{if(remoteControllerSocket===ws)remoteControllerSocket=null;releaseAllRemoteGameInputs();if(remoteControllerSession===session&&!remoteSocketRetryTimer){const delay=Math.min(6000,500*Math.pow(1.7,remoteSocketRetryCount++));remoteSocketRetryTimer=setTimeout(()=>{remoteSocketRetryTimer=null;connectRemoteControllerSocket()},delay)}};ws.onerror=()=>{try{ws.close()}catch(_){}}}catch(_){if(remoteControllerSession&&!remoteSocketRetryTimer){remoteSocketRetryTimer=setTimeout(()=>{remoteSocketRetryTimer=null;connectRemoteControllerSocket()},2000)}}}
 async function startRemoteController(){
