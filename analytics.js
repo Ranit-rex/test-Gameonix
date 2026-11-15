@@ -26,12 +26,21 @@
     return (mobile ? 'Mobile · ' : 'Desktop · ') + String(platform).slice(0, 70);
   };
   const identity = () => {
-    let user = 'Guest', loggedIn = false, userId = '';
     try {
-      const current = window.firebase?.auth?.()?.currentUser || window.auth?.currentUser || null;
-      if (current) { user = current.displayName || current.email || 'Logged-in player'; userId = current.uid || ''; loggedIn = true; }
+      const appIdentity = window.playoviaGetIdentity?.();
+      if (appIdentity) return {
+        user: String(appIdentity.username || 'Guest').slice(0, 80),
+        userId: String(appIdentity.userId || '').slice(0, 100),
+        loggedIn: !!appIdentity.loggedIn
+      };
+      const current = window.PlayHubFirebase?.auth?.currentUser || window.firebase?.auth?.()?.currentUser || null;
+      if (current) return {
+        user: String(current.displayName || current.email?.split('@')[0] || 'Player').slice(0, 80),
+        userId: String(current.uid || '').slice(0, 100),
+        loggedIn: true
+      };
     } catch (_) {}
-    return { user: String(user).slice(0, 80), userId: String(userId).slice(0, 100), loggedIn };
+    return { user: 'Guest', userId: '', loggedIn: false };
   };
   const sendGameEvent = (type, game) => {
     if (!game || !game.slug) return;
