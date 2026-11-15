@@ -52,16 +52,14 @@
     const title = link.dataset.gameTitle || link.getAttribute('aria-label') || link.querySelector('h1,h2,h3,h4,.game-title')?.textContent?.trim() || link.textContent?.trim().replace(/\s+/g, ' ').slice(0, 90) || slug;
     return { slug, title };
   };
-  document.addEventListener('click', event => {
-    const game = slugFromElement(event.target);
-    if (!game) return;
-    sendGameEvent('game_open', game);
-    const startedAt = Date.now();
-    activeGames.set(game.slug, { ...game, startedAt });
-    setTimeout(() => {
-      if (activeGames.has(game.slug)) sendGameEvent('game_play', game);
-    }, 1200);
-  }, true);
+  window.playoviaTrackGame = (type, slug, title) => {
+    const gameSlug = String(slug || '').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 80);
+    if (!gameSlug) return;
+    const game = { slug: gameSlug, title: String(title || gameSlug).slice(0, 90) };
+    if (type === 'game_open') activeGames.set(gameSlug, { ...game, startedAt: Date.now() });
+    if (type === 'game_exit') activeGames.delete(gameSlug);
+    sendGameEvent(type, game);
+  };
   setInterval(() => { for (const game of activeGames.values()) sendGameEvent('game_heartbeat', game); }, 30000);
   const finishGame = slug => {
     const game = activeGames.get(slug);
