@@ -1462,7 +1462,8 @@ function sendRemoteGameInput(payload){
  }catch(e){console.warn('Remote controller bridge:',e)}
 }
 function releaseAllRemoteGameInputs(){for(const button of [...remotePressedButtons])sendRemoteGameInput({button,action:'up'})}
-function connectRemoteControllerSocket(){try{const session=remoteControllerSession;if(!session)return;const ws=new WebSocket(PLAYOVIA_AI_ENDPOINT.replace(/^http/,'ws')+'/api/controller/socket?sessionId='+encodeURIComponent(session.sessionId)+'&role=host&token='+encodeURIComponent(session.hostToken));remoteControllerSocket=ws;ws.onmessage=event=>{try{const data=JSON.parse(event.data);if(data.type==='input')sendRemoteGameInput({action:data.action,button:data.button,at:data.at||Date.now()})}catch(_){}};ws.onopen=()=>{if(remoteControllerSession!==session){ws.close();return}remoteControllerSocket=ws};ws.onclose=()=>{if(remoteControllerSocket===ws)remoteControllerSocket=null;releaseAllRemoteGameInputs()};ws.onerror=()=>{try{ws.close()}catch(_){}}}catch(_){}}
+let remoteSocketRetryTimer=null,remoteSocketRetryCount=0;
+function connectRemoteControllerSocket(){try{const session=remoteControllerSession;if(!session)return;if(remoteControllerSocket&&remoteControllerSocket.readyState<2)return;const ws=new WebSocket(PLAYOVIA_AI_ENDPOINT.replace(/^http/,'ws')+'/api/controller/socket?sessionId='+encodeURIComponent(session.sessionId)+'&role=host&token='+encodeURIComponent(session.hostToken));remoteControllerSocket=ws;ws.onmessage=event=>{try{const data=JSON.parse(event.data);if(data.type==='input')sendRemoteGameInput({action:data.action,button:data.button,at:data.at||Date.now()})}catch(_){}};ws.onopen=()=>{if(remoteControllerSession!==session){ws.close();return}remoteSocketRetryCount=0;remoteControllerSocket=ws};ws.onclose=()=>{if(remoteControllerSocket===ws)remoteControllerSocket=null;releaseAllRemoteGameInputs();if(remoteControllerSession===session&&!remoteSocketRetryTimer){const delay=Math.min(6000,500*Math.pow(1.7,remoteSocketRetryCount++));remoteSocketRetryTimer=setTimeout(()=>{remoteSocketRetryTimer=null;connectRemoteControllerSocket()},delay)}};ws.onerror=()=>{try{ws.close()}catch(_){}}}catch(_){if(remoteControllerSession&&!remoteSocketRetryTimer){remoteSocketRetryTimer=setTimeout(()=>{remoteSocketRetryTimer=null;connectRemoteControllerSocket()},2000)}}}
 async function startRemoteController(){
  if(!currentUser){$('remoteControllerStatus').textContent='Sign in to Playovia on this phone first.';return}
  try{
@@ -1494,6 +1495,7 @@ async function startRemoteController(){
  }catch(e){console.error('Remote controller setup:',e);$('remoteControllerStatus').textContent='Could not create controller: '+(e.message||'Please retry')}
 }
 async function stopRemoteController(){
+ clearTimeout(remoteSocketRetryTimer);remoteSocketRetryTimer=null;remoteSocketRetryCount=0;
  releaseAllRemoteGameInputs();try{remoteControllerSocket&&remoteControllerSocket.close()}catch(_){}remoteControllerSocket=null;
  if(remoteControllerPollTimer){clearInterval(remoteControllerPollTimer);remoteControllerPollTimer=null}
  const session=remoteControllerSession;remoteControllerSession=null;remoteControllerGameReady=false;
