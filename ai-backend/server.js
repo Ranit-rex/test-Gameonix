@@ -416,6 +416,7 @@ const server = http.createServer(async (req, res) => {
       try {
         const input = await readJsonBody(req, 2048);
         const gameTitle = String(input.gameTitle || 'Game').replace(/[<>]/g, '').slice(0, 100);
+        const gameSlug = String(input.gameSlug || '').toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 80);
         let code = '';
         for (let attempt = 0; attempt < 12; attempt++) {
           const candidate = String(crypto.randomInt(100000, 1000000));
@@ -424,7 +425,7 @@ const server = http.createServer(async (req, res) => {
         if (!code) return send(res, 503, { error: 'Could not create a pairing code. Please retry.' }, origin);
         const sessionId = crypto.randomBytes(18).toString('hex');
         const session = {
-          id: sessionId, uid: user.uid, code, gameTitle,
+          id: sessionId, uid: user.uid, code, gameTitle, gameSlug,
           hostToken: crypto.randomBytes(32).toString('hex'),
           controllerToken: '', controllerConnected: false, gameReady: false,
           commands: [], status: 'active', createdAt: Date.now(),
@@ -446,7 +447,7 @@ const server = http.createServer(async (req, res) => {
         session.controllerToken = crypto.randomBytes(32).toString('hex');
         session.controllerConnected = true;
         session.connectedAt = Date.now();
-        return send(res, 200, { ok: true, sessionId: session.id, controllerToken: session.controllerToken, gameTitle: session.gameTitle }, origin);
+        return send(res, 200, { ok: true, sessionId: session.id, controllerToken: session.controllerToken, gameTitle: session.gameTitle, gameSlug: session.gameSlug || '' }, origin);
       } catch (error) { return send(res, 400, { error: error.message || 'Invalid request.' }, origin); }
     }
     const sessionId = String(url.searchParams.get('sessionId') || '');
@@ -488,7 +489,7 @@ const server = http.createServer(async (req, res) => {
     }
     if (req.method === 'GET' && route === '/api/controller/status') {
       if (!safeTokenEqual(bearerToken(req), session.controllerToken)) return send(res, 401, { error: 'Invalid controller session.' }, origin);
-      return send(res, 200, { ok: true, active: true, gameTitle: session.gameTitle, gameReady: session.gameReady }, origin);
+      return send(res, 200, { ok: true, active: true, gameTitle: session.gameTitle, gameSlug: session.gameSlug || '', gameReady: session.gameReady }, origin);
     }
     if (req.method === 'DELETE' && route === '/api/controller/session') {
       if (!safeTokenEqual(bearerToken(req), session.hostToken)) return send(res, 401, { error: 'Invalid gaming-phone session.' }, origin);
@@ -819,6 +820,7 @@ server.on('upgrade',(req,socket)=>{
   if(!session||session.status!=='active'||session.expiresAt<=Date.now()||!['host','controller'].includes(role)||!(role==='host'?safeTokenEqual(token,session.hostToken):(session.controllerConnected&&safeTokenEqual(token,session.controllerToken)))){socket.write('HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n');socket.destroy();return}
   const key=req.headers['sec-websocket-key'];if(!key){socket.destroy();return}const accept=crypto.createHash('sha1').update(key+'258EAFA5-E914-47DA-95CA-C5AB0DC85B11').digest('base64');
   socket.write('HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: '+accept+'\r\n\r\n');
+  socket.setNoDelay(true);try{socket.setKeepAlive(true,10000)}catch(_){}
   if(role==='host'){if(session.hostSocket)session.hostSocket.destroy();session.hostSocket=socket}else{if(session.controllerSocket)session.controllerSocket.destroy();session.controllerSocket=socket}attachControllerSocket(socket,session,role);
  }catch(_){socket.destroy()}
 });
