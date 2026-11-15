@@ -965,6 +965,7 @@ async function initFirebase(){
 }
 function makePlayerId(){const letters='ABCDEFGHJKLMNPQRSTUVWXYZ',digits='0123456789';const pick=s=>s[Math.floor(Math.random()*s.length)];let out='';for(let i=0;i<5;i++)out+=pick(letters);for(let i=0;i<4;i++)out+=pick(digits);return out}
 async function ensurePlayerId(user,ref){for(let attempt=0;attempt<15;attempt++){const id=makePlayerId(),idRef=db.collection('playerIds').doc(id);const result=await db.runTransaction(async tx=>{const us=await tx.get(ref);if(!us.exists)throw new Error('Profile missing while creating Player ID.');if(us.data().playerId){window.PlayHubPlayerId=us.data().playerId;return us.data().playerId;}const taken=await tx.get(idRef);if(taken.exists)return null;tx.set(idRef,{uid:user.uid,playerId:id,createdAt:stamp()});tx.update(ref,{playerId:id,updatedAt:stamp()});window.PlayHubPlayerId=id;return id});if(result)return result}throw new Error('Could not generate a unique Player ID. Please retry.')}
+window.ensurePlayHubPlayerId=async()=>{const user=currentUser||auth?.currentUser||null;if(!user||!db)return '';const ref=db.collection('users').doc(user.uid);const id=await ensurePlayerId(user,ref);window.PlayHubPlayerId=id;return id};
 function watchHomeCurrency(user){
  if(homeCurrencyUnsubscribe){homeCurrencyUnsubscribe();homeCurrencyUnsubscribe=null}
  const card=$('homeCurrencyCard'),value=$('homeCurrencyBalance');
