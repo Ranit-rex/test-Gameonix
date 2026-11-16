@@ -2,7 +2,11 @@
 (function(){
  const make=(name,actions,tip='')=>({name,tip,actions});
  window.PLAYOVIA_CONTROLLER_PROFILES={
-  'extreme-parkour':make('Extreme Parkour',[\n   {slot:'a',label:'Jump',key:' ',code:'Space',role:'Jump'},\n   {slot:'start',label:'Pause',key:'Escape',code:'Escape',role:'Pause / resume'}\n  ],'Move with the joystick; A jumps and Start pauses.'),\n  'dungeon-hunter':make('Dungeon Hunter',[
+  'extreme-parkour':make('Extreme Parkour',[
+   {slot:'a',label:'Jump',key:' ',code:'Space',role:'Jump'},
+   {slot:'start',label:'Pause',key:'Escape',code:'Escape',role:'Pause / resume'}
+  ],'Move with the joystick; A jumps and Start pauses.'),
+  'dungeon-hunter':make('Dungeon Hunter',[
    {slot:'a',label:'Attack',key:'j',code:'KeyJ',role:'Primary attack'},
    {slot:'b',label:'Heavy',key:'k',code:'KeyK',role:'Heavy attack'},
    {slot:'x',label:'Special',key:'l',code:'KeyL',role:'Special attack'},
@@ -49,7 +53,8 @@
   const t=clean(title);
   if(t.includes('dungeon')&&t.includes('hunter'))return 'dungeon-hunter';
   const aliases={
-   'dungeon-hunter':['dungeonhunter','dungeon hunter'],\n   'extreme-parkour':['extremeparkour','extreme parkour'],
+   'dungeon-hunter':['dungeonhunter','dungeon hunter'],
+   'extreme-parkour':['extremeparkour','extreme parkour'],
    'city-rush':['cityrush','city rush'],
    'obby-rush':['obbyrush','obby rush'],
    'ashgrave':['ashgrave'],
