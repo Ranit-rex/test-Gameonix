@@ -10,7 +10,7 @@ This is a React Native CLI app. It does not use Expo or WebView. The website at 
 
 ## Android build
 
-A GitHub Actions workflow builds a native debug APK using Gradle. Run it from Actions as `Playovia Android APK build` (or push a change under `mobile-app/`). The APK is published as the `playovia-android-debug` workflow artifact when the build succeeds.
+A GitHub Actions workflow builds a standalone native debug APK using Gradle and embeds `index.android.bundle`, so the installed app does not need Metro, USB debugging, or the same Wi-Fi network. The workflow verifies the bundle is present before publishing the `playovia-android-debug` artifact.
 
 ## Local development
 Use Node.js 22.13+ and Android Studio with Android SDK configured.
