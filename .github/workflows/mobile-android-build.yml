@@ -35,11 +35,30 @@ jobs:
         run: |
           npx @react-native-community/cli@20.2.0 init Playovia --version 0.88.1 --directory "$RUNNER_TEMP/Playovia" --package-name xyz.playovia.app --skip-install
           cp -R "$RUNNER_TEMP/Playovia/android" mobile-app/android
-      - name: Build debug APK
+      - name: Configure standalone JavaScript bundle
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path("mobile-app/android/app/build.gradle")
+          source = path.read_text()
+          marker = "react {"
+          if marker not in source:
+              raise SystemExit("React Native Gradle 'react {' block was not found")
+          if "debuggableVariants" not in source:
+              source = source.replace(marker, marker + '\n    // Bundle JS into debug APK so it runs without Metro.\n    debuggableVariants = []', 1)
+          path.write_text(source)
+          PY
+      - name: Build standalone debug APK
         working-directory: mobile-app/android
         run: |
           chmod +x gradlew
           ./gradlew --no-daemon assembleDebug
+          APK="app/build/outputs/apk/debug/app-debug.apk"
+          test -s "$APK"
+          if ! unzip -l "$APK" | grep -q 'assets/index.android.bundle'; then
+            echo "JavaScript bundle is missing from APK; refusing to publish a Metro-dependent build."
+            exit 1
+          fi
       - name: Upload Playovia APK
         uses: actions/upload-artifact@v4
         with:
