@@ -44,7 +44,10 @@
   const clean=v=>String(v||'').toLowerCase().replace(/[^a-z0-9]+/g,'');
   const direct=String(slug||'').toLowerCase();
   if(window.PLAYOVIA_CONTROLLER_PROFILES[direct])return direct;
+  const directClean=clean(direct);
+  if(directClean.includes('dungeonhunter'))return 'dungeon-hunter';
   const t=clean(title);
+  if(t.includes('dungeon')&&t.includes('hunter'))return 'dungeon-hunter';
   const aliases={
    'dungeon-hunter':['dungeonhunter','dungeon hunter'],
    'city-rush':['cityrush','city rush'],
