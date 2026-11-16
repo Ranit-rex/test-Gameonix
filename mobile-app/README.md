@@ -8,6 +8,10 @@ This is a React Native CLI app. It does not use Expo or WebView. The website at 
 - Other titles remain visible in the catalogue but open a native migration notice until their gameplay is ported. No HTML game is embedded or opened.
 - Native Firebase sign-in and the remaining 17 game ports are planned follow-up work; website login and gameplay are unchanged.
 
+## Android build
+
+A GitHub Actions workflow builds a native debug APK using Gradle. Run it from Actions as `Playovia Android APK build` (or push a change under `mobile-app/`). The APK is published as the `playovia-android-debug` workflow artifact when the build succeeds.
+
 ## Local development
 Use Node.js 22.13+ and Android Studio with Android SDK configured.
 
