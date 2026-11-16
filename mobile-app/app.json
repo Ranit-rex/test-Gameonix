@@ -1,0 +1,22 @@
+{
+  "expo": {
+    "name": "Playovia",
+    "slug": "playovia",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "scheme": "playovia",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "xyz.playovia.app"
+    },
+    "android": {
+      "package": "xyz.playovia.app"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "REPLACE_WITH_EAS_PROJECT_ID"
+      }
+    }
+  }
+}
