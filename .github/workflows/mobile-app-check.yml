@@ -1,0 +1,34 @@
+name: Playovia mobile app validation
+
+on:
+  push:
+    paths:
+      - "mobile-app/**"
+      - ".github/workflows/mobile-app-check.yml"
+  pull_request:
+    paths:
+      - "mobile-app/**"
+      - ".github/workflows/mobile-app-check.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile-app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22.13"
+          cache: npm
+          cache-dependency-path: mobile-app/package.json
+      - name: Install dependencies
+        run: npm install
+      - name: Check Expo configuration
+        run: npx expo config --type public
+      - name: TypeScript check
+        run: npx tsc --noEmit
