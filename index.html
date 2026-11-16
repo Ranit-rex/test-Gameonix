@@ -1596,7 +1596,7 @@ function openGameAiGlass(){
  body.appendChild(panel);panel.classList.remove('hidden');panel.classList.add('game-overlay-ai');
  $('gameAiGlassTitle').textContent=($('playingTitle')?.textContent||'GAME').toUpperCase();
  $('gameAiGlass').classList.remove('hidden');
- if(!panel.dataset.gameWelcome){panel.dataset.gameWelcome='1';aiAddBubble('I am ready to help with '+($('playingTitle')?.textContent||'this game')+'. Ask about the objective, controls, strategy or what to do next. Use the mic for a quick voice question or Live Listen for ongoing spoken questions.','assistant',null,false)}
+ panel.dataset.gameWelcome='1';aiAddBubble('I am ready to help with '+($('playingTitle')?.textContent||'this game')+'. Ask about the objective, controls, strategy or what to do next. Use the mic for a quick voice question or Live Listen for ongoing spoken questions.','assistant',null,false);
 }
 function stopGameAiLiveListen(){
  gameAiLiveListening=false;clearTimeout(gameAiLiveRestart);gameAiLiveRestart=null;
