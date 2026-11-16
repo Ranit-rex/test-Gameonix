@@ -1,0 +1,49 @@
+name: Playovia Android APK build
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "mobile-app/**"
+      - ".github/workflows/mobile-android-build.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  android-apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout Playovia
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.13"
+          cache: npm
+          cache-dependency-path: mobile-app/package.json
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Install React Native dependencies
+        working-directory: mobile-app
+        run: npm install
+      - name: Generate native Android Gradle project
+        run: |
+          npx @react-native-community/cli@20.2.0 init Playovia --version 0.88.1 --directory "$RUNNER_TEMP/Playovia" --package-name xyz.playovia.app --skip-install
+          cp -R "$RUNNER_TEMP/Playovia/android" mobile-app/android
+      - name: Build debug APK
+        working-directory: mobile-app/android
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon assembleDebug
+      - name: Upload Playovia APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: playovia-android-debug
+          path: mobile-app/android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
