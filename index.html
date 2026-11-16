@@ -1612,6 +1612,7 @@ $('remoteControllerCopy')?.addEventListener('click',async()=>{const code=$('remo
 
 let gameAiPanelPlaceholder=null,gameAiLiveRecognition=null,gameAiLiveListening=false,gameAiLiveRestart=null,gameAiPreviousChat=null,gameAiAutoSpeak=true,gameAiSpeaking=false;
 function openGameAiGlass(){
+ gameAiLoadVoices();if('speechSynthesis'in window)window.speechSynthesis.resume();
  if(!gameAiPreviousChat){gameAiPreviousChat={history:playoviaAiHistory.slice(),chatId:playoviaChatId,messages:$('aiMessages')?.innerHTML||''};playoviaAiHistory=[];playoviaChatId=(typeof crypto!=='undefined'&&crypto.randomUUID)?crypto.randomUUID():('pv-game-'+Date.now()+'-'+Math.random().toString(36).slice(2));$('aiMessages').innerHTML='';$('aiInput').value='';}
  $('gameAiGlassTitle').textContent=($('playingTitle')?.textContent||'GAME').toUpperCase();
  $('gameAiAnswer').textContent='';
@@ -1648,19 +1649,27 @@ function toggleGameAiLiveListen(){
  };
  start();
 }
+let gameAiVoiceCache=[];
+function gameAiLoadVoices(){if(!('speechSynthesis'in window))return gameAiVoiceCache;const found=window.speechSynthesis.getVoices();if(found&&found.length)gameAiVoiceCache=found;return gameAiVoiceCache}
+if('speechSynthesis'in window){gameAiLoadVoices();window.speechSynthesis.addEventListener?.('voiceschanged',gameAiLoadVoices)}
 function gameAiSpeakAnswer(text){
  if(!gameAiAutoSpeak||$('gameAiGlass')?.classList.contains('hidden')||!('speechSynthesis'in window)||!('SpeechSynthesisUtterance'in window))return;
  const clean=String(text||'').replace(/\s+/g,' ').trim();if(!clean)return;
- const synth=window.speechSynthesis;
+ const synth=window.speechSynthesis,lang=/[\u0900-\u097F]/.test(clean)?'hi-IN':'en-IN';
  if(gameAiLiveListening){gameAiSpeaking=true;clearTimeout(gameAiLiveRestart);gameAiLiveRestart=null;try{gameAiLiveRecognition?.stop()}catch(_){}}
- synth.cancel();
- const utterance=new SpeechSynthesisUtterance(clean),lang=/[\u0900-\u097F]/.test(clean)?'hi-IN':'en-IN';
- utterance.lang=lang;utterance.rate=.94;utterance.pitch=1.12;utterance.volume=1;
- const voices=synth.getVoices();const matching=voices.filter(v=>v.lang&&v.lang.toLowerCase().startsWith(lang.slice(0,2)));
- const preferred=matching.find(v=>/female|zira|samantha|aria|jenny|google.*(uk|us).*english|heera|priya/i.test(v.name))||matching.find(v=>/natural|neural|online/i.test(v.name))||matching[0];
+ synth.cancel();synth.resume();
+ const utterance=new SpeechSynthesisUtterance(clean);
+ utterance.lang=lang;utterance.rate=1.04;utterance.pitch=1.28;utterance.volume=1;
+ const voices=gameAiVoiceCache.length?gameAiVoiceCache:gameAiLoadVoices();
+ const matching=voices.filter(v=>v.lang&&v.lang.toLowerCase().startsWith(lang.slice(0,2)));
+ const preferred=matching.find(v=>/swara|heera|lekha|raveena|aditi|veena|priya|female|zira|samantha|aria|jenny/i.test(v.name))
+  ||matching.find(v=>/natural|neural|online/i.test(v.name))
+  ||matching.find(v=>/google/i.test(v.name))
+  ||matching[0];
  if(preferred)utterance.voice=preferred;
- utterance.onend=utterance.onerror=()=>{gameAiSpeaking=false;if(gameAiLiveListening&&!gameAiLiveRecognition){gameAiLiveRestart=setTimeout(()=>{if(gameAiLiveListening)toggleGameAiRecognitionRestart()},250)}};
- synth.speak(utterance);
+ let finished=false;const finish=()=>{if(finished)return;finished=true;gameAiSpeaking=false;if(gameAiLiveListening&&!gameAiLiveRecognition){gameAiLiveRestart=setTimeout(()=>{if(gameAiLiveListening)toggleGameAiRecognitionRestart()},180)}};
+ utterance.onend=finish;utterance.onerror=finish;
+ try{synth.speak(utterance);synth.resume()}catch(e){finish();console.warn('Playovia speech playback unavailable',e)}
 }
 function toggleGameAiRecognitionRestart(){if(!gameAiLiveListening)return;const btn=$('gameAiListenBtn');if(btn)btn.classList.add('listening');const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SpeechRecognition)return;const rec=new SpeechRecognition();gameAiLiveRecognition=rec;rec.lang='en-IN';rec.continuous=true;rec.interimResults=true;rec.onresult=event=>{for(let n=event.resultIndex;n<event.results.length;n++){const result=event.results[n];if(!result.isFinal)continue;const spoken=String(result[0]?.transcript||'').trim();if(spoken){$('gameAiGlassStatus').textContent='Question heard · Preparing a game-aware answer…';sendGameAiQuestion(spoken,$('playingTitle')?.textContent||'the current game').catch(e=>{$('gameAiGlassStatus').textContent=e.message})}}};rec.onerror=event=>{if(event.error!=='no-speech'&&event.error!=='aborted')$('gameAiGlassStatus').textContent='Microphone issue: '+event.error};rec.onend=()=>{if(gameAiLiveListening&&!gameAiSpeaking)gameAiLiveRestart=setTimeout(toggleGameAiRecognitionRestart,350);else if(gameAiLiveRecognition===rec)gameAiLiveRecognition=null};try{rec.start()}catch(_){gameAiLiveRecognition=null}}
 function sendGameAiQuestion(question,game){return new Promise((resolve,reject)=>{let attempts=0;const send=()=>{if(playoviaAiBusy){if(++attempts>40){reject(new Error('AI is busy. Please try again.'));return}setTimeout(send,250);return}aiSend('Question about '+game+': '+question+'. Give a concise, actionable game-aware answer.').then(resolve,reject)};send()})}
