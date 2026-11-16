@@ -15,7 +15,7 @@ button:active,.pressed{transform:scale(.94);filter:brightness(1.3);border-color:
 .connect input{width:100%;padding:9px;border:1px solid #3b5274;border-radius:10px;background:#080f1e;color:#fff;font-size:20px;letter-spacing:6px;text-align:center;font-weight:900}
 .primary{width:100%;padding:10px;margin-top:8px;background:linear-gradient(110deg,#226e65,#24527e);font-size:12px}
 .wait{margin:auto;text-align:center;color:#a7b5ca;font-size:11px;line-height:1.5}.wait b{display:block;color:#83e9d3;font-size:15px;margin-bottom:4px}
-.pad{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) minmax(80px,.55fr) minmax(0,1fr);align-items:center;gap:clamp(6px,2vw,18px);padding:0 1vw}
+.pad{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) minmax(150px,.85fr) minmax(0,1fr);align-items:center;gap:clamp(6px,2vw,18px);padding:0 1vw}
 .side{height:100%;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:space-evenly;gap:clamp(4px,1vh,10px)}
 .shoulders{display:flex;gap:6px;justify-content:center;width:100%}.shoulders button{width:clamp(40px,8vw,58px);height:clamp(27px,5vh,36px);font-size:10px}
 .stick{position:relative;width:min(34vw,34vh,174px);height:min(34vw,34vh,174px);border-radius:50%;border:2px solid #344c6c;background:radial-gradient(circle at 50% 45%,#1c2c45,#0b1425 72%);box-shadow:inset 0 0 24px #0009,0 8px 22px #0006;touch-action:none;user-select:none}
@@ -23,12 +23,12 @@ button:active,.pressed{transform:scale(.94);filter:brightness(1.3);border-color:
 .stick-knob{position:absolute;left:50%;top:50%;width:42%;height:42%;border-radius:50%;transform:translate(-50%,-50%);background:linear-gradient(145deg,#58799f,#203957);border:2px solid #8bb8d7;box-shadow:0 5px 14px #0009,inset 0 2px 5px #ffffff35;pointer-events:none}
 .stick-label{position:absolute;inset:0;display:grid;place-items:center;color:#9db4ce;font-size:9px;font-weight:900;letter-spacing:1px;pointer-events:none}
 
-.center{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px}.center button{font-size:9px;padding:8px 10px}
+.center{display:flex;min-width:0;flex-direction:column;align-items:center;justify-content:center;gap:7px}.center button{font-size:9px;padding:8px 10px}.controller-guide{width:min(100%,190px);max-height:124px;overflow:auto;padding:7px 8px;border:1px solid #3a5576;border-radius:10px;background:linear-gradient(145deg,#172b43dd,#0b1728ee);color:#c6d7ec;font-size:8px;line-height:1.45;text-align:left;white-space:pre-line;box-shadow:0 5px 15px #0006}
 .faces{width:min(29vw,29vh,156px);height:min(29vw,29vh,156px);display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);align-items:center;justify-items:center}
 .faces button{width:clamp(37px,8vw,54px);height:clamp(37px,8vw,54px);border-radius:50%;font-size:18px;padding:0}
 .tri{grid-area:1/2;background:linear-gradient(145deg,#287a55,#164a38)}.circle{grid-area:2/3;background:linear-gradient(145deg,#a43d62,#5d203b)}.cross{grid-area:3/2;background:linear-gradient(145deg,#326eb7,#1c3d70)}.square{grid-area:2/1;background:linear-gradient(145deg,#8351b5,#48256e)}
 .foot{text-align:center;font-size:8px;color:#71839d;line-height:12px;flex:0 0 12px}
-@media(orientation:portrait){.pad{grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:2px;padding:0}.center{position:absolute;top:27px;left:50%;transform:translateX(-50%);z-index:2;flex-direction:row;gap:5px}.center .hint{display:none}.side{justify-content:space-around}.stick,.faces{width:min(39vw,21vh,145px);height:min(39vw,21vh,145px)}.faces button{width:clamp(36px,10vw,48px);height:clamp(36px,10vw,48px)}.shoulders button{width:42px;height:27px}.pad{padding-top:22px}}
+@media(orientation:portrait){.pad{grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:2px;padding:0}.center{position:absolute;top:27px;left:50%;transform:translateX(-50%);z-index:2;flex-direction:row;gap:5px}.center .hint{display:none}.controller-guide{position:absolute;top:68px;left:50%;transform:translateX(-50%);width:min(44vw,210px);max-height:66px;font-size:7px;line-height:1.3;padding:5px 7px;z-index:3}.side{justify-content:space-around}.stick,.faces{width:min(39vw,21vh,145px);height:min(39vw,21vh,145px)}.faces button{width:clamp(36px,10vw,48px);height:clamp(36px,10vw,48px)}.shoulders button{width:42px;height:27px}.pad{padding-top:22px}}
 @media(max-height:370px) and (orientation:landscape){.app{gap:2px;padding-top:3px;padding-bottom:3px}.head{height:18px;flex-basis:18px}.pad{gap:4px}.stick,.faces{width:min(25vw,23vh,112px);height:min(25vw,23vh,112px)}.faces button{width:34px;height:34px}.shoulders button{height:24px}.foot{font-size:7px}}
 .center-buttons{display:flex;align-items:center;justify-content:center;gap:5px;flex-wrap:wrap}.center-buttons button{white-space:nowrap}
 .action-label{display:block;font-size:8px;line-height:9px;font-weight:850;letter-spacing:0;color:#e7f0ff;white-space:nowrap;pointer-events:none;text-shadow:0 1px 2px #000}
@@ -48,7 +48,7 @@ button:active,.pressed{transform:scale(.94);filter:brightness(1.3);border-color:
 <section id="controllerPanel" class="pad hidden">
 <div class="side"><div class="shoulders"><button data-button="l1">L1<small class="action-label"></small></button><button data-button="l2">L2<small class="action-label"></small></button></div>
 <div class="stick" id="analogStick" aria-label="Analog joystick"><div class="stick-label">MOVE</div><div class="stick-knob" id="stickKnob"></div></div></div>
-<div class="center"><div class="center-buttons"><button data-button="select">SELECT<small class="action-label"></small></button><button data-button="start">START<small class="action-label"></small></button></div><div class="hint" style="text-align:center;color:#7188a5;font-size:9px;letter-spacing:1.3px">PLAYOVIA GAMEPAD</div></div>
+<div class="center"><div class="center-buttons"><button data-button="select">SELECT<small class="action-label"></small></button><button data-button="start">START<small class="action-label"></small></button></div><div class="hint" style="text-align:center;color:#7188a5;font-size:9px;letter-spacing:1.3px">GAME CONTROLS</div><div id="controllerGuide" class="controller-guide" aria-live="polite">Connect to load this game’s control guide.</div></div>
 <div class="side"><div class="shoulders"><button data-button="r2">R2<small class="action-label"></small></button><button data-button="r1">R1<small class="action-label"></small></button></div>
 <div class="faces"><button class="tri" data-button="y">△<small class="action-label"></small></button><button class="circle" data-button="b">○<small class="action-label"></small></button><button class="cross" data-button="a">×<small class="action-label"></small></button><button class="square" data-button="x">□<small class="action-label"></small></button></div></div>
 </section>
@@ -56,7 +56,7 @@ button:active,.pressed{transform:scale(.94);filter:brightness(1.3);border-color:
 <button type="button" id="disconnectBtn" class="disconnect-btn hidden">Disconnect controller</button><div id="status" class="status">Sign in to connect</div><div class="foot">Keep this screen open · Both phones must stay online</div>
 </main>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
-<script src="./controller-profiles.js?v=20261116-controller-fix-2"></script>
+<script src="./controller-profiles.js?v=20261116-game-guide-2"></script>
 <script>
 'use strict';
 const CONFIG={apiKey:'AIzaSyB_pZ9WfVSx2XHuDeSZ7VrwEr-Pz_m_2QM',authDomain:'play-hub-688e8.firebaseapp.com',projectId:'play-hub-688e8',storageBucket:'play-hub-688e8.firebasestorage.app',messagingSenderId:'195222206861',appId:'1:195222206861:web:828a8cf16991f982a925c4'},API='https://test-gameonix.onrender.com', $=id=>document.getElementById(id);
@@ -75,23 +75,31 @@ function scheduleControllerReconnect(){if(!connected||reconnectTimer)return;cons
 function openControllerSocket(){if(!connected||!sessionId||!controllerToken)return;if(controllerSocket&&controllerSocket.readyState<2)return;try{const wsUrl=API.replace(/^http/,'ws')+'/api/controller/socket?sessionId='+encodeURIComponent(sessionId)+'&role=controller&token='+encodeURIComponent(controllerToken);const ws=new WebSocket(wsUrl);controllerSocket=ws;ws.onopen=()=>{if(controllerSocket!==ws){ws.close();return}reconnectAttempt=0;clearInterval(socketHeartbeat);socketHeartbeat=setInterval(()=>{if(ws.readyState===1)try{ws.send(JSON.stringify({type:'ping'}))}catch(_){}},12000);$('status').textContent=gameReady?'🎮 Controls connected':'Connected · Waiting for game'};ws.onclose=()=>{if(controllerSocket===ws)controllerSocket=null;clearInterval(socketHeartbeat);socketHeartbeat=null;if(connected)scheduleControllerReconnect()};ws.onerror=()=>{try{ws.close()}catch(_){}}}catch(_){scheduleControllerReconnect()}}
 function disconnect(msg){releaseAllButtons();connected=false;clearTimeout(reconnectTimer);reconnectTimer=null;reconnectAttempt=0;clearInterval(statusTimer);statusTimer=null;clearInterval(socketHeartbeat);socketHeartbeat=null;try{controllerSocket&&controllerSocket.close()}catch(_){}controllerSocket=null;$('controllerPanel').classList.add('hidden');$('waitPanel').classList.add('hidden');$('disconnectBtn').classList.add('hidden');$('connectPanel').classList.remove('hidden');$('connectBtn').disabled=false;$('status').textContent=msg;sessionId='';controllerToken='';localStorage.removeItem('playovia_remote_controller_v1')}
 function setControllerActionLabels(slug){
- const profile=window.PLAYOVIA_CONTROLLER_PROFILES?.[slug];
- const actions=profile?.actions||[];
+ const profile=window.PLAYOVIA_CONTROLLER_PROFILES?.[slug],actions=profile?.actions||[];
  const bySlot=new Map(actions.map(item=>[item.slot,item]));
- const hasProfile=!!profile;
  document.querySelectorAll('[data-button]').forEach(btn=>{
   const item=bySlot.get(btn.dataset.button);
-  btn.classList.remove('hidden');
-  btn.disabled=hasProfile?!item:false;
-  const small=btn.querySelector('.action-label');
-  if(small)small.textContent=item?item.label:'';
-  btn.classList.toggle('is-unsupported',hasProfile&&!item);
-  btn.title=item?btn.dataset.button.toUpperCase()+' · '+item.label:(hasProfile?'No action in this game profile':'Game action mapping unavailable');
+  btn.classList.remove('hidden');btn.disabled=!!profile&&!item;
+  const small=btn.querySelector('.action-label');if(small)small.textContent=item?item.label:'';
+  btn.classList.toggle('is-unsupported',!!profile&&!item);
+  btn.title=item?btn.dataset.button.toUpperCase()+' · '+item.label+' · '+(item.role||''):(profile?'No action assigned in this game':'Game action mapping unavailable');
   btn.setAttribute('aria-label',item?btn.dataset.button.toUpperCase()+' '+item.label:btn.dataset.button.toUpperCase()+' unmapped');
  });
  document.querySelectorAll('.shoulders,.faces,.center-buttons').forEach(group=>group.classList.remove('hidden'));
  const hint=document.querySelector('.center .hint');
- if(hint)hint.textContent=profile?.name?profile.name.toUpperCase()+' · GAME CONTROLS':(hasProfile?'MOVEMENT ONLY':'GAME PROFILE NOT DETECTED');
+ if(hint)hint.textContent=profile?.name?profile.name.toUpperCase()+' · CONTROLS':(profile?'MOVEMENT ONLY':'GAME PROFILE NOT DETECTED');
+ const guide=$('controllerGuide');
+ if(guide){
+  const order=['a','b','x','y','l1','r1','l2','r2','start','select'];
+  const lines=['MOVE · Analog joystick'];
+  actions.slice().sort((x,y)=>order.indexOf(x.slot)-order.indexOf(y.slot)).forEach(item=>{
+   const key=item.slot==='start'?'START':item.slot==='select'?'SELECT':item.slot.toUpperCase();
+   lines.push(key+' · '+item.label+(item.role?' — '+item.role:''));
+  });
+  if(!profile)lines.push('Game profile not detected; movement only is guaranteed.');
+  if(profile&&!actions.length)lines.push(profile.tip||'No extra action keys are defined for this game.');
+  guide.textContent=(profile?.name||'GAME GUIDE')+'\n'+lines.join('\n');
+ }
 }
 const heldButtons=new Set();
 function transmitInput(key,action){
