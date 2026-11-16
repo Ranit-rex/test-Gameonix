@@ -40,4 +40,22 @@
   'bomb-tag':make('Bomb Tag',[],'Movement only; no extra action keys are defined.')
  };
  window.PLAYOVIA_CONTROLLER_SLOTS=['a','b','x','y','l1','r1','l2','r2','start','select'];
+ window.PLAYOVIA_RESOLVE_CONTROLLER_PROFILE=(slug,title)=>{
+  const clean=v=>String(v||'').toLowerCase().replace(/[^a-z0-9]+/g,'');
+  const direct=String(slug||'').toLowerCase();
+  if(window.PLAYOVIA_CONTROLLER_PROFILES[direct])return direct;
+  const t=clean(title);
+  const aliases={
+   'dungeon-hunter':['dungeonhunter','dungeon hunter'],
+   'city-rush':['cityrush','city rush'],
+   'obby-rush':['obbyrush','obby rush'],
+   'ashgrave':['ashgrave'],
+   'last-lantern':['ghostnight','ghost night','lastlantern','last lantern'],
+   'antarctic-the-last-signal':['antarctic','the last signal','antarctic the last signal'],
+   'bomb-tag':['bombtag','bomb tag']
+  };
+  for(const [key,names] of Object.entries(aliases))if(names.some(n=>t.includes(clean(n))))return key;
+  for(const [key,value] of Object.entries(window.PLAYOVIA_CONTROLLER_PROFILES))if(t.includes(clean(value.name)))return key;
+  return '';
+ };
 })();
