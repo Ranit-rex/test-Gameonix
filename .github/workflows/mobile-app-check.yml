@@ -1,4 +1,4 @@
-name: Playovia mobile app validation
+name: Playovia native app validation
 
 on:
   push:
@@ -26,9 +26,9 @@ jobs:
           node-version: "22.13"
           cache: npm
           cache-dependency-path: mobile-app/package.json
-      - name: Install dependencies
+      - name: Install native React Native dependencies
         run: npm install
-      - name: Check Expo configuration
-        run: npx expo config --type public
+      - name: Verify React Native CLI
+        run: npx react-native --version
       - name: TypeScript check
         run: npx tsc --noEmit
