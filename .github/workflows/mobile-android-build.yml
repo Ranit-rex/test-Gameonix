@@ -35,23 +35,17 @@ jobs:
         run: |
           npx @react-native-community/cli@20.2.0 init Playovia --version 0.88.1 --directory "$RUNNER_TEMP/Playovia" --package-name xyz.playovia.app --skip-install
           cp -R "$RUNNER_TEMP/Playovia/android" mobile-app/android
-      - name: Configure standalone JavaScript bundle
+      - name: Generate embedded JavaScript bundle
+        working-directory: mobile-app
         run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          import re
-          path = Path("mobile-app/android/app/build.gradle")
-          source = path.read_text()
-          marker = "react {"
-          if marker not in source:
-              raise SystemExit("React Native Gradle 'react {' block was not found")
-          source, count = re.subn(r'debuggableVariants\s*=\s*\[[^\]]*\]', 'debuggableVariants = []', source, count=1)
-          if count == 0:
-              source = source.replace(marker, marker + '\n    // Bundle JS into debug APK so it runs without Metro.\n    debuggableVariants = []', 1)
-          if "debuggableVariants = []" not in source:
-              raise SystemExit("Could not configure standalone JS bundling")
-          path.write_text(source)
-          PY
+          mkdir -p android/app/src/main/assets
+          npx react-native bundle \
+            --platform android \
+            --dev false \
+            --entry-file index.js \
+            --bundle-output android/app/src/main/assets/index.android.bundle \
+            --assets-dest android/app/src/main/res
+          test -s android/app/src/main/assets/index.android.bundle
       - name: Build standalone debug APK
         working-directory: mobile-app/android
         run: |
