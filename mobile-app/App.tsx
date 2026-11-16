@@ -59,7 +59,7 @@ const quizData:Record<string,QuizQuestion[]>={
 {prompt:"“Konnichiwa” belongs to which language?",options:["Japanese","Korean","Chinese","Thai"],answer:"Japanese"},
 {prompt:"“Annyeonghaseyo” is a greeting in which language?",options:["Korean","Japanese","Mongolian","Vietnamese"],answer:"Korean"},
 {prompt:"“Merhaba” is a greeting in which language?",options:["Turkish","Arabic","Persian","Greek"],answer:"Turkish"},
-{prompt:"“Shalom” is a greeting in which language?",options:["Hebrew","Arabic","Amharic","Yiddish"],answer:"Hebrew"}]
+{prompt:"“Shalom” is a greeting in which language?",options:["Hebrew","Arabic","Amharic","Yiddish"],answer:"Hebrew"}],
 "logo-rush":[
 {prompt:"Which brand uses the golden arches (M)?",options:["McDonald's","Microsoft","Mastercard","Mazda"],answer:"McDonald's"},
 {prompt:"Which brand is known for a swoosh logo?",options:["Nike","Adidas","Puma","Reebok"],answer:"Nike"},
