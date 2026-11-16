@@ -646,7 +646,21 @@ html.low-performance #playhubApp .hero{animation:siteHeroIn .2s ease-out both}
   .account .profile-menu-trigger.hidden{display:none!important}
 }
 </style>
-</head>
+<style id="playovia-game-ai-ultra-compact">
+/* Ultra-light overlay: ~98% transparent so gameplay stays visible */
+#gameOverlay .game-ai-glass{top:58px!important;width:min(420px,calc(100% - 16px))!important;border:1px solid rgba(210,225,255,.16)!important;border-radius:8px!important;background:rgba(5,9,18,.02)!important;backdrop-filter:blur(2px)!important;-webkit-backdrop-filter:blur(2px)!important;box-shadow:0 1px 5px rgba(0,0,0,.08)!important}
+#gameOverlay .game-ai-strip{gap:5px!important;padding:3px 5px!important;min-height:27px!important}
+#gameOverlay .game-ai-strip-orb{width:17px!important;height:17px!important;border-radius:5px!important;font-size:10px!important;background:rgba(120,90,190,.025)!important;border-color:rgba(220,210,255,.14)!important}
+#gameOverlay .game-ai-strip-title{font-size:8px!important;letter-spacing:.2px!important;gap:4px!important;text-shadow:0 1px 2px #000}
+#gameOverlay .game-ai-strip-title small{font-size:7px!important}
+#gameOverlay .game-ai-glass-status{margin-top:0!important;font-size:7px!important;line-height:1.1!important;color:rgba(255,255,255,.72)!important;text-shadow:0 1px 2px #000}
+#gameOverlay .game-ai-strip-transcript{font-size:7px!important;line-height:1.1!important;color:rgba(255,255,255,.8)!important;text-shadow:0 1px 2px #000}
+#gameOverlay .game-ai-strip-actions{gap:3px!important}
+#gameOverlay .game-ai-listen{min-height:20px!important;padding:2px 5px!important;border-radius:5px!important;font-size:7px!important;background:rgba(10,30,35,.035)!important;border-color:rgba(160,240,220,.2)!important;color:rgba(255,255,255,.82)!important}
+#gameOverlay .game-ai-glass-close{width:19px!important;height:19px!important;border-radius:5px!important;font-size:13px!important;background:rgba(255,255,255,.025)!important;border-color:rgba(255,255,255,.15)!important}
+#gameOverlay .game-ai-strip-answer{padding:2px 7px 4px 27px!important;font-size:9px!important;line-height:1.25!important;max-height:72px!important;color:rgba(255,255,255,.88)!important;text-shadow:0 1px 2px #000}
+@media(max-width:520px){#gameOverlay .game-ai-glass{top:57px!important;width:calc(100% - 10px)!important}#gameOverlay .game-ai-strip{gap:4px!important;padding:2px 4px!important}#gameOverlay .game-ai-strip-title{font-size:7px!important}#gameOverlay .game-ai-glass-status{font-size:6px!important}#gameOverlay .game-ai-listen{padding:2px 4px!important;font-size:6px!important}}
+</style></head>
 <body>
 <div id="loginGate" aria-label="Playovia sign in">
  <div class="gate-card">
@@ -1593,7 +1607,7 @@ let gameAiPanelPlaceholder=null,gameAiLiveRecognition=null,gameAiLiveListening=f
 function openGameAiGlass(){
  if(!gameAiPreviousChat){gameAiPreviousChat={history:playoviaAiHistory.slice(),chatId:playoviaChatId,messages:$('aiMessages')?.innerHTML||''};playoviaAiHistory=[];playoviaChatId=(typeof crypto!=='undefined'&&crypto.randomUUID)?crypto.randomUUID():('pv-game-'+Date.now()+'-'+Math.random().toString(36).slice(2));$('aiMessages').innerHTML='';$('aiInput').value='';}
  $('gameAiGlassTitle').textContent=($('playingTitle')?.textContent||'GAME').toUpperCase();
- $('gameAiAnswer').textContent='Game assistant ready. Ask by mic or use Listen for continuous voice questions.';
+ $('gameAiAnswer').textContent='';
  $('gameAiTranscript').textContent='';
  $('gameAiGlass').classList.remove('hidden');
  $('gameAiGlassStatus').textContent='Ready · Mic asks one question; Listen keeps listening';
@@ -1630,7 +1644,7 @@ function toggleGameAiLiveListen(){
 $('gameAiLiveBtn')?.addEventListener('click',openGameAiGlass);
 $('gameAiGlassClose')?.addEventListener('click',()=>aiClose());
 $('gameAiListenBtn')?.addEventListener('click',toggleGameAiLiveListen);
-$('gameAiMicBtn')?.addEventListener('click',()=>{const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SpeechRecognition){$('gameAiGlassStatus').textContent='Voice input unsupported. Use updated Chrome.';return}const rec=new SpeechRecognition();rec.lang='en-IN';rec.continuous=false;rec.interimResults=true;$('gameAiMicBtn').textContent='■';$('gameAiGlassStatus').textContent='Listening for one question…';rec.onresult=e=>{let t='';for(let i=0;i<e.results.length;i++)t+=e.results[i][0].transcript;$('gameAiTranscript').textContent='You: '+t;if(e.results[e.results.length-1]?.isFinal){const game=$('playingTitle')?.textContent||'the current game';aiSend('Question about '+game+': '+t+'. Give a concise, actionable game-aware answer.')}};rec.onerror=e=>{$('gameAiGlassStatus').textContent='Microphone error: '+e.error};rec.onend=()=>{$('gameAiMicBtn').textContent='🎙'};try{rec.start()}catch(e){$('gameAiMicBtn').textContent='🎙';$('gameAiGlassStatus').textContent='Allow microphone permission and try again.'}});$('fullscreenBtn').addEventListener('click',async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await $('gameFrame').requestFullscreen()}catch(e){status('Fullscreen unavailable: '+e.message,'error')}});document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('gameOverlay').classList.contains('hidden'))closeGame()});
+$('gameAiMicBtn')?.addEventListener('click',()=>{const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SpeechRecognition){$('gameAiGlassStatus').textContent='Voice input unsupported. Use updated Chrome.';return}const rec=new SpeechRecognition();let finalText='';rec.lang='en-IN';rec.continuous=false;rec.interimResults=true;$('gameAiMicBtn').textContent='■';$('gameAiGlassStatus').textContent='Listening…';rec.onresult=e=>{let interim='';for(let i=0;i<e.results.length;i++){const part=String(e.results[i][0]?.transcript||'').trim();if(e.results[i].isFinal){if(part)finalText+=(finalText?' ':'')+part}else if(part)interim+=(interim?' ':'')+part}$('gameAiTranscript').textContent='You: '+(finalText+(interim?' '+interim:''))};rec.onerror=e=>{$('gameAiGlassStatus').textContent='Microphone error: '+e.error+'. Check mic permission.'};rec.onend=()=>{$('gameAiMicBtn').textContent='🎙';const question=finalText.trim();if(!question){$('gameAiGlassStatus').textContent='No speech detected. Tap mic and speak again.';return}$('gameAiGlassStatus').textContent='Sending your question…';const game=$('playingTitle')?.textContent||'the current game';aiSend('Question about '+game+': '+question+'. Give a concise, actionable game-aware answer.').then(()=>{$('gameAiGlassStatus').textContent='Answer ready'}).catch(()=>{$('gameAiGlassStatus').textContent='Could not send. Please try again.'})};try{rec.start()}catch(e){$('gameAiMicBtn').textContent='🎙';$('gameAiGlassStatus').textContent='Allow microphone permission and try again.'}});$('fullscreenBtn').addEventListener('click',async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await $('gameFrame').requestFullscreen()}catch(e){status('Fullscreen unavailable: '+e.message,'error')}});document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('gameOverlay').classList.contains('hidden'))closeGame()});
 
 // Playovia AI Assistant — Render backend; Gemini key stays server-side.
 const PLAYOVIA_AI_ENDPOINT='https://test-gameonix.onrender.com';
