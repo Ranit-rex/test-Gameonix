@@ -1,1 +1,53 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-labelledby="t d"><title id="t">Mini Jet Combat</title><desc id="d">A stylized jet fighter flying through a neon combat arena.</desc><defs><linearGradient id="bg" x2="1" y2="1"><stop stop-color="#101a36"/><stop offset=".55" stop-color="#293c70"/><stop offset="1" stop-color="#6c3ca2"/></linearGradient><linearGradient id="jet" x2="0" y2="1"><stop stop-color="#f7fbff"/><stop offset=".55" stop-color="#8cbcff"/><stop offset="1" stop-color="#435bba"/></linearGradient><radialGradient id="glow"><stop stop-color="#70dcff" stop-opacity=".75"/><stop offset="1" stop-color="#70dcff" stop-opacity="0"/></radialGradient></defs><rect width="1200" height="675" fill="url(#bg)"/><circle cx="850" cy="280" r="320" fill="url(#glow)"/><path d="M0 500 250 380 390 440 590 300 800 420 1030 250 1200 320V675H0Z" fill="#0b1127" opacity=".6"/><g fill="none" stroke="#83dfff" stroke-opacity=".35" stroke-width="3"><path d="M0 550 360 460 600 510 940 390 1200 420"/><path d="M0 590 330 510 650 550 960 470 1200 500"/><path d="M90 0 420 675M330 0 570 675M960 0 760 675"/></g><g transform="translate(655 300) rotate(-13)"><path d="M-270 15 20-35 200-210 245-198 180-35 290 25 282 55 155 35 105 170 70 178 68 45-210 95Z" fill="url(#jet)" stroke="#eaf5ff" stroke-width="9" stroke-linejoin="round"/><path d="M-110 0 20-35 105-110 122-105 75-20Z" fill="#203b75"/><path d="M-245 22-410 82-394 110-208 70Z" fill="#ff9b43"/><path d="M-255 35-420 95" stroke="#ffd18a" stroke-width="13" stroke-linecap="round"/><path d="M-70 18 65-4" stroke="#fff" stroke-opacity=".7" stroke-width="8"/></g><g font-family="Arial,sans-serif" font-weight="900"><text x="64" y="100" font-size="27" letter-spacing="8" fill="#a8c9ff">PLAYOVIA · ACTION ARENA</text><text x="60" y="570" font-size="76" letter-spacing="2" fill="#fff">MINI JET COMBAT</text><text x="66" y="620" font-size="24" letter-spacing="5" fill="#b8d9ff">FLY · AIM · DOMINATE</text></g></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
+<title id="title">Mini Jet Combat — Playovia</title><desc id="desc">Arcade fighter jets clash in a dramatic sunset sky above the clouds.</desc>
+<defs>
+ <linearGradient id="sky" x2="0.15" y2="1"><stop stop-color="#07142f"/><stop offset=".48" stop-color="#173b70"/><stop offset="1" stop-color="#f0783c"/></linearGradient>
+ <radialGradient id="sun"><stop stop-color="#ffe6a1" stop-opacity=".95"/><stop offset=".35" stop-color="#ff9b52" stop-opacity=".5"/><stop offset="1" stop-color="#ff6b39" stop-opacity="0"/></radialGradient>
+ <linearGradient id="metal" x2=".2" y2="1"><stop stop-color="#f5fbff"/><stop offset=".42" stop-color="#8ca9c8"/><stop offset="1" stop-color="#263b62"/></linearGradient>
+ <linearGradient id="wing" x2="1" y2="1"><stop stop-color="#ff5b48"/><stop offset="1" stop-color="#8c1e38"/></linearGradient>
+ <linearGradient id="flame" x2="1"><stop stop-color="#fff4b0"/><stop offset=".35" stop-color="#ffb33e"/><stop offset="1" stop-color="#ff4d2d" stop-opacity="0"/></linearGradient>
+ <filter id="blur"><feGaussianBlur stdDeviation="24"/></filter>
+ <filter id="glow"><feGaussianBlur stdDeviation="7" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs>
+<rect width="1200" height="675" fill="url(#sky)"/>
+<circle cx="920" cy="280" r="250" fill="url(#sun)"/>
+<path d="M0 330Q180 230 360 330T720 300T1200 260V675H0Z" fill="#101e3c" opacity=".7"/>
+<path d="M0 430Q170 340 330 420T660 390T980 360T1200 390V675H0Z" fill="#172744"/>
+<path d="M0 515Q180 430 360 500T720 470T1040 450T1200 490V675H0Z" fill="#0a1730"/>
+<g fill="#d7e7ff" opacity=".2" filter="url(#blur)"><ellipse cx="110" cy="420" rx="220" ry="38"/><ellipse cx="850" cy="470" rx="310" ry="55"/><ellipse cx="1080" cy="390" rx="180" ry="35"/></g>
+<g stroke="#8bdcff" stroke-width="3" opacity=".45" fill="none"><path d="M-30 180 300 80M-20 215 250 135M900 90 1220 20"/><path d="M0 590 450 500M780 610 1200 520"/></g>
+<!-- distant enemy aircraft -->
+<g transform="translate(860 145) scale(.42) rotate(-13)" opacity=".9" fill="#182b4a" stroke="#ff8a58" stroke-width="5">
+ <path d="M-190 10 0-18 125-135 150-128 105-15 210 18 205 38 95 28 58 115 32 120 30 32-150 70Z"/>
+ <path d="M-185 14-300 55-290 72-145 45Z" fill="#ff7048"/>
+</g>
+<g transform="translate(1040 235) scale(.3) rotate(18)" opacity=".8" fill="#182b4a" stroke="#ff8a58" stroke-width="7">
+ <path d="M-190 10 0-18 125-135 150-128 105-15 210 18 205 38 95 28 58 115 32 120 30 32-150 70Z"/>
+</g>
+<!-- laser streaks -->
+<path d="M770 175 1110 70" stroke="#ff734c" stroke-width="5" opacity=".8" filter="url(#glow)"/>
+<path d="M650 205 1040 135" stroke="#71dcff" stroke-width="3" opacity=".8"/>
+<!-- explosion -->
+<g transform="translate(180 300)" filter="url(#glow)"><circle r="52" fill="#ff6b32" opacity=".18"/><path d="M0-55 13-20 44-38 28-5 62 8 25 20 39 52 5 31-13 62-18 25-53 38-31 5-62-12-23-18Z" fill="#ff9b40"/><circle r="19" fill="#fff0b2"/></g>
+<!-- main fighter -->
+<g transform="translate(650 390) rotate(-13)">
+ <path d="M-370 42 60-18 340-245 382-230 286-24 430 52 422 83 246 48 160 245 113 252 103 62-290 145Z" fill="url(#metal)" stroke="#e7f4ff" stroke-width="9" stroke-linejoin="round"/>
+ <path d="M-65 8 60-18 178-118 202-110 130-5Z" fill="#172b50" stroke="#9bc9e8" stroke-width="5"/>
+ <path d="M-330 52-500 125-480 158-275 112Z" fill="url(#wing)" stroke="#ffb18d" stroke-width="5"/>
+ <path d="M-350 72-535 145" stroke="url(#flame)" stroke-width="30" stroke-linecap="round" filter="url(#glow)"/>
+ <path d="M-120 55 90 20 210 70 90 91Z" fill="#dceeff" opacity=".45"/>
+ <path d="M-10 12 120-12" stroke="#fff" stroke-width="8" opacity=".8"/>
+ <path d="M-30 30 82 12" stroke="#ff5149" stroke-width="13"/>
+ <path d="M-205 90 75 45" stroke="#243d65" stroke-width="8" opacity=".7"/>
+ <path d="M-5-3 55-17 118-68 130-62 86-1Z" fill="#172b50"/>
+ <circle cx="230" cy="39" r="9" fill="#67e4ff" filter="url(#glow)"/>
+</g>
+<!-- game HUD framing -->
+<g fill="none" stroke="#7edfff" stroke-width="2" opacity=".6"><path d="M52 52h62M52 52v62M1148 52h-62M1148 52v62M52 623h62M52 623v-62M1148 623h-62M1148 623v-62"/><circle cx="1015" cy="535" r="45"/><circle cx="1015" cy="535" r="28"/><path d="M1015 475v120M955 535h120"/></g>
+<g font-family="Arial,sans-serif" font-weight="900">
+ <text x="76" y="104" font-size="22" letter-spacing="7" fill="#9ce8ff">PLAYOVIA  /  ARCADE AIR WARFARE</text>
+ <text x="72" y="548" font-size="70" letter-spacing="1" fill="#fff" stroke="#10213c" stroke-width="2" paint-order="stroke">MINI JET COMBAT</text>
+ <text x="78" y="592" font-size="20" letter-spacing="6" fill="#b9e9ff">LOCK ON  •  TAKE OFF  •  DOMINATE</text>
+</g>
+<rect x="70" y="610" width="235" height="5" rx="3" fill="#ff754b"/><rect x="310" y="610" width="90" height="5" rx="3" fill="#7de5ff"/>
+</svg>
