@@ -1,0 +1,43 @@
+name: Playovia iOS native build
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "mobile-app/**"
+      - ".github/workflows/mobile-ios-build.yml"
+jobs:
+  ios-simulator:
+    runs-on: macos-15
+    defaults:
+      run:
+        working-directory: mobile-app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.0
+          cache: npm
+          cache-dependency-path: mobile-app/package-lock.json
+      - name: Install JavaScript dependencies
+        run: npm install
+      - name: Generate native iOS project
+        run: |
+          npx @react-native-community/cli@20.2.0 init Playovia --version 0.88.1 --directory "$RUNNER_TEMP/Playovia" --package-name xyz.playovia.app --skip-install
+          rm -rf ios
+          cp -R "$RUNNER_TEMP/Playovia/ios" ios
+      - name: Install CocoaPods
+        run: |
+          cd ios
+          pod install
+      - name: Build iOS simulator app
+        run: |
+          cd ios
+          xcodebuild -workspace Playovia.xcworkspace -scheme Playovia -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath "$RUNNER_TEMP/PlayoviaDerived" CODE_SIGNING_ALLOWED=NO build
+      - name: Upload simulator app
+        uses: actions/upload-artifact@v4
+        with:
+          name: playovia-ios-simulator
+          path: ${{ runner.temp }}/PlayoviaDerived/Build/Products/Debug-iphonesimulator/Playovia.app
+          if-no-files-found: error
+          retention-days: 14
