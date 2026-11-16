@@ -1,53 +1,30 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
-<title id="title">Mini Jet Combat — Playovia</title><desc id="desc">Arcade fighter jets clash in a dramatic sunset sky above the clouds.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675">
 <defs>
- <linearGradient id="sky" x2="0.15" y2="1"><stop stop-color="#07142f"/><stop offset=".48" stop-color="#173b70"/><stop offset="1" stop-color="#f0783c"/></linearGradient>
- <radialGradient id="sun"><stop stop-color="#ffe6a1" stop-opacity=".95"/><stop offset=".35" stop-color="#ff9b52" stop-opacity=".5"/><stop offset="1" stop-color="#ff6b39" stop-opacity="0"/></radialGradient>
- <linearGradient id="metal" x2=".2" y2="1"><stop stop-color="#f5fbff"/><stop offset=".42" stop-color="#8ca9c8"/><stop offset="1" stop-color="#263b62"/></linearGradient>
- <linearGradient id="wing" x2="1" y2="1"><stop stop-color="#ff5b48"/><stop offset="1" stop-color="#8c1e38"/></linearGradient>
- <linearGradient id="flame" x2="1"><stop stop-color="#fff4b0"/><stop offset=".35" stop-color="#ffb33e"/><stop offset="1" stop-color="#ff4d2d" stop-opacity="0"/></linearGradient>
- <filter id="blur"><feGaussianBlur stdDeviation="24"/></filter>
- <filter id="glow"><feGaussianBlur stdDeviation="7" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+ <linearGradient id="sky" x2="0" y2="1"><stop stop-color="#081b50"/><stop offset=".52" stop-color="#1266b8"/><stop offset="1" stop-color="#f15b36"/></linearGradient>
+ <linearGradient id="gold" x2="0" y2="1"><stop stop-color="#fff27a"/><stop offset=".48" stop-color="#ffad27"/><stop offset="1" stop-color="#e94b17"/></linearGradient>
+ <linearGradient id="blue" x2="1" y2="1"><stop stop-color="#5ceaff"/><stop offset="1" stop-color="#1749d8"/></linearGradient>
+ <linearGradient id="red" x2="1" y2="1"><stop stop-color="#ffb14a"/><stop offset="1" stop-color="#e3264c"/></linearGradient>
+ <filter id="glow"><feGaussianBlur stdDeviation="8" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+ <pattern id="haz" width="28" height="28" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="14" height="28" fill="#ffbd37"/><rect x="14" width="14" height="28" fill="#15233d"/></pattern>
 </defs>
 <rect width="1200" height="675" fill="url(#sky)"/>
-<circle cx="920" cy="280" r="250" fill="url(#sun)"/>
-<path d="M0 330Q180 230 360 330T720 300T1200 260V675H0Z" fill="#101e3c" opacity=".7"/>
-<path d="M0 430Q170 340 330 420T660 390T980 360T1200 390V675H0Z" fill="#172744"/>
-<path d="M0 515Q180 430 360 500T720 470T1040 450T1200 490V675H0Z" fill="#0a1730"/>
-<g fill="#d7e7ff" opacity=".2" filter="url(#blur)"><ellipse cx="110" cy="420" rx="220" ry="38"/><ellipse cx="850" cy="470" rx="310" ry="55"/><ellipse cx="1080" cy="390" rx="180" ry="35"/></g>
-<g stroke="#8bdcff" stroke-width="3" opacity=".45" fill="none"><path d="M-30 180 300 80M-20 215 250 135M900 90 1220 20"/><path d="M0 590 450 500M780 610 1200 520"/></g>
-<!-- distant enemy aircraft -->
-<g transform="translate(860 145) scale(.42) rotate(-13)" opacity=".9" fill="#182b4a" stroke="#ff8a58" stroke-width="5">
- <path d="M-190 10 0-18 125-135 150-128 105-15 210 18 205 38 95 28 58 115 32 120 30 32-150 70Z"/>
- <path d="M-185 14-300 55-290 72-145 45Z" fill="#ff7048"/>
+<circle cx="600" cy="275" r="230" fill="#45dfff" opacity=".14" filter="url(#glow)"/>
+<g fill="#d8f8ff" opacity=".7"><path d="M0 260q55-70 120 0 60-80 130 0H0M920 230q65-85 130 0 70-70 150 0H920"/></g>
+<g fill="#10294e" stroke="#3bdcff" stroke-width="5" opacity=".9"><path d="M35 440V190h90v250zm90 0V270h70v170zm850 0V230h80v210zm80 0V160h100v280z"/><path d="M60 225h40v15H60m0 45h40v15H60m930-95h45v15h-45m0 45h45v15h-45"/></g>
+<g fill="#16365f" stroke="#39d8ff" stroke-width="4"><path d="M420 460V340h90v120zm100 0V285h110v175zm120 0V360h80v100"/></g>
+<g transform="translate(150 500)"><path d="M0 0l95-50 100 0 80 50-30 22H30z" fill="#18253d" stroke="#9beeff" stroke-width="7"/><path d="M20-5h235" stroke="url(#haz)" stroke-width="17"/></g>
+<g transform="translate(800 505)"><path d="M0 0l85-55h180l90 55-25 25H25z" fill="#18253d" stroke="#9beeff" stroke-width="7"/><path d="M22-7h300" stroke="url(#haz)" stroke-width="18"/></g>
+<!-- blue mini trooper -->
+<g transform="translate(300 355) rotate(-18)"><path d="M-38 15l-58 58 38 14 65-46" fill="#123b9b" stroke="#7ceeff" stroke-width="9"/><path d="M25 15l55 62-37 13-61-49" fill="#123b9b" stroke="#7ceeff" stroke-width="9"/><rect x="-55" y="-15" width="110" height="100" rx="30" fill="url(#blue)" stroke="#b7fbff" stroke-width="8"/><rect x="-49" y="-100" width="98" height="92" rx="34" fill="#123b8c" stroke="#9af4ff" stroke-width="9"/><path d="M-38-58q38-30 76 0v35h-76z" fill="#071a3f"/><path d="M-28-42h56" stroke="#46edff" stroke-width="13" filter="url(#glow)"/><path d="M-18 35h36" stroke="#e8fdff" stroke-width="7"/><path d="M55 0l70 12-4 23-78-9" fill="#22385d" stroke="#a8f5ff" stroke-width="7"/><path d="M118 7l58 10-6 23-60-11z" fill="#1a2540" stroke="#fff" stroke-width="5"/><path d="M-72 0l-25 60 24 10 34-49" fill="#ff9c28" stroke="#fff0a4" stroke-width="6" filter="url(#glow)"/></g>
+<!-- red trooper -->
+<g transform="translate(930 380) rotate(15)"><path d="M-25 18l-52 55 34 17 57-50" fill="#a51e42" stroke="#ffc1ac" stroke-width="8"/><path d="M25 18l50 55-34 17-55-50" fill="#a51e42" stroke="#ffc1ac" stroke-width="8"/><rect x="-52" y="-12" width="104" height="92" rx="30" fill="url(#red)" stroke="#ffd3a0" stroke-width="8"/><rect x="-48" y="-94" width="96" height="90" rx="32" fill="#9d2346" stroke="#ffc1ac" stroke-width="8"/><path d="M-35-55q35-25 70 0v32h-70z" fill="#260f2a"/><path d="M-25-39h50" stroke="#ffdc65" stroke-width="12" filter="url(#glow)"/><path d="M-60 0l-40 55 24 13 50-50" fill="#e94c4c" stroke="#ffc1ac" stroke-width="7"/><path d="M50 0l65 18-7 24-72-17" fill="#33334b" stroke="#ffc1ac" stroke-width="7"/><path d="M108 10l54 13-8 22-56-15z" fill="#212b43" stroke="#fff" stroke-width="5"/></g>
+<g stroke-linecap="round" filter="url(#glow)"><path d="M440 365l210 35" stroke="#53f5ff" stroke-width="13"/><path d="M790 390l-170-5" stroke="#ffce43" stroke-width="13"/><path d="M480 400l55-28-18 31 30 22zM690 380l-48-28 17 34-28 20z" fill="#fff"/></g>
+<g text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-weight="1000">
+ <text x="600" y="92" font-size="38" letter-spacing="12" fill="#8ef4ff">PLAYOVIA PRESENTS</text>
+ <text x="600" y="174" font-size="82" fill="#07132e" stroke="#07132e" stroke-width="22" stroke-linejoin="round">MINI MASTERS</text>
+ <text x="600" y="174" font-size="82" fill="url(#gold)" stroke="#fff1a0" stroke-width="3" paint-order="stroke">MINI MASTERS</text>
+ <text x="600" y="252" font-size="78" fill="#07132e" stroke="#07132e" stroke-width="20" stroke-linejoin="round">COMBAT</text>
+ <text x="600" y="252" font-size="78" fill="#f4f8ff" stroke="#54dfff" stroke-width="3" paint-order="stroke">COMBAT</text>
 </g>
-<g transform="translate(1040 235) scale(.3) rotate(18)" opacity=".8" fill="#182b4a" stroke="#ff8a58" stroke-width="7">
- <path d="M-190 10 0-18 125-135 150-128 105-15 210 18 205 38 95 28 58 115 32 120 30 32-150 70Z"/>
-</g>
-<!-- laser streaks -->
-<path d="M770 175 1110 70" stroke="#ff734c" stroke-width="5" opacity=".8" filter="url(#glow)"/>
-<path d="M650 205 1040 135" stroke="#71dcff" stroke-width="3" opacity=".8"/>
-<!-- explosion -->
-<g transform="translate(180 300)" filter="url(#glow)"><circle r="52" fill="#ff6b32" opacity=".18"/><path d="M0-55 13-20 44-38 28-5 62 8 25 20 39 52 5 31-13 62-18 25-53 38-31 5-62-12-23-18Z" fill="#ff9b40"/><circle r="19" fill="#fff0b2"/></g>
-<!-- main fighter -->
-<g transform="translate(650 390) rotate(-13)">
- <path d="M-370 42 60-18 340-245 382-230 286-24 430 52 422 83 246 48 160 245 113 252 103 62-290 145Z" fill="url(#metal)" stroke="#e7f4ff" stroke-width="9" stroke-linejoin="round"/>
- <path d="M-65 8 60-18 178-118 202-110 130-5Z" fill="#172b50" stroke="#9bc9e8" stroke-width="5"/>
- <path d="M-330 52-500 125-480 158-275 112Z" fill="url(#wing)" stroke="#ffb18d" stroke-width="5"/>
- <path d="M-350 72-535 145" stroke="url(#flame)" stroke-width="30" stroke-linecap="round" filter="url(#glow)"/>
- <path d="M-120 55 90 20 210 70 90 91Z" fill="#dceeff" opacity=".45"/>
- <path d="M-10 12 120-12" stroke="#fff" stroke-width="8" opacity=".8"/>
- <path d="M-30 30 82 12" stroke="#ff5149" stroke-width="13"/>
- <path d="M-205 90 75 45" stroke="#243d65" stroke-width="8" opacity=".7"/>
- <path d="M-5-3 55-17 118-68 130-62 86-1Z" fill="#172b50"/>
- <circle cx="230" cy="39" r="9" fill="#67e4ff" filter="url(#glow)"/>
-</g>
-<!-- game HUD framing -->
-<g fill="none" stroke="#7edfff" stroke-width="2" opacity=".6"><path d="M52 52h62M52 52v62M1148 52h-62M1148 52v62M52 623h62M52 623v-62M1148 623h-62M1148 623v-62"/><circle cx="1015" cy="535" r="45"/><circle cx="1015" cy="535" r="28"/><path d="M1015 475v120M955 535h120"/></g>
-<g font-family="Arial,sans-serif" font-weight="900">
- <text x="76" y="104" font-size="22" letter-spacing="7" fill="#9ce8ff">PLAYOVIA  /  ARCADE AIR WARFARE</text>
- <text x="72" y="548" font-size="70" letter-spacing="1" fill="#fff" stroke="#10213c" stroke-width="2" paint-order="stroke">MINI JET COMBAT</text>
- <text x="78" y="592" font-size="20" letter-spacing="6" fill="#b9e9ff">LOCK ON  •  TAKE OFF  •  DOMINATE</text>
-</g>
-<rect x="70" y="610" width="235" height="5" rx="3" fill="#ff754b"/><rect x="310" y="610" width="90" height="5" rx="3" fill="#7de5ff"/>
+<g font-family="Arial,sans-serif" font-weight="bold" text-anchor="middle"><rect x="410" y="600" width="380" height="42" rx="21" fill="#08162f" stroke="#62eaff" stroke-width="3"/><text x="600" y="628" font-size="21" fill="#fff">JETPACK • SHOOT • DOMINATE</text></g>
 </svg>
