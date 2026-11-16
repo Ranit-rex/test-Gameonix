@@ -472,7 +472,7 @@ const server = http.createServer(async (req, res) => {
     }
     if (req.method === 'POST' && route === '/api/controller/ready') {
       if (!safeTokenEqual(bearerToken(req), session.hostToken)) return send(res, 401, { error: 'Invalid gaming-phone session.' }, origin);
-      try { const input = await readJsonBody(req, 1024); session.gameReady = input.ready === true; return send(res, 200, { ok: true, gameReady: session.gameReady }, origin); }
+      try { const input = await readJsonBody(req, 1024); session.gameReady = input.ready === true; if (typeof input.gameTitle === 'string') session.gameTitle = input.gameTitle.replace(/[<>]/g, '').slice(0, 100) || 'Game'; if (typeof input.gameSlug === 'string') session.gameSlug = input.gameSlug.toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 80); if (!session.gameReady) session.commands.length = 0; return send(res, 200, { ok: true, gameReady: session.gameReady, gameTitle: session.gameTitle, gameSlug: session.gameSlug }, origin); }
       catch (error) { return send(res, 400, { error: error.message || 'Invalid request.' }, origin); }
     }
     if (req.method === 'POST' && route === '/api/controller/input') {
