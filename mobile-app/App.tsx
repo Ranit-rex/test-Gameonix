@@ -60,6 +60,28 @@ const quizData:Record<string,QuizQuestion[]>={
 {prompt:"“Annyeonghaseyo” is a greeting in which language?",options:["Korean","Japanese","Mongolian","Vietnamese"],answer:"Korean"},
 {prompt:"“Merhaba” is a greeting in which language?",options:["Turkish","Arabic","Persian","Greek"],answer:"Turkish"},
 {prompt:"“Shalom” is a greeting in which language?",options:["Hebrew","Arabic","Amharic","Yiddish"],answer:"Hebrew"}]
+"logo-rush":[
+{prompt:"Which brand uses the golden arches (M)?",options:["McDonald's","Microsoft","Mastercard","Mazda"],answer:"McDonald's"},
+{prompt:"Which brand is known for a swoosh logo?",options:["Nike","Adidas","Puma","Reebok"],answer:"Nike"},
+{prompt:"Which company uses a bitten apple as its logo?",options:["Apple","Dell","HP","Samsung"],answer:"Apple"},
+{prompt:"Which brand has four interlocking rings?",options:["Audi","BMW","Mercedes-Benz","Volkswagen"],answer:"Audi"},
+{prompt:"Which streaming brand is known for a red play button?",options:["YouTube","Netflix","Spotify","Twitch"],answer:"YouTube"},
+{prompt:"Which company uses a green mermaid logo?",options:["Starbucks","Subway","Sprite","Spotify"],answer:"Starbucks"},
+{prompt:"Which sportswear brand uses three stripes?",options:["Adidas","Nike","New Balance","Under Armour"],answer:"Adidas"},
+{prompt:"Which car brand has a prancing horse logo?",options:["Ferrari","Porsche","Lamborghini","Jaguar"],answer:"Ferrari"},
+{prompt:"Which social platform uses a ghost mascot?",options:["Snapchat","Instagram","Facebook","Pinterest"],answer:"Snapchat"},
+{prompt:"Which technology brand uses a four-colour G?",options:["Google","Intel","Sony","Lenovo"],answer:"Google"}],
+"map-masters":[
+{prompt:"Which country is shaped like a boot?",options:["Italy","Greece","Portugal","Croatia"],answer:"Italy"},
+{prompt:"Which is the largest country by area?",options:["Russia","Canada","China","United States"],answer:"Russia"},
+{prompt:"Which country is directly south of the United States?",options:["Mexico","Brazil","Cuba","Guatemala"],answer:"Mexico"},
+{prompt:"Which island country lies southeast of India?",options:["Sri Lanka","Maldives","Indonesia","Madagascar"],answer:"Sri Lanka"},
+{prompt:"Which country contains the city of Nairobi?",options:["Kenya","Nigeria","Ghana","Ethiopia"],answer:"Kenya"},
+{prompt:"Which country is home to the city of Cairo?",options:["Egypt","Morocco","Algeria","Sudan"],answer:"Egypt"},
+{prompt:"Which country shares the longest land border with the United States?",options:["Canada","Mexico","Russia","Cuba"],answer:"Canada"},
+{prompt:"Which country is an archipelago in Southeast Asia?",options:["Indonesia","Nepal","Mongolia","Laos"],answer:"Indonesia"},
+{prompt:"Which country lies between France and Spain in the Pyrenees?",options:["Andorra","Belgium","Luxembourg","Monaco"],answer:"Andorra"},
+{prompt:"Which country has the cities of Sydney and Melbourne?",options:["Australia","New Zealand","South Africa","Ireland"],answer:"Australia"}],
 };
 async function loadGames():Promise<Game[]>{const r=await fetch(treeUrl);if(!r.ok)throw Error("Could not load games");const t=await r.json();const list=(t.tree||[]).filter((x:any)=>x.type==="blob"&&/^games\/[^/]+\/[^/]+\/[^/]+\/game\.json$/.test(x.path));const games=await Promise.all(list.map(async(x:any)=>{const p=x.path.split("/"),base=raw+"/games/"+p[1]+"/"+p[2]+"/"+p[3];let m:any={};try{const q=await fetch(base+"/game.json");if(q.ok)m=await q.json()}catch{}const cover=m.thumbnail||m.cover;return{id:p[3],title:m.title||p[3].replace(/-/g," "),category:m.category||p[1],description:m.description||"Play this game on Playovia.",thumbnail:cover?(String(cover).startsWith("http")?cover:base+"/"+cover):undefined} as Game}));return games.filter(g=>!["chess","8ballpool","8-ball-pool","bobbleleague","bobble-league"].includes(g.id)&&g.id!=="").sort((a,b)=>a.title.localeCompare(b.title))}
 export default function App(){const[games,setGames]=useState<Game[]>([]),[selected,setSelected]=useState<Game|null>(null),[tab,setTab]=useState("home"),[loading,setLoading]=useState(true),[error,setError]=useState(""),[query,setQuery]=useState("");const[round,setRound]=useState(0),[answer,setAnswer]=useState(""),[score,setScore]=useState(0),[feedback,setFeedback]=useState(""),[finished,setFinished]=useState(false),[selectedChoice,setSelectedChoice]=useState("");
