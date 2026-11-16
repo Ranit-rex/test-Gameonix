@@ -44,8 +44,14 @@ jobs:
           marker = "react {"
           if marker not in source:
               raise SystemExit("React Native Gradle 'react {' block was not found")
-          if "debuggableVariants" not in source:
-              source = source.replace(marker, marker + '\n    // Bundle JS into debug APK so it runs without Metro.\n    debuggableVariants = []', 1)
+          import re
+          # The RN template explicitly marks debug as Metro-dependent.
+          # Replace that default rather than only adding a second property.
+          source, count = re.subn(r'debuggableVariants\\s*=\\s*\\[[^\\]]*\\]', 'debuggableVariants = []', source, count=1)
+          if count == 0:
+              source = source.replace(marker, marker + '\\n    // Bundle JS into debug APK so it runs without Metro.\\n    debuggableVariants = []', 1)
+          if "debuggableVariants = []" not in source:
+              raise SystemExit("Could not configure standalone JS bundling")
           path.write_text(source)
           PY
       - name: Build standalone debug APK
