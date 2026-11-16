@@ -1,26 +1,21 @@
-# Playovia Mobile
+# Playovia Native Android
 
-Isolated Expo + React Native app for Android and iOS. Root website files remain untouched.
+This is a React Native CLI app. It does not use Expo or WebView. The website at the repository root remains independent and unchanged.
 
-- Native home and game catalogue.
-- Reads game folders and optional game.json metadata from this repository.
-- Runs existing HTML games in a native WebView; games are not rewritten.
-- Android/iOS EAS build profiles are included.
+## Current migration status
+- Native React Native app shell and catalogue.
+- Capital Quest has a first native solo-game implementation.
+- Other titles remain visible in the catalogue but open a native migration notice until their gameplay is ported. No HTML game is embedded or opened.
+- Native Firebase sign-in and the remaining 17 game ports are planned follow-up work; website login and gameplay are unchanged.
 
 ## Local development
-Use Node.js 22.13+.
+Use Node.js 22.13+ and Android Studio with Android SDK configured.
 
 ```bash
 cd mobile-app
 npm install
-npx expo install --fix
-npx expo start
+npx react-native start
+npx react-native run-android
 ```
 
-## Build
-Create an Expo project, set its project ID in app.json, then run eas build --platform android --profile preview or eas build --platform ios --profile preview. Android preview builds an APK. iOS distribution needs Apple signing credentials and an Apple Developer account.
-
-## Firebase
-The website uses Google sign-in with Firebase project play-hub-688e. Native Google sign-in needs Android and iOS OAuth client IDs matching the app identifiers. These must be configured from Firebase/Google Cloud. Once configured, the app can use the same Firebase project and accounts.
-
-Do not move or rename root website files. Any future website/backend changes must be reviewed separately.
+The Android native project is generated from the React Native CLI template in the Android build workflow. Google sign-in requires Android OAuth configuration for package `xyz.playovia.app` in the existing Firebase project `play-hub-688e`.
