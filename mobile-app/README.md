@@ -18,4 +18,4 @@ npx react-native start
 npx react-native run-android
 ```
 
-The Android native project is generated from the React Native CLI template in the Android build workflow. Google sign-in requires Android OAuth configuration for package `xyz.playovia.app` in the existing Firebase project `play-hub-688e`.
+The Android Gradle project and automated APK build are the next setup step; this source-only migration commit does not produce an APK yet. Google sign-in requires Android OAuth configuration for package `xyz.playovia.app` in the existing Firebase project `play-hub-688e`.
