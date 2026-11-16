@@ -1,114 +1,37 @@
-import React,{useEffect,useMemo,useState}from"react";
-import{ActivityIndicator,BackHandler,FlatList,Image,Pressable,SafeAreaView,StatusBar,StyleSheet,Text,TextInput,View}from"react-native";
-type Game={id:string;title:string;category:string;description:string;thumbnail?:string};
-const treeUrl="https://api.github.com/repos/Ranit-rex/test-Gameonix/git/trees/main?recursive=1",raw="https://raw.githubusercontent.com/Ranit-rex/test-Gameonix/main";
-const capitals:[string,string,string][]=[["🇯🇵","Japan","Tokyo"],["🇫🇷","France","Paris"],["🇮🇳","India","New Delhi"],["🇬🇧","United Kingdom","London"],["🇮🇹","Italy","Rome"],["🇪🇸","Spain","Madrid"],["🇩🇪","Germany","Berlin"],["🇨🇦","Canada","Ottawa"],["🇦🇺","Australia","Canberra"],["🇧🇷","Brazil","Brasília"],["🇪🇬","Egypt","Cairo"],["🇰🇷","South Korea","Seoul"],["🇨🇳","China","Beijing"],["🇷🇺","Russia","Moscow"],["🇲🇽","Mexico","Mexico City"],["🇹🇭","Thailand","Bangkok"],["🇳🇵","Nepal","Kathmandu"],["🇧🇩","Bangladesh","Dhaka"],["🇵🇰","Pakistan","Islamabad"],["🇦🇷","Argentina","Buenos Aires"],["🇳🇿","New Zealand","Wellington"],["🇸🇪","Sweden","Stockholm"],["🇳🇴","Norway","Oslo"],["🇬🇷","Greece","Athens"],["🇵🇹","Portugal","Lisbon"],["🇹🇷","Türkiye","Ankara"],["🇸🇦","Saudi Arabia","Riyadh"],["🇰🇪","Kenya","Nairobi"],["🇳🇬","Nigeria","Abuja"],["🇮🇩","Indonesia","Jakarta"]];
-type QuizQuestion={prompt:string;options:string[];answer:string};
-const quizData:Record<string,QuizQuestion[]>={
-"currency-clash":[
-{prompt:"Which currency uses the symbol ¥?",options:["Japanese yen","Euro","Indian rupee","Pound sterling"],answer:"Japanese yen"},
-{prompt:"₹ is the symbol for which currency?",options:["Indian rupee","Pakistani rupee","Nepalese rupee","Sri Lankan rupee"],answer:"Indian rupee"},
-{prompt:"Which currency uses the symbol £?",options:["Pound sterling","Euro","Swiss franc","Dollar"],answer:"Pound sterling"},
-{prompt:"€ is the symbol for which currency?",options:["Euro","Peso","Dinar","Won"],answer:"Euro"},
-{prompt:"Which country uses the baht (฿)?",options:["Thailand","Vietnam","Malaysia","Indonesia"],answer:"Thailand"},
-{prompt:"₩ is the symbol for which currency?",options:["South Korean won","Japanese yen","Chinese yuan","Thai baht"],answer:"South Korean won"},
-{prompt:"Which currency is used in Bangladesh?",options:["Taka","Rupiah","Riyal","Ringgit"],answer:"Taka"},
-{prompt:"A$ is commonly used for which currency?",options:["Australian dollar","US dollar","Canadian dollar","Singapore dollar"],answer:"Australian dollar"},
-{prompt:"Which country uses the lira (₺)?",options:["Türkiye","Egypt","Brazil","Mexico"],answer:"Türkiye"},
-{prompt:"Which currency is used in South Africa?",options:["Rand","Ruble","Real","Rupee"],answer:"Rand"}],
-"flag-frenzy":[
-{prompt:"🇯🇵 Which country does this flag represent?",options:["Japan","China","South Korea","Vietnam"],answer:"Japan"},
-{prompt:"🇧🇷 Which country does this flag represent?",options:["Brazil","Argentina","Portugal","Mexico"],answer:"Brazil"},
-{prompt:"🇨🇦 Which country does this flag represent?",options:["Canada","Denmark","Austria","Switzerland"],answer:"Canada"},
-{prompt:"🇮🇳 Which country does this flag represent?",options:["India","Ireland","Niger","Italy"],answer:"India"},
-{prompt:"🇫🇷 Which country does this flag represent?",options:["France","Netherlands","Russia","Croatia"],answer:"France"},
-{prompt:"🇿🇦 Which country does this flag represent?",options:["South Africa","Kenya","Ghana","Nigeria"],answer:"South Africa"},
-{prompt:"🇲🇽 Which country does this flag represent?",options:["Mexico","Italy","Hungary","Bulgaria"],answer:"Mexico"},
-{prompt:"🇳🇵 Which country does this flag represent?",options:["Nepal","Bhutan","Bangladesh","Sri Lanka"],answer:"Nepal"},
-{prompt:"🇦🇺 Which country does this flag represent?",options:["Australia","New Zealand","Fiji","United Kingdom"],answer:"Australia"},
-{prompt:"🇬🇷 Which country does this flag represent?",options:["Greece","Finland","Israel","Uruguay"],answer:"Greece"}],
-"landmark-legends":[
-{prompt:"Which landmark stands in Agra, India?",options:["Taj Mahal","Red Fort","Hawa Mahal","India Gate"],answer:"Taj Mahal"},
-{prompt:"The Eiffel Tower is in which city?",options:["Paris","Rome","Madrid","Berlin"],answer:"Paris"},
-{prompt:"Which ancient structure is in Giza, Egypt?",options:["Great Pyramid","Colosseum","Petra","Parthenon"],answer:"Great Pyramid"},
-{prompt:"The Statue of Liberty is in which country?",options:["United States","Canada","France","Brazil"],answer:"United States"},
-{prompt:"Which landmark is famous in Rome?",options:["Colosseum","Big Ben","Acropolis","Louvre"],answer:"Colosseum"},
-{prompt:"Machu Picchu is located in which country?",options:["Peru","Chile","Mexico","Bolivia"],answer:"Peru"},
-{prompt:"Big Ben is a landmark in which city?",options:["London","Dublin","Edinburgh","Manchester"],answer:"London"},
-{prompt:"The Christ the Redeemer statue overlooks which city?",options:["Rio de Janeiro","São Paulo","Lisbon","Buenos Aires"],answer:"Rio de Janeiro"},
-{prompt:"The Great Wall is in which country?",options:["China","Japan","Mongolia","South Korea"],answer:"China"},
-{prompt:"The Sydney Opera House is in which country?",options:["Australia","New Zealand","Singapore","South Africa"],answer:"Australia"}],
-"wild-nations":[
-{prompt:"Which animal is the national animal of India?",options:["Bengal tiger","Lion","Elephant","Leopard"],answer:"Bengal tiger"},
-{prompt:"Which animal is strongly associated with Australia's national emblem?",options:["Kangaroo","Panda","Koala","Camel"],answer:"Kangaroo"},
-{prompt:"Which animal is the national animal of China?",options:["Giant panda","Red fox","Tiger","Snow leopard"],answer:"Giant panda"},
-{prompt:"Which animal is the national animal of the United States?",options:["Bald eagle","Grizzly bear","Bison","Wolf"],answer:"Bald eagle"},
-{prompt:"Which animal is the national animal of Bangladesh?",options:["Royal Bengal tiger","Asian elephant","Peacock","Leopard"],answer:"Royal Bengal tiger"},
-{prompt:"Which animal is the national animal of Nepal?",options:["Cow","Yak","Tiger","Snow leopard"],answer:"Cow"},
-{prompt:"Which animal is the national animal of Thailand?",options:["Asian elephant","Water buffalo","Tiger","Gaur"],answer:"Asian elephant"},
-{prompt:"Which animal is the national animal of South Africa?",options:["Springbok","Lion","Zebra","Giraffe"],answer:"Springbok"},
-{prompt:"Which animal is the national animal of Pakistan?",options:["Markhor","Snow leopard","Camel","Blackbuck"],answer:"Markhor"},
-{prompt:"Which animal is the national animal of Scotland?",options:["Unicorn","Stag","Golden eagle","Wolf"],answer:"Unicorn"}],
-"word-wonders":[
-{prompt:"“Hola” is a greeting in which language?",options:["Spanish","French","Italian","Portuguese"],answer:"Spanish"},
-{prompt:"“Bonjour” belongs to which language?",options:["French","German","Dutch","Spanish"],answer:"French"},
-{prompt:"“Guten Tag” is used in which language?",options:["German","Swedish","Danish","Polish"],answer:"German"},
-{prompt:"“Ciao” is commonly used in which language?",options:["Italian","Greek","Turkish","Romanian"],answer:"Italian"},
-{prompt:"“Namaste” is a greeting from which language tradition?",options:["Hindi","Japanese","Arabic","Russian"],answer:"Hindi"},
-{prompt:"“Olá” is a greeting in which language?",options:["Portuguese","Spanish","French","Catalan"],answer:"Portuguese"},
-{prompt:"“Konnichiwa” belongs to which language?",options:["Japanese","Korean","Chinese","Thai"],answer:"Japanese"},
-{prompt:"“Annyeonghaseyo” is a greeting in which language?",options:["Korean","Japanese","Mongolian","Vietnamese"],answer:"Korean"},
-{prompt:"“Merhaba” is a greeting in which language?",options:["Turkish","Arabic","Persian","Greek"],answer:"Turkish"},
-{prompt:"“Shalom” is a greeting in which language?",options:["Hebrew","Arabic","Amharic","Yiddish"],answer:"Hebrew"}],
-"logo-rush":[
-{prompt:"Which brand uses the golden arches (M)?",options:["McDonald's","Microsoft","Mastercard","Mazda"],answer:"McDonald's"},
-{prompt:"Which brand is known for a swoosh logo?",options:["Nike","Adidas","Puma","Reebok"],answer:"Nike"},
-{prompt:"Which company uses a bitten apple as its logo?",options:["Apple","Dell","HP","Samsung"],answer:"Apple"},
-{prompt:"Which brand has four interlocking rings?",options:["Audi","BMW","Mercedes-Benz","Volkswagen"],answer:"Audi"},
-{prompt:"Which streaming brand is known for a red play button?",options:["YouTube","Netflix","Spotify","Twitch"],answer:"YouTube"},
-{prompt:"Which company uses a green mermaid logo?",options:["Starbucks","Subway","Sprite","Spotify"],answer:"Starbucks"},
-{prompt:"Which sportswear brand uses three stripes?",options:["Adidas","Nike","New Balance","Under Armour"],answer:"Adidas"},
-{prompt:"Which car brand has a prancing horse logo?",options:["Ferrari","Porsche","Lamborghini","Jaguar"],answer:"Ferrari"},
-{prompt:"Which social platform uses a ghost mascot?",options:["Snapchat","Instagram","Facebook","Pinterest"],answer:"Snapchat"},
-{prompt:"Which technology brand uses a four-colour G?",options:["Google","Intel","Sony","Lenovo"],answer:"Google"}],
-"map-masters":[
-{prompt:"Which country is shaped like a boot?",options:["Italy","Greece","Portugal","Croatia"],answer:"Italy"},
-{prompt:"Which is the largest country by area?",options:["Russia","Canada","China","United States"],answer:"Russia"},
-{prompt:"Which country is directly south of the United States?",options:["Mexico","Brazil","Cuba","Guatemala"],answer:"Mexico"},
-{prompt:"Which island country lies southeast of India?",options:["Sri Lanka","Maldives","Indonesia","Madagascar"],answer:"Sri Lanka"},
-{prompt:"Which country contains the city of Nairobi?",options:["Kenya","Nigeria","Ghana","Ethiopia"],answer:"Kenya"},
-{prompt:"Which country is home to the city of Cairo?",options:["Egypt","Morocco","Algeria","Sudan"],answer:"Egypt"},
-{prompt:"Which country shares the longest land border with the United States?",options:["Canada","Mexico","Russia","Cuba"],answer:"Canada"},
-{prompt:"Which country is an archipelago in Southeast Asia?",options:["Indonesia","Nepal","Mongolia","Laos"],answer:"Indonesia"},
-{prompt:"Which country lies between France and Spain in the Pyrenees?",options:["Andorra","Belgium","Luxembourg","Monaco"],answer:"Andorra"},
-{prompt:"Which country has the cities of Sydney and Melbourne?",options:["Australia","New Zealand","South Africa","Ireland"],answer:"Australia"}],
-"quick-math":[
-{prompt:"12 + 9 = ?",options:["21","19","22","20"],answer:"21"},
-{prompt:"8 × 7 = ?",options:["56","54","48","64"],answer:"56"},
-{prompt:"100 ÷ 4 = ?",options:["25","20","40","30"],answer:"25"},
-{prompt:"45 − 17 = ?",options:["28","27","29","32"],answer:"28"},
-{prompt:"9 × 9 = ?",options:["81","72","99","79"],answer:"81"},
-{prompt:"What is half of 86?",options:["43","46","42","36"],answer:"43"},
-{prompt:"15 + 27 = ?",options:["42","41","43","44"],answer:"42"},
-{prompt:"72 ÷ 8 = ?",options:["9","8","7","6"],answer:"9"},
-{prompt:"6 × 12 = ?",options:["72","62","68","74"],answer:"72"},
-{prompt:"200 − 65 = ?",options:["135","145","125","155"],answer:"135"}],
-};
-const nativeGames:Game[]=[
-{id:"quick-math",title:"Quick Math",category:"Arcade",description:"Race through ten quick maths questions."},
-{id:"memory-match",title:"Memory Match",category:"Puzzle",description:"Flip cards and find all six matching pairs."},
-{id:"tic-tac-toe",title:"Tic Tac Toe",category:"Classic",description:"Play the classic X and O game on one phone."}
-];
-const memoryCards=["🚀","🎮","🍕","🐼","⚽","🌈","🚀","🎮","🍕","🐼","⚽","🌈"];
-async function loadGames():Promise<Game[]>{const r=await fetch(treeUrl);if(!r.ok)throw Error("Could not load games");const t=await r.json();const list=(t.tree||[]).filter((x:any)=>x.type==="blob"&&/^games\/[^/]+\/[^/]+\/[^/]+\/game\.json$/.test(x.path));const games=await Promise.all(list.map(async(x:any)=>{const p=x.path.split("/"),base=raw+"/games/"+p[1]+"/"+p[2]+"/"+p[3];let m:any={};try{const q=await fetch(base+"/game.json");if(q.ok)m=await q.json()}catch{}const cover=m.thumbnail||m.cover;return{id:p[3],title:m.title||p[3].replace(/-/g," "),category:m.category||p[1],description:m.description||"Play this game on Playovia.",thumbnail:cover?(String(cover).startsWith("http")?cover:base+"/"+cover):undefined} as Game}));return games.filter(g=>!["chess","8ballpool","8-ball-pool","bobbleleague","bobble-league"].includes(g.id)&&g.id!=="").sort((a,b)=>a.title.localeCompare(b.title))}
-export default function App(){const[games,setGames]=useState<Game[]>([]),[selected,setSelected]=useState<Game|null>(null),[tab,setTab]=useState("home"),[loading,setLoading]=useState(true),[error,setError]=useState(""),[query,setQuery]=useState("");const[round,setRound]=useState(0),[answer,setAnswer]=useState(""),[score,setScore]=useState(0),[feedback,setFeedback]=useState(""),[finished,setFinished]=useState(false),[selectedChoice,setSelectedChoice]=useState("");const[rushStarted,setRushStarted]=useState(false),[rushSeconds,setRushSeconds]=useState(30),[rushScore,setRushScore]=useState(0);const[memoryFlipped,setMemoryFlipped]=useState<number[]>([]),[memoryMatched,setMemoryMatched]=useState<number[]>([]),[ticBoard,setTicBoard]=useState<string[]>(Array(9).fill("")),[ticTurn,setTicTurn]=useState("X"),[ticWinner,setTicWinner]=useState("");
-useEffect(()=>{loadGames().then(g=>setGames([...g,...nativeGames])).catch(e=>setError(e.message)).finally(()=>setLoading(false))},[]);
-useEffect(()=>{if(!selected||selected.id!=="city-rush"||!rushStarted)return;const timer=setInterval(()=>setRushSeconds(v=>{if(v<=1){setRushStarted(false);return 0}return v-1}),1000);return()=>clearInterval(timer)},[selected,rushStarted]);
-useEffect(()=>{if(!selected)return;const h=BackHandler.addEventListener("hardwareBackPress",()=>{setSelected(null);return true});return()=>h.remove()},[selected]);
-const isCapital=selected?.id==="capital-quest";const quiz=selected?quizData[selected.id]:undefined;const isNativeQuiz=isCapital||Boolean(quiz);const current=capitals[round%capitals.length];const question:QuizQuestion|undefined=isCapital?{prompt:"What is the capital of "+current[1]+"?",options:[current[2],...capitals.filter(x=>x[2]!==current[2]).slice((round*3)%20,(round*3)%20+3).map(x=>x[2])],answer:current[2]}:quiz?quiz[round%quiz.length]:undefined;
-const reset=()=>{setMemoryFlipped([]);setMemoryMatched([]);setTicBoard(Array(9).fill(""));setTicTurn("X");setTicWinner("");setRound(0);setAnswer("");setSelectedChoice("");setScore(0);setFeedback("");setFinished(false);setRushStarted(false);setRushSeconds(30);setRushScore(0)};
-const submit=()=>{if(!selectedChoice||!question)return;if(selectedChoice===question.answer){setScore(v=>v+1);setFeedback("Correct! +1 point 🎉")}else{setFeedback("Not quite — correct answer: "+question.answer)}setTimeout(()=>{if(round>=9){setFinished(true)}else{setRound(v=>v+1);setSelectedChoice("");setFeedback("")}},950)};
-const flipMemory=(i:number)=>{if(memoryFlipped.length===2||memoryFlipped.includes(i)||memoryMatched.includes(i))return;const next=[...memoryFlipped,i];setMemoryFlipped(next);if(next.length===2){if(memoryCards[next[0]]===memoryCards[next[1]]){setTimeout(()=>{setMemoryMatched(v=>[...v,...next]);setMemoryFlipped([])},450)}else setTimeout(()=>setMemoryFlipped([]),850)}};const playTic=(i:number)=>{if(ticBoard[i]||ticWinner)return;const next=[...ticBoard];next[i]=ticTurn;const lines=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];const won=lines.some(line=>line.every(k=>next[k]===ticTurn));setTicBoard(next);if(won)setTicWinner(ticTurn);else if(next.every(Boolean))setTicWinner("DRAW");else setTicTurn(ticTurn==="X"?"O":"X")};const filtered=useMemo(()=>games.filter(g=>(tab==="home"?true:tab==="games"?true:false)&&((g.title+" "+g.category).toLowerCase().includes(query.toLowerCase()))),[games,query,tab]);
-if(selected)return <SafeAreaView style={s.root}><StatusBar barStyle="light-content"/><View style={s.gamebar}><Pressable onPress={()=>setSelected(null)}><Text style={s.back}>‹</Text></Pressable><Text style={s.gametitle} numberOfLines={1}>{selected.title}</Text><Text style={s.pill}>NATIVE</Text></View>{isNativeQuiz?<View style={s.game}><Text style={s.kicker}>PLAYOVIA · SOLO MODE</Text><Text style={s.gameTitle}>{selected.title}</Text><Text style={s.muted}>10 quick questions · Choose the correct answer.</Text>{finished?<><Text style={s.bigFlag}>🏆</Text><Text style={s.gameTitle}>Round complete!</Text><Text style={s.score}>Your score: {score}/10</Text><Pressable style={s.primary} onPress={reset}><Text style={s.primaryText}>PLAY AGAIN</Text></Pressable></>:<><View style={s.question}><Text style={s.round}>QUESTION {round+1} / 10</Text><Text style={s.prompt}>{question?.prompt}</Text>{question?.options.map((option,index)=><Pressable key={option} disabled={Boolean(feedback)} onPress={()=>setSelectedChoice(option)} style={[s.option,selectedChoice===option&&s.optionSelected]}><Text style={[s.optionText,selectedChoice===option&&s.optionTextSelected]}>{String.fromCharCode(65+index)}. {option}</Text></Pressable>)}<Pressable style={[s.primary,!selectedChoice&&s.disabled]} disabled={!selectedChoice||Boolean(feedback)} onPress={submit}><Text style={s.primaryText}>SUBMIT ANSWER</Text></Pressable><Text style={s.feedback}>{feedback}</Text><Text style={s.score}>SCORE  {score}</Text></View></>}</View>:selected.id==="city-rush"?<View style={s.game}><Text style={s.kicker}>PLAYOVIA · NATIVE ARCADE</Text><Text style={s.gameTitle}>City Rush: Tap Dash</Text><Text style={s.muted}>Race through the city! Tap as fast as you can before the 30-second timer ends.</Text><View style={s.question}><Text style={s.round}>TIME LEFT</Text><Text style={s.bigFlag}>{rushSeconds}s</Text><Text style={s.score}>DISTANCE SCORE · {rushScore}</Text><Pressable disabled={!rushStarted||rushSeconds===0} onPress={()=>setRushScore(v=>v+1)} style={[s.primary,{alignSelf:"stretch",alignItems:"center",paddingVertical:24,opacity:!rushStarted||rushSeconds===0?0.45:1}]}><Text style={[s.primaryText,{fontSize:20}]}>🚕  TAP TO DASH</Text></Pressable><Text style={s.feedback}>{rushSeconds===0?"🏁 Run complete! Final score: "+rushScore:rushStarted?"Keep tapping to build your distance!":"Ready when you are."}</Text><Pressable style={s.primary} onPress={()=>{setRushScore(0);setRushSeconds(30);setRushStarted(true)}}><Text style={s.primaryText}>{rushStarted?"RESTART RUN":"START 30-SECOND RUN"}</Text></Pressable></View></View>:selected.id==="memory-match"?<View style={s.game}><Text style={s.kicker}>PLAYOVIA · PUZZLE</Text><Text style={s.gameTitle}>Memory Match</Text><Text style={s.muted}>Find all six matching pairs. Matched {memoryMatched.length/2}/6.</Text><View style={{flexDirection:"row",flexWrap:"wrap",justifyContent:"center",gap:10,marginTop:24}}>{memoryCards.map((v,i)=><Pressable key={i} onPress={()=>flipMemory(i)} disabled={memoryMatched.includes(i)||memoryFlipped.includes(i)} style={{width:"27%",height:78,alignItems:"center",justifyContent:"center",borderRadius:14,backgroundColor:memoryMatched.includes(i)?"#244b43":"#211d3c",borderWidth:1,borderColor:"#62518f"}}><Text style={{fontSize:30}}>{memoryMatched.includes(i)||memoryFlipped.includes(i)?v:"❔"}</Text></Pressable>)}</View>{memoryMatched.length===12?<Text style={s.feedback}>🏆 All pairs found! Great memory.</Text>:null}<Pressable style={s.primary} onPress={()=>{setMemoryFlipped([]);setMemoryMatched([])}}><Text style={s.primaryText}>RESTART</Text></Pressable></View>:selected.id==="tic-tac-toe"?<View style={s.game}><Text style={s.kicker}>PLAYOVIA · CLASSIC</Text><Text style={s.gameTitle}>Tic Tac Toe</Text><Text style={s.muted}>{ticWinner?ticWinner==="DRAW"?"It's a draw!":ticWinner+" wins!":"Turn: "+ticTurn+" · Two players, one phone."}</Text><View style={{width:282,alignSelf:"center",flexDirection:"row",flexWrap:"wrap",marginTop:30}}>{ticBoard.map((v,i)=><Pressable key={i} onPress={()=>playTic(i)} style={{width:94,height:94,alignItems:"center",justifyContent:"center",backgroundColor:"#17152d",borderWidth:1,borderColor:"#554477"}}><Text style={{fontSize:44,fontWeight:"900",color:v==="X"?"#c4b5fd":"#70d6c2"}}>{v}</Text></Pressable>)}</View><Pressable style={s.primary} onPress={()=>{setTicBoard(Array(9).fill(""));setTicTurn("X");setTicWinner("")}}><Text style={s.primaryText}>NEW ROUND</Text></Pressable></View>:<View style={s.game}><Text style={s.kicker}>NATIVE GAME PORT</Text><Text style={s.gameTitle}>{selected.title}</Text><Text style={s.muted}>{selected.description}</Text><View style={s.notice}><Text style={s.noticeTitle}>Native conversion in progress</Text><Text style={s.muted}>This game will run with native React Native screens and controls. The website version is not opened inside the app.</Text></View><Pressable style={s.secondary} onPress={()=>setSelected(null)}><Text style={s.secondaryText}>BACK TO GAMES</Text></Pressable></View>}</SafeAreaView>;
-return <SafeAreaView style={s.root}><StatusBar barStyle="light-content"/><View style={s.header}><View><Text style={s.brand}>PLAY<Text style={s.accent}>OVIA</Text></Text><Text style={s.tag}>YOUR WORLD. YOUR GAMES.</Text></View><View style={s.avatar}><Text style={s.avatarText}>P</Text></View></View>{tab==="account"?<View style={s.game}><Text style={s.kicker}>PLAYER PROFILE</Text><Text style={s.gameTitle}>Your Playovia space</Text><Text style={s.muted}>Native account sign-in is the next integration step. Existing website accounts remain unchanged.</Text></View>:<><View style={s.hero}><Text style={s.kicker}>WELCOME TO PLAYOVIA</Text><Text style={s.heroTitle}>{tab==="home"?"Ready to play?":"Find your next game."}</Text><Text style={s.muted}>A growing collection of games, rebuilt for native mobile.</Text><Pressable style={s.primary} onPress={()=>setTab("games")}><Text style={s.primaryText}>EXPLORE GAMES  →</Text></Pressable></View><View style={s.search}><TextInput value={query} onChangeText={setQuery} placeholder="Search games..." placeholderTextColor="#777d99" style={s.searchInput}/></View><View style={s.section}><Text style={s.sectionTitle}>{tab==="home"?"FEATURED GAMES":"ALL GAMES"}</Text><Text style={s.mutedSmall}>{games.length} TITLES</Text></View>{loading?<View style={s.center}><ActivityIndicator color="#b9a5ff"/><Text style={s.muted}>Loading catalogue…</Text></View>:error?<View style={s.center}><Text style={s.muted}>{error}</Text></View>:<FlatList data={tab==="home"?filtered.slice(0,6):filtered} keyExtractor={x=>x.id} numColumns={2} columnWrapperStyle={s.row} contentContainerStyle={s.list} renderItem={({item})=><Pressable style={s.card} onPress={()=>{setSelected(item);reset()}}>{item.thumbnail?<Image source={{uri:item.thumbnail}} style={s.cover}/>:<View style={s.cover}><Text style={s.bigEmoji}>🎮</Text></View>}<Text numberOfLines={1} style={s.cardTitle}>{item.title}</Text><Text style={s.category}>{item.category.toUpperCase()}</Text><Text style={s.play}>OPEN NATIVE GAME ›</Text></Pressable>}/>}</>}<View style={s.nav}>{["home","games","account"].map(x=><Pressable key={x} onPress={()=>setTab(x)} style={s.navItem}><Text style={[s.navIcon,tab===x&&s.active]}>{x==="home"?"⌂":x==="games"?"▦":"◉"}</Text><Text style={[s.navLabel,tab===x&&s.active]}>{x.toUpperCase()}</Text></Pressable>)}</View></SafeAreaView>}
-const s=StyleSheet.create({root:{flex:1,backgroundColor:"#090b16"},header:{height:66,paddingHorizontal:20,flexDirection:"row",alignItems:"center",justifyContent:"space-between",borderBottomWidth:1,borderColor:"#202338"},brand:{color:"#fff",fontSize:23,fontWeight:"900",letterSpacing:1.4},accent:{color:"#a78bfa"},tag:{color:"#777d99",fontSize:8,fontWeight:"800",letterSpacing:2},avatar:{backgroundColor:"#272044",padding:10,borderRadius:22},avatarText:{color:"#c4b5fd",fontWeight:"900"},hero:{padding:19,borderRadius:20,backgroundColor:"#17152d",borderWidth:1,borderColor:"#39305e",margin:16},kicker:{color:"#b7a4ff",fontSize:10,fontWeight:"900",letterSpacing:2},heroTitle:{color:"#fff",fontSize:28,fontWeight:"900",marginTop:8},muted:{color:"#aaa9c0",fontSize:13,lineHeight:20,marginTop:7},primary:{alignSelf:"flex-start",backgroundColor:"#a78bfa",padding:13,borderRadius:12,marginTop:16},primaryText:{color:"#151126",fontWeight:"900",fontSize:11},search:{marginHorizontal:16,marginBottom:14,backgroundColor:"#151827",borderRadius:12,borderWidth:1,borderColor:"#252a40"},searchInput:{padding:12,color:"#fff"},section:{marginHorizontal:18,marginBottom:12,flexDirection:"row",justifyContent:"space-between"},sectionTitle:{color:"#f4f2ff",fontSize:12,fontWeight:"900"},mutedSmall:{color:"#797c96",fontSize:9},row:{gap:12,marginHorizontal:16,marginBottom:13},list:{paddingBottom:18},card:{flex:1,minWidth:0,backgroundColor:"#151827",borderRadius:16,padding:9,borderWidth:1,borderColor:"#252a40"},cover:{width:"100%",height:105,borderRadius:10,backgroundColor:"#25213b"},bigEmoji:{fontSize:36,textAlign:"center",marginTop:28},cardTitle:{color:"#fff",fontSize:13,fontWeight:"800",marginTop:10},category:{color:"#8e91aa",fontSize:9,marginTop:4},play:{color:"#b9a5ff",fontSize:9,fontWeight:"900",marginTop:9},nav:{height:65,borderTopWidth:1,borderColor:"#202338",backgroundColor:"#0d1020",flexDirection:"row",justifyContent:"space-around",alignItems:"center"},navItem:{alignItems:"center",minWidth:70},navIcon:{fontSize:21,color:"#737792"},navLabel:{fontSize:8,color:"#737792",fontWeight:"900"},active:{color:"#c4b5fd"},gamebar:{height:50,backgroundColor:"#101322",flexDirection:"row",alignItems:"center",paddingHorizontal:14,gap:12},back:{color:"#fff",fontSize:32},gametitle:{flex:1,color:"#fff",fontWeight:"800"},pill:{color:"#c4b5fd",fontSize:9,fontWeight:"900"},game:{flex:1,padding:20},gameTitle:{color:"#fff",fontSize:27,fontWeight:"900",marginTop:10},option:{width:"100%",padding:13,borderRadius:11,backgroundColor:"#0d1020",borderWidth:1,borderColor:"#34314e",marginTop:9},optionSelected:{borderColor:"#a78bfa",backgroundColor:"#292044"},optionText:{color:"#d7d4e8",fontSize:13,fontWeight:"700"},optionTextSelected:{color:"#fff"},disabled:{opacity:0.45},question:{marginTop:25,padding:18,borderRadius:20,backgroundColor:"#17152d",borderWidth:1,borderColor:"#39305e",alignItems:"center"},round:{color:"#b7a4ff",fontSize:10,fontWeight:"900",letterSpacing:2},bigFlag:{fontSize:76,marginTop:20},prompt:{color:"#fff",fontSize:17,fontWeight:"800",textAlign:"center",marginTop:15},answer:{width:"100%",marginTop:20,padding:14,borderRadius:12,backgroundColor:"#0d1020",borderWidth:1,borderColor:"#514477",color:"#fff"},feedback:{minHeight:28,color:"#c4b5fd",fontWeight:"800",marginTop:12,textAlign:"center"},score:{color:"#fff",fontWeight:"900",marginTop:15},notice:{padding:17,backgroundColor:"#17152d",borderRadius:16,borderWidth:1,borderColor:"#39305e",marginTop:25},noticeTitle:{color:"#fff",fontWeight:"900",fontSize:16},secondary:{alignSelf:"flex-start",padding:13,borderRadius:12,borderWidth:1,borderColor:"#8270bb",marginTop:18},secondaryText:{color:"#c4b5fd",fontWeight:"900",fontSize:11},center:{flex:1,alignItems:"center",justifyContent:"center",gap:10}});
+import React,{useCallback,useEffect,useRef,useState}from"react";
+import{ActivityIndicator,BackHandler,SafeAreaView,StatusBar,StyleSheet,Text,View}from"react-native";
+import{WebView,WebViewNavigation}from"react-native-webview";
+
+const HOME="https://playovia.xyz/";
+
+export default function App(){
+ const web=useRef<WebView>(null);
+ const [canGoBack,setCanGoBack]=useState(false);
+ const [loading,setLoading]=useState(true);
+ const [failed,setFailed]=useState(false);
+ const [progress,setProgress]=useState(0);
+ const back=useCallback(()=>{if(canGoBack){web.current?.goBack();return true}return false},[canGoBack]);
+ useEffect(()=>{const sub=BackHandler.addEventListener("hardwareBackPress",back);return()=>sub.remove()},[back]);
+ const nav=(state:WebViewNavigation)=>setCanGoBack(state.canGoBack);
+ return <SafeAreaView style={styles.root}>
+  <StatusBar backgroundColor="#090b16" barStyle="light-content"/>
+  <WebView ref={web} source={{uri:HOME}} style={styles.web}
+   javaScriptEnabled domStorageEnabled thirdPartyCookiesEnabled sharedCookiesEnabled
+   allowsBackForwardNavigationGestures javaScriptCanOpenWindowsAutomatically
+   setSupportMultipleWindows={false} allowsInlineMediaPlayback mediaPlaybackRequiresUserAction={false}
+   originWhitelist={["http://*","https://*"]} mixedContentMode="compatibility"
+   onNavigationStateChange={nav}
+   onLoadStart={()=>{setLoading(true);setFailed(false);setProgress(0)}}
+   onLoadProgress={({nativeEvent})=>setProgress(nativeEvent.progress)}
+   onLoadEnd={()=>setLoading(false)}
+   onError={()=>{setLoading(false);setFailed(true)}}
+   onHttpError={({nativeEvent})=>{if(nativeEvent.statusCode>=500)setFailed(true)}}
+   onOpenWindow={({nativeEvent})=>{if(nativeEvent.targetUrl)web.current?.injectJavaScript("window.location.href="+JSON.stringify(nativeEvent.targetUrl)+";true;")}}
+   renderLoading={()=><View style={styles.loading}><Text style={styles.logo}>PLAY<Text style={styles.accent}>OVIA</Text></Text><ActivityIndicator size="large" color="#a78bfa"/><Text style={styles.label}>Loading Playovia…</Text></View>}
+   startInLoadingState
+  />
+  {loading&&<View pointerEvents="none" style={styles.progress}><View style={[styles.progressFill,{width:(Math.max(0,Math.min(1,progress))*100)+"%"}]}/></View>}
+  {failed&&!loading&&<View style={styles.error}><Text style={styles.errorTitle}>Connection problem</Text><Text style={styles.label}>Playovia could not be loaded. Check your internet and reload.</Text></View>}
+ </SafeAreaView>
+}
+const styles=StyleSheet.create({root:{flex:1,backgroundColor:"#090b16"},web:{flex:1,backgroundColor:"#090b16"},loading:{...StyleSheet.absoluteFillObject,backgroundColor:"#090b16",alignItems:"center",justifyContent:"center",gap:18},logo:{fontSize:30,fontWeight:"900",letterSpacing:2,color:"#fff"},accent:{color:"#a78bfa"},label:{color:"#aaa9c0",fontSize:13,textAlign:"center"},progress:{height:2,backgroundColor:"#201b35"},progressFill:{height:2,backgroundColor:"#a78bfa"},error:{position:"absolute",bottom:24,left:20,right:20,padding:16,borderRadius:14,backgroundColor:"#21172a",borderWidth:1,borderColor:"#63436e"},errorTitle:{color:"#fff",fontSize:16,fontWeight:"800",marginBottom:5}});
