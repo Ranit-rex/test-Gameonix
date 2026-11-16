@@ -74,6 +74,16 @@ body{background:#edf5ff!important;color:var(--ink)!important}.wrap{max-width:112
 
 /* Mobile keyboard: keep the page vertically scrollable and bring chat into view */
 @media(max-width:700px){html,body{min-height:100%;height:auto!important;overflow-y:auto!important;overscroll-behavior-y:contain}body.chat-typing{overflow-y:auto!important;touch-action:pan-y}body.chat-typing .wrap{padding-bottom:42vh!important}body.chat-typing .boardpanel canvas{max-height:30dvh!important;min-height:120px!important}body.chat-typing .side{display:block!important;overflow:visible!important}body.chat-typing .side>.chat-panel{display:block!important;position:relative!important;overflow:visible!important}body.chat-typing .chatlog{height:clamp(75px,14dvh,125px)!important;max-height:14dvh!important;overflow-y:auto!important;touch-action:pan-y}body.chat-typing .chatline{position:sticky!important;bottom:0!important;background:#fff!important;padding-bottom:5px!important}}
+
+
+/* Mobile home-page scrolling fix: allow the full setup/lobby page to scroll on touch devices */
+@media(max-width:700px){
+ html,body{height:auto!important;min-height:100%!important;overflow-x:hidden!important;overflow-y:auto!important;overscroll-behavior-y:auto!important;touch-action:pan-y!important;-webkit-overflow-scrolling:touch}
+ body{position:relative!important}
+ .wrap{height:auto!important;min-height:100dvh!important;overflow:visible!important;padding-bottom:calc(24px + env(safe-area-inset-bottom))!important}
+ #home,.home{height:auto!important;max-height:none!important;overflow:visible!important;margin-top:12px!important;margin-bottom:18px!important}
+ #lobby,.lobby{max-height:none!important;overflow:visible!important}
+}
 </style>
 </head>
 <body>
