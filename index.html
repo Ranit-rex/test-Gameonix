@@ -2008,13 +2008,13 @@ firebaseInitPromise=initFirebase();
  }
  function initBanner(){
   const host=document.getElementById('playoviaAdcashBanner');
-  if(!host||host.dataset.loaded==='1'||read('banner'))return;
+  if(!host||host.dataset.loaded==='1')return;
   if(!ready())return;
   const tag=document.createElement('script');
   tag.type='text/javascript';
   tag.text='aclib.runBanner({zoneId: \' '+ZONES.banner+' \'.trim()});';
   host.appendChild(tag);
-  host.dataset.loaded='1';write('banner','1');
+  host.dataset.loaded='1';
  }
  function showInterstitial(){
   if(!ready())return;
@@ -2027,7 +2027,7 @@ firebaseInitPromise=initFirebase();
   if(zoneQueue)return zoneQueue;
   zoneQueue=(async()=>{
    if(!ready())return;
-   if(!read('banner')){initBanner();await wait(500)}
+   initBanner();await wait(500);
    callZone('runVideoSlider',{zoneId:ZONES.videoSlider});
    await wait(500);
    callZone('runInPagePush',{zoneId:ZONES.inPagePush,maxAds:2});
