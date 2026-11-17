@@ -2024,7 +2024,10 @@ firebaseInitPromise=initFirebase();
   }
   if(page==='about'&&!read('slider')){
    if(call('runVideoSlider',{zoneId:ZONES.videoSlider}))write('slider','1');
+   return;
   }
+  if(page==='settings'&&!read('pop')){popUnder();return}
+  if(page==='saved'){interstitial();return}
  }
  function interstitial(){
   if(!ready())return;
@@ -2043,18 +2046,12 @@ firebaseInitPromise=initFirebase();
    const fromUser=!!(navigator.userActivation&&navigator.userActivation.isActive);
    const result=original.apply(this,arguments);
    if(page==='home'){const slot=document.getElementById('playoviaPageAd');if(slot)slot.classList.add('hidden');return result}
-   loadLibrary().then(ok=>{if(!ok)return;showPageFormat(page);if(fromUser&&page==='games')interstitial()});
+   loadLibrary().then(ok=>{if(!ok)return;showPageFormat(page)});
    return result;
   };
   wrapped.__playoviaAdcash=true;window.setPage=wrapped;
  }
- function wrapLaunch(){
-  if(typeof window.launchGame!=='function'||window.launchGame.__playoviaAdcash)return;
-  const original=window.launchGame;
-  const wrapped=function(){popUnder();return original.apply(this,arguments)};
-  wrapped.__playoviaAdcash=true;window.launchGame=wrapped;
- }
- loadLibrary().then(ok=>{if(!ok){console.warn('Adcash library unavailable; ad zones skipped.');return}wrapPage();wrapLaunch()});
+ loadLibrary().then(ok=>{if(!ok){console.warn('Adcash library unavailable; ad zones skipped.');return}wrapPage()});
 })();
 </script>
 
