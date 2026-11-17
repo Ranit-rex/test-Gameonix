@@ -2018,19 +2018,20 @@ firebaseInitPromise=initFirebase();
  }
  function showInterstitial(){
   if(!ready())return;
-  const last=Number(read('interstitialAt')||0);
-  if(Date.now()-last<15*60*1000)return;
-  if(callZone('runInterstitial',{zoneId:ZONES.interstitial}))write('interstitialAt',Date.now());
+  // Site-side cooldown removed; Adcash controls any provider-side countdown.
+  callZone('runInterstitial',{zoneId:ZONES.interstitial});
  }
- // Start each display zone separately so their requests do not fire together.
+ // Trigger zones quickly in sequence. Slider and push can retry on later page visits.
  function initNonHome(fromUser){
   pendingInterstitial=pendingInterstitial||!!fromUser;
   if(zoneQueue)return zoneQueue;
   zoneQueue=(async()=>{
    if(!ready())return;
-   if(!read('banner')){initBanner();await wait(3000)}
-   if(!read('slider')){if(callZone('runVideoSlider',{zoneId:ZONES.videoSlider}))write('slider','1');await wait(3000)}
-   if(!read('push')){if(callZone('runInPagePush',{zoneId:ZONES.inPagePush,maxAds:2}))write('push','1');await wait(3000)}
+   if(!read('banner')){initBanner();await wait(500)}
+   callZone('runVideoSlider',{zoneId:ZONES.videoSlider});
+   await wait(500);
+   callZone('runInPagePush',{zoneId:ZONES.inPagePush,maxAds:2});
+   await wait(500);
    if(pendingInterstitial){pendingInterstitial=false;showInterstitial()}
   })().finally(()=>{zoneQueue=null});
   return zoneQueue;
