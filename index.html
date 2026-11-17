@@ -1984,10 +1984,12 @@ firebaseInitPromise=initFirebase();
 <script id="playoviaAdcashIntegration">
 (function(){
  'use strict';
- const ZONES={vast:'https://youradexchange.com/video/select.php?r=12458558',pop:'12458710',videoSlider:'12458718',interstitial:'12458722',inPagePush:'12458750',banner:'12458758'};
+ const ZONES={vast:'https://youradexchange.com/video/select.php?r=12458558',videoSlider:'12458718',interstitial:'12458722',inPagePush:'12458750',banner:'12458758'};
  const KEY='playovia_adcash_v1';
  const read=(key)=>{try{return sessionStorage.getItem(KEY+'_'+key)}catch(_){return null}};
  const write=(key,value)=>{try{sessionStorage.setItem(KEY+'_'+key,String(value))}catch(_){}};
+ const wait=(ms)=>new Promise(resolve=>setTimeout(resolve,ms));
+ let zoneQueue=null,pendingInterstitial=false;
  function ready(){return !!(window.aclib&&typeof window.aclib==='object')}
  function loadLibrary(){
   if(ready())return Promise.resolve(true);
@@ -2014,21 +2016,24 @@ firebaseInitPromise=initFirebase();
   host.appendChild(tag);
   host.dataset.loaded='1';write('banner','1');
  }
- function initNonHome(){
-  if(!ready())return;
-  if(!read('push')){if(callZone('runInPagePush',{zoneId:ZONES.inPagePush,maxAds:2}))write('push','1')}
-  if(!read('slider')){if(callZone('runVideoSlider',{zoneId:ZONES.videoSlider}))write('slider','1')}
-  initBanner();
- }
  function showInterstitial(){
   if(!ready())return;
   const last=Number(read('interstitialAt')||0);
   if(Date.now()-last<15*60*1000)return;
   if(callZone('runInterstitial',{zoneId:ZONES.interstitial}))write('interstitialAt',Date.now());
  }
- function showPopUnder(){
-  if(!ready()||read('pop'))return;
-  if(callZone('runPop',{zoneId:ZONES.pop}))write('pop','1');
+ // Start each display zone separately so their requests do not fire together.
+ function initNonHome(fromUser){
+  pendingInterstitial=pendingInterstitial||!!fromUser;
+  if(zoneQueue)return zoneQueue;
+  zoneQueue=(async()=>{
+   if(!ready())return;
+   if(!read('banner')){initBanner();await wait(3000)}
+   if(!read('slider')){if(callZone('runVideoSlider',{zoneId:ZONES.videoSlider}))write('slider','1');await wait(3000)}
+   if(!read('push')){if(callZone('runInPagePush',{zoneId:ZONES.inPagePush,maxAds:2}))write('push','1');await wait(3000)}
+   if(pendingInterstitial){pendingInterstitial=false;showInterstitial()}
+  })().finally(()=>{zoneQueue=null});
+  return zoneQueue;
  }
  function wrapPageNavigation(){
   if(typeof window.setPage!=='function'||window.setPage.__playoviaAdcash)return;
@@ -2037,24 +2042,16 @@ firebaseInitPromise=initFirebase();
    const fromUser=!!(navigator.userActivation&&navigator.userActivation.isActive);
    const result=original.apply(this,arguments);
    if(page==='home')return result;
-   loadLibrary().then(ok=>{if(!ok)return;initNonHome();if(fromUser)showInterstitial()});
+   loadLibrary().then(ok=>{if(ok)initNonHome(fromUser)});
    return result;
   };
   wrapped.__playoviaAdcash=true;window.setPage=wrapped;
  }
- function wrapGameLaunch(){
-  if(typeof window.launchGame!=='function'||window.launchGame.__playoviaAdcash)return;
-  const original=window.launchGame;
-  const wrapped=function(){
-   showPopUnder();
-   return original.apply(this,arguments);
-  };
-  wrapped.__playoviaAdcash=true;window.launchGame=wrapped;
- }
  loadLibrary().then(ok=>{
   if(!ok){console.warn('Adcash library did not load; ad zones remain inactive.');return}
-  wrapPageNavigation();wrapGameLaunch();
-  // The app starts on Home: no ad zone is invoked until the player navigates away.
+  wrapPageNavigation();
+  // Pop-under zone intentionally disabled: no game-launch redirect/new-tab ads.
+  // The app starts on Home: no display zone is invoked until the player navigates away.
  });
 })();
 </script>
