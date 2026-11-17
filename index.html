@@ -683,11 +683,12 @@ body:has(#gameDetailsModal:not(.hidden)) #playoviaPageAd,body:has(#gameDetailsMo
   {src:'https://nap5k.com/tag.min.js',zone:'12248040'},
   {src:'https://n6wxm.com/vignette.min.js',zone:'12285825'}
  ];
- let loaded=false,loading=false;
- window.playoviaLoadGameAds=function(){
-  if(loaded||loading)return;
-  if(!document.getElementById('gameOverlay')||document.getElementById('gameOverlay').classList.contains('hidden'))return;
-  loading=true;
+ let loaded=false,queued=false;
+ function loadZones(){
+  if(loaded||queued)return;
+  const overlay=document.getElementById('gameOverlay');
+  if(overlay&&!overlay.classList.contains('hidden')){setTimeout(loadZones,2500);return}
+  queued=true;
   zones.forEach(item=>{
    if(document.querySelector('script[data-playovia-monetag="'+item.zone+'"]'))return;
    const script=document.createElement('script');
@@ -698,7 +699,15 @@ body:has(#gameDetailsModal:not(.hidden)) #playoviaPageAd,body:has(#gameDetailsMo
    script.onerror=()=>{script.dataset.loadError='true'};
    document.head.appendChild(script);
   });
- };
+ }
+ function schedule(){
+  if(loaded||queued)return;
+  const run=()=>{queued=false;loadZones()};
+  if('requestIdleCallback'in window)requestIdleCallback(run,{timeout:5000});
+  else setTimeout(run,3000);
+ }
+ window.addEventListener('load',()=>setTimeout(schedule,2500),{once:true});
+ document.addEventListener('playovia:game-closed',schedule);
 })();
 </script>
 
@@ -1590,7 +1599,7 @@ async function keepGameScreenAwake(){
 async function releaseGameScreenWakeLock(){const lock=playoviaScreenWakeLock;playoviaScreenWakeLock=null;if(lock)try{await lock.release()}catch(_){}}
 document.addEventListener('visibilitychange',()=>{if(document.hidden){if(playoviaScreenWakeLock)releaseGameScreenWakeLock()}else if(!document.getElementById('gameOverlay')?.classList.contains('hidden'))keepGameScreenAwake()});
 /* Playovia game session state (ads remain disabled). */
-let gameLoadTimer=null,playoviaLogGame=null,activeRemoteGameSlug='',playoviaExitConfirmed=false;function launchGame(url,title,slug){activeRemoteGameSlug=String(slug||'').toLowerCase();releaseAllRemoteGameInputs();setControllerGameReady(false,{gameTitle:title,gameSlug:activeRemoteGameSlug});if(slug){playoviaLogGame={slug,title};window.playoviaTrackGame?.('game_open',slug,title)}try{history.pushState({playoviaGameOpen:true},location.href);gameHistoryPushed=true}catch(_){}if(slug){startGameSession(title,slug);rememberGame(slug);const plays=readPlays();plays[slug]=(plays[slug]||0)+1;try{localStorage.setItem(userStoreKey('plays'),JSON.stringify(plays))}catch(_){}renderGames(allGames)}else setPlayingPresence(title,slug);$('playingTitle').textContent=title;$('gameLoadingTitle').textContent='Starting '+title+'…';$('gameLoadingNote').textContent='Getting things ready';$('gameLoading').classList.remove('hidden');$('gameOverlay').classList.remove('hidden');$('gameOverlay').classList.remove('is-opening');void $('gameOverlay').offsetWidth;$('gameOverlay').classList.add('is-opening');document.body.style.overflow='hidden';keepGameScreenAwake();if(gameLoadTimer)clearTimeout(gameLoadTimer);gameLoadTimer=setTimeout(()=>{if(!$('gameOverlay').classList.contains('hidden'))$('gameLoadingNote').textContent='Taking longer than usual? The game may need a little more time.'},15000);const launchUrl=new URL(url,location.href);launchUrl.searchParams.set('playovia_refresh','20261113-30rounds');const gameFrame=$('gameFrame');gameFrame.addEventListener('load',()=>{setTimeout(()=>window.playoviaLoadGameAds?.(),7000)},{once:true});gameFrame.src=launchUrl.href;setControllerGameReady(false)}
+let gameLoadTimer=null,playoviaLogGame=null,activeRemoteGameSlug='',playoviaExitConfirmed=false;function launchGame(url,title,slug){activeRemoteGameSlug=String(slug||'').toLowerCase();releaseAllRemoteGameInputs();setControllerGameReady(false,{gameTitle:title,gameSlug:activeRemoteGameSlug});if(slug){playoviaLogGame={slug,title};window.playoviaTrackGame?.('game_open',slug,title)}try{history.pushState({playoviaGameOpen:true},location.href);gameHistoryPushed=true}catch(_){}if(slug){startGameSession(title,slug);rememberGame(slug);const plays=readPlays();plays[slug]=(plays[slug]||0)+1;try{localStorage.setItem(userStoreKey('plays'),JSON.stringify(plays))}catch(_){}renderGames(allGames)}else setPlayingPresence(title,slug);$('playingTitle').textContent=title;$('gameLoadingTitle').textContent='Starting '+title+'…';$('gameLoadingNote').textContent='Getting things ready';$('gameLoading').classList.remove('hidden');$('gameOverlay').classList.remove('hidden');$('gameOverlay').classList.remove('is-opening');void $('gameOverlay').offsetWidth;$('gameOverlay').classList.add('is-opening');document.body.style.overflow='hidden';keepGameScreenAwake();if(gameLoadTimer)clearTimeout(gameLoadTimer);gameLoadTimer=setTimeout(()=>{if(!$('gameOverlay').classList.contains('hidden'))$('gameLoadingNote').textContent='Taking longer than usual? The game may need a little more time.'},15000);const launchUrl=new URL(url,location.href);launchUrl.searchParams.set('playovia_refresh','20261113-30rounds');$('gameFrame').src=launchUrl.href;setControllerGameReady(false)}
 function closeGame(fromHistory=false){if($('gameOverlay').classList.contains('hidden'))return;if(!$('gameAiGlass')?.classList.contains('hidden'))aiClose();setControllerGameReady(false);if(remoteControllerSession)stopRemoteController();$('remoteControllerModal')?.classList.add('hidden');if(playoviaLogGame){window.playoviaTrackGame?.('game_exit',playoviaLogGame.slug,playoviaLogGame.title);playoviaLogGame=null}if(gameLoadTimer){clearTimeout(gameLoadTimer);gameLoadTimer=null}finishGameSession();clearPlayingPresence();$('gameOverlay').classList.remove('is-opening');$('gameOverlay').classList.add('hidden');releaseGameScreenWakeLock();$('gameLoading').classList.remove('hidden');document.body.style.overflow='';$('playingTitle').textContent='Playing';const frame=$('gameFrame');frame.src='about:blank';if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});if(gameHistoryPushed){gameHistoryPushed=false;if(!fromHistory){try{history.back()}catch(_){}}}document.dispatchEvent(new Event('playovia:game-closed'))}
 window.addEventListener('pagehide',()=>{if(typeof stopGameAiLiveListen==='function')stopGameAiLiveListen();if(!$('gameOverlay').classList.contains('hidden')){if(playoviaLogGame){window.playoviaTrackGame?.('game_exit',playoviaLogGame.slug,playoviaLogGame.title);playoviaLogGame=null}finishGameSession();clearPlayingPresence()}});
 $('gameFrame').addEventListener('load',()=>{if($('gameOverlay').classList.contains('hidden'))return;if(gameLoadTimer){clearTimeout(gameLoadTimer);gameLoadTimer=null}keepGameScreenAwake();setControllerGameReady(true);try{const frameUrl=new URL($('gameFrame').contentWindow.location.href);if(frameUrl.href==='about:blank'){closeGame();return}$('gameLoading').classList.add('hidden');if(playoviaLogGame)window.playoviaTrackGame?.('game_play',playoviaLogGame.slug,playoviaLogGame.title);const hubUrl=new URL('./',location.href);if(frameUrl.origin===location.origin){const frameDoc=$('gameFrame').contentDocument;const isHubPath=frameUrl.pathname===hubUrl.pathname||frameUrl.pathname===hubUrl.pathname+'index.html'||frameUrl.pathname.endsWith('/index.html')&&!!frameDoc?.querySelector('#playhubApp');if(isHubPath)closeGame()}}catch(_){}});window.addEventListener('popstate',()=>{if(!$('gameOverlay').classList.contains('hidden'))closeGame(true);else gameHistoryPushed=false});$('closeGameBtn').addEventListener('click',closeGame);
