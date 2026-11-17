@@ -847,6 +847,9 @@ html.low-performance #playhubApp .hero{animation:siteHeroIn .2s ease-out both}
 const FIREBASE_CONFIG={apiKey:'AIzaSyB_pZ9WfVSx2XHuDeSZ7VrwEr-Pz_m_2QM',authDomain:'play-hub-688e8.firebaseapp.com',databaseURL:'https://play-hub-688e8-default-rtdb.asia-southeast1.firebasedatabase.app',projectId:'play-hub-688e8',storageBucket:'play-hub-688e8.firebasestorage.app',messagingSenderId:'195222206861',appId:'1:195222206861:web:828a8cf16991f982a925c4'};
 const $=id=>document.getElementById(id);const lowEndDevice=(navigator.deviceMemory&&navigator.deviceMemory<=4)||(navigator.hardwareConcurrency&&navigator.hardwareConcurrency<=4)||!!navigator.connection?.saveData;if(lowEndDevice)document.documentElement.classList.add('low-performance');document.addEventListener('click',function playoviaLoginCapture(event){const button=event.target.closest('#gateLoginBtn,#loginBtn');if(!button)return;event.preventDefault();event.stopImmediatePropagation();if(typeof startGoogleLogin==='function')startGoogleLogin().catch(error=>{const gate=$('gateStatus');if(gate){gate.textContent='Login could not start: '+(error.message||error);gate.className='gate-status error'}console.error('Captured Google login error:',error)})},true);let auth=null,db=null,currentUser=null,currentUsername='',homeCurrencyUnsubscribe=null,allGames=[],discoveredGames=[],currentPage='home',firebaseReady=false,authError=null,firebaseInitPromise=null,gamesLoaded=false,manualOrder=null,currentSuggestedIds=[];
 window.addEventListener('error',e=>{authError='Page startup error: '+(e.message||'Unknown JavaScript error')+' at '+(e.filename||'page')+':'+(e.lineno||'?');console.error(authError)});window.addEventListener('unhandledrejection',e=>{authError='Startup promise error: '+(e.reason?.message||String(e.reason||'Unknown rejection'));console.error(authError)});
+// Start Firebase immediately, before the rest of the large app script runs.
+firebaseInitPromise=initFirebase();
+setTimeout(()=>{const gate=$('gateStatus'),btn=$('gateLoginBtn');if(gate&&gate.textContent.includes('Connecting securely')){gate.textContent='Playovia connection timed out. Tap Continue with Google to retry.';gate.className='gate-status error';btn?.classList.remove('hidden');if(btn)btn.disabled=false}},14000);
 const stamp=()=>firebase.firestore.FieldValue.serverTimestamp();
 window.playoviaGetIdentity=()=>{const user=currentUser||auth?.currentUser||firebase?.auth?.()?.currentUser||null;return{username:currentUsername||user?.displayName||user?.email?.split('@')[0]||'Guest',playerId:window.PlayHubPlayerId||'',loggedIn:!!user}};
 window.getPlayHubGames=()=>discoveredGames;
@@ -1988,16 +1991,7 @@ $('aiChangeBtn')?.addEventListener('click',()=>aiEngineModal(true));$('aiEngineC
 $('aiShareBtn')?.addEventListener('click',aiSharePlayovia);$('aiGameSearchSubmit')?.addEventListener('click',aiSearchGamesNow);$('aiGameSearchInput')?.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();aiSearchGamesNow()}});$('aiScreenshotSubmit')?.addEventListener('click',aiAnalyzeScreenshot);$('aiVoiceBtn')?.addEventListener('click',aiVoiceInput);$('aiTranslateSubmit')?.addEventListener('click',aiTranslateNow);document.querySelectorAll('[data-ai-action]').forEach(b=>b.addEventListener('click',()=>{const action=b.dataset.aiAction;if(action==='translate')aiToggleTranslator();if(action==='walkthrough')aiStartWalkthrough();if(action==='guide')aiStartGameGuide();if(action==='hint')aiStartSmartHint();if(action==='search')aiToggleGameSearch();if(action==='screenshot')aiToggleScreenshot()}));aiRestoreChat();
 $('playoviaAiLaunch')?.addEventListener('click',()=>{if($('playoviaAiPanel').classList.contains('hidden'))aiOpen();else aiClose()});$('aiCloseBtn')?.addEventListener('click',aiClose);$('aiClearBtn')?.addEventListener('click',aiClear);$('aiCompose')?.addEventListener('submit',e=>{e.preventDefault();aiSend($('aiInput').value)});$('aiInput')?.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();$('aiCompose').requestSubmit()}});document.querySelectorAll('[data-ai-prompt]').forEach(b=>b.addEventListener('click',()=>aiSend(b.dataset.aiPrompt)));
 
-firebaseInitPromise=initFirebase();
-setTimeout(()=>{
- const gate=$('gateStatus'),btn=$('gateLoginBtn');
- if(gate&&gate.textContent.includes('Connecting securely')){
-  gate.textContent='Secure connection is taking too long. You can retry Google sign-in or refresh Playovia.';
-  gate.className='gate-status error';
-  btn?.classList.remove('hidden');
-  if(btn)btn.disabled=false;
- }
-},16000);
+// Firebase initialization is started near the top of this script.
 </script>
 
 <script>
