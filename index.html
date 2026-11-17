@@ -4,8 +4,6 @@
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4790966794040054"
      crossorigin="anonymous"></script>
 
-<!-- Adcash AutoTag removed to stop intrusive automatic ads. AdSense remains enabled. -->
-
 <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96.png">
 <link rel="shortcut icon" type="image/png" href="/favicon-96.png">
 <link rel="apple-touch-icon" href="/favicon-96.png">
@@ -847,9 +845,6 @@ html.low-performance #playhubApp .hero{animation:siteHeroIn .2s ease-out both}
 const FIREBASE_CONFIG={apiKey:'AIzaSyB_pZ9WfVSx2XHuDeSZ7VrwEr-Pz_m_2QM',authDomain:'play-hub-688e8.firebaseapp.com',databaseURL:'https://play-hub-688e8-default-rtdb.asia-southeast1.firebasedatabase.app',projectId:'play-hub-688e8',storageBucket:'play-hub-688e8.firebasestorage.app',messagingSenderId:'195222206861',appId:'1:195222206861:web:828a8cf16991f982a925c4'};
 const $=id=>document.getElementById(id);const lowEndDevice=(navigator.deviceMemory&&navigator.deviceMemory<=4)||(navigator.hardwareConcurrency&&navigator.hardwareConcurrency<=4)||!!navigator.connection?.saveData;if(lowEndDevice)document.documentElement.classList.add('low-performance');document.addEventListener('click',function playoviaLoginCapture(event){const button=event.target.closest('#gateLoginBtn,#loginBtn');if(!button)return;event.preventDefault();event.stopImmediatePropagation();if(typeof startGoogleLogin==='function')startGoogleLogin().catch(error=>{const gate=$('gateStatus');if(gate){gate.textContent='Login could not start: '+(error.message||error);gate.className='gate-status error'}console.error('Captured Google login error:',error)})},true);let auth=null,db=null,currentUser=null,currentUsername='',homeCurrencyUnsubscribe=null,allGames=[],discoveredGames=[],currentPage='home',firebaseReady=false,authError=null,firebaseInitPromise=null,gamesLoaded=false,manualOrder=null,currentSuggestedIds=[];
 window.addEventListener('error',e=>{authError='Page startup error: '+(e.message||'Unknown JavaScript error')+' at '+(e.filename||'page')+':'+(e.lineno||'?');console.error(authError)});window.addEventListener('unhandledrejection',e=>{authError='Startup promise error: '+(e.reason?.message||String(e.reason||'Unknown rejection'));console.error(authError)});
-// Start Firebase immediately, before the rest of the large app script runs.
-firebaseInitPromise=initFirebase();
-setTimeout(()=>{const gate=$('gateStatus'),btn=$('gateLoginBtn');if(gate&&gate.textContent.includes('Connecting securely')){gate.textContent='Playovia connection timed out. Tap Continue with Google to retry.';gate.className='gate-status error';btn?.classList.remove('hidden');if(btn)btn.disabled=false}},14000);
 const stamp=()=>firebase.firestore.FieldValue.serverTimestamp();
 window.playoviaGetIdentity=()=>{const user=currentUser||auth?.currentUser||firebase?.auth?.()?.currentUser||null;return{username:currentUsername||user?.displayName||user?.email?.split('@')[0]||'Guest',playerId:window.PlayHubPlayerId||'',loggedIn:!!user}};
 window.getPlayHubGames=()=>discoveredGames;
@@ -908,12 +903,7 @@ async function initFirebase(){
   if(!window.firebase||!firebase.auth)throw new Error('Firebase Auth SDK did not register its global API');
   if(!firebase.apps.length)firebase.initializeApp(FIREBASE_CONFIG);
   auth=firebase.auth();
-  // Some mobile browsers stall Firebase LOCAL persistence (especially with
-  // restricted storage). Never let that block the auth observer or login UI.
-  await Promise.race([
-   auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL),
-   new Promise((_,reject)=>setTimeout(()=>reject(new Error('Firebase persistence timed out')),7000))
-  ]).catch(e=>console.warn('Firebase persistence unavailable; continuing with browser default:',e.message));
+  await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 
   // Start the app's auth observer immediately. Optional data SDKs must never
   // hold the sign-in screen hostage while they download.
@@ -1495,94 +1485,8 @@ async function keepGameScreenAwake(){
 }
 async function releaseGameScreenWakeLock(){const lock=playoviaScreenWakeLock;playoviaScreenWakeLock=null;if(lock)try{await lock.release()}catch(_){}}
 document.addEventListener('visibilitychange',()=>{if(document.hidden){if(playoviaScreenWakeLock)releaseGameScreenWakeLock()}else if(!document.getElementById('gameOverlay')?.classList.contains('hidden'))keepGameScreenAwake()});
-
-/* Playovia VAST video ads: game-start and exit interstitials. */
-const PLAYOVIA_VAST_TAG='https://youradexchange.com/video/select.php?r=12458558';
-function playoviaHasRealVastTag(){try{const u=new URL(PLAYOVIA_VAST_TAG);return /^https?:$/.test(u.protocol)&&!!u.hostname}catch(_){return false}}
-let playoviaAdPlayer=null,playoviaAdScriptsPromise=null,playoviaAdBusy=false,playoviaExitConfirmed=false,playoviaPendingGameUrl='';
-function ensurePlayoviaAdUI(){
- if($('playoviaVideoAdLayer'))return;
- const style=document.createElement('style');style.id='playovia-video-ad-style';style.textContent='#playoviaVideoAdLayer{position:fixed;inset:0;z-index:10050;background:rgba(3,5,12,.97);display:none;align-items:center;justify-content:center;padding:16px}#playoviaVideoAdLayer.active{display:flex}#playoviaVideoAdCard{width:min(900px,100%);background:#101729;border:1px solid #394564;border-radius:18px;padding:16px;color:#fff;box-shadow:0 25px 90px #000b}#playoviaVideoAdTitle{font-weight:850;font-size:17px;margin:0 0 12px}#playoviaAdVideo{width:100%;max-height:65vh;aspect-ratio:16/9;background:#000;border-radius:12px}#playoviaAdStatus{font-size:12px;color:#aeb9d0;margin-top:10px;min-height:18px}#playoviaAdChoice{display:none;gap:10px;margin-top:14px}#playoviaAdChoice button{flex:1;border:0;border-radius:12px;padding:13px 16px;font-weight:850;color:#fff;background:linear-gradient(100deg,#a44cff,#327dff)}#playoviaAdChoice button:last-child{background:#29334b;border:1px solid #475574}';
- document.head.appendChild(style);
- const layer=document.createElement('div');layer.id='playoviaVideoAdLayer';layer.innerHTML='<div id="playoviaVideoAdCard"><div id="playoviaVideoAdTitle">Playovia Video Ad</div><video id="playoviaAdVideo" class="video-js vjs-default-skin" playsinline></video><div id="playoviaAdStatus" role="status">Loading video ad…</div><button id="playoviaAdStart" type="button" style="display:none;width:100%;margin-top:12px;border:0;border-radius:12px;padding:14px;background:linear-gradient(100deg,#a44cff,#327dff);color:#fff;font-weight:850">▶ Play Ad</button><div id="playoviaAdChoice"><button id="playoviaAdResume" type="button">▶ Resume Game</button><button id="playoviaAdExit" type="button">Exit Game</button></div></div>';
- document.body.appendChild(layer);
- $('playoviaAdResume').addEventListener('click',()=>{playoviaExitConfirmed=false;hidePlayoviaAd();});
- $('playoviaAdExit').addEventListener('click',()=>{playoviaExitConfirmed=true;hidePlayoviaAd();closeGame(false);});
-}
-function loadPlayoviaAdScripts(){
- if(playoviaAdScriptsPromise)return playoviaAdScriptsPromise;
- playoviaAdScriptsPromise=new Promise((resolve,reject)=>{
-  const add=(src)=>new Promise((ok,bad)=>{const x=document.createElement('script');x.src=src;x.async=true;x.onload=ok;x.onerror=()=>bad(new Error('Could not load '+src));document.head.appendChild(x)});
-  const css=(href)=>{const x=document.createElement('link');x.rel='stylesheet';x.href=href;document.head.appendChild(x)};
-  css('https://vjs.zencdn.net/8.10.0/video-js.css');
-  css('https://cdnjs.cloudflare.com/ajax/libs/videojs-contrib-ads/6.9.0/videojs.ads.min.css');
-  css('https://cdn.jsdelivr.net/npm/videojs-ima@2.6.0/dist/videojs.ima.css');
-  add('https://vjs.zencdn.net/8.10.0/video.min.js')
-   .then(()=>add('https://cdnjs.cloudflare.com/ajax/libs/videojs-contrib-ads/6.9.0/videojs.ads.min.js'))
-   .then(()=>add('https://imasdk.googleapis.com/js/sdkloader/ima3.js'))
-   .then(()=>add('https://cdn.jsdelivr.net/npm/videojs-ima@2.6.0/dist/videojs.ima.min.js'))
-   .then(()=>resolve()).catch(reject);
- });
- return playoviaAdScriptsPromise;
-}
-function hidePlayoviaAd(){
- const layer=$('playoviaVideoAdLayer');if(layer)layer.classList.remove('active');
- if(playoviaAdPlayer){try{playoviaAdPlayer.dispose()}catch(_){}playoviaAdPlayer=null}
- playoviaAdBusy=false;
-}
-async function playPlayoviaVastAd(kind){
- if(!playoviaHasRealVastTag())return {completed:false,reason:'missing-vast-tag'};
- if(playoviaAdBusy)return {completed:false,reason:'busy'};
- playoviaAdBusy=true;ensurePlayoviaAdUI();
- const layer=$('playoviaVideoAdLayer'),title=$('playoviaVideoAdTitle'),status=$('playoviaAdStatus'),choice=$('playoviaAdChoice'),startBtn=$('playoviaAdStart');
- title.textContent=kind==='start'?'Ad before your game':'One short ad before you continue';
- status.textContent='Preparing video ad…';choice.style.display='none';startBtn.style.display='none';layer.classList.add('active');
- let settled=false,started=false,timer=null;
- const finish=(result)=>{if(settled)return;settled=true;if(timer)clearTimeout(timer);startBtn.style.display='none';if(kind==='exit'){status.textContent=result.completed?'Ad finished. Resume or exit your game.':'No video ad available. Resume or exit your game.';choice.style.display='flex';if(playoviaAdPlayer){try{playoviaAdPlayer.dispose()}catch(_){}playoviaAdPlayer=null}playoviaAdBusy=false;return result}hidePlayoviaAd();return result};
- try{
-  await loadPlayoviaAdScripts();
-  if(typeof videojs!=='function'||!videojs.getPlugin('ima'))throw new Error('VAST player unavailable');
-  const video=$('playoviaAdVideo');
-  playoviaAdPlayer=videojs(video,{controls:true,autoplay:false,preload:'auto',fluid:false,fill:false,playsinline:true,controlBar:{volumePanel:true,fullscreenToggle:false}});
-  playoviaAdPlayer.ima({id:'playoviaAdVideo',adTagUrl:PLAYOVIA_VAST_TAG,adsManagerLoadedTimeout:20000,timeout:20000,vastLoadTimeout:15000});
-  playoviaAdPlayer.on('ads-ad-started',()=>{started=true;status.textContent='Video ad playing…';startBtn.style.display='none';});
-  const done=()=>finish({completed:started,reason:started?'ended':'no-fill'});
-  playoviaAdPlayer.on('ads-ad-ended',done);
-  playoviaAdPlayer.on('ads-pod-ended',done);
-  playoviaAdPlayer.on('ads-allpods-completed',done);
-  playoviaAdPlayer.on('ads-ad-skipped',()=>finish({completed:false,reason:'skipped'}));
-  playoviaAdPlayer.on('ads-ad-error',()=>finish({completed:false,reason:'ad-error'}));
-  playoviaAdPlayer.ready(()=>{
-   status.textContent='Tap Play Ad to start the video';
-   startBtn.style.display='block';
-   startBtn.onclick=()=>{
-    if(settled)return;
-    startBtn.style.display='none';
-    status.textContent='Requesting video ad…';
-    try{
-     // Start the watchdog before requesting ads: some mobile IMA requests never emit an error event.
-     timer=setTimeout(()=>finish({completed:false,reason:'timeout'}),18000);
-     playoviaAdPlayer.ima.initializeAdDisplayContainer();
-     playoviaAdPlayer.ima.requestAds();
-     const p=playoviaAdPlayer.play();
-     if(p&&p.catch)p.catch(()=>{if(settled)return;startBtn.style.display='block';status.textContent='Playback blocked. Tap Play Ad to retry';/* Keep watchdog active so the game cannot remain stuck. */});
-    }catch(e){finish({completed:false,reason:e.message||'request-failed'})}
-   };
-  });
-  return await new Promise(resolve=>{
-   const poll=()=>{if(settled){resolve({completed:started,reason:'finished'});return}setTimeout(poll,100)};
-   poll();
-  });
- }catch(e){
-  console.warn('Playovia VAST ad unavailable:',e);
-  status.textContent='Video ad unavailable — continuing';
-  setTimeout(()=>{if(kind==='exit'){choice.style.display='flex';status.textContent='No video ad available. Resume or exit your game.';playoviaAdBusy=false}else hidePlayoviaAd()},650);
-  return {completed:false,reason:'unavailable'};
- }
-}
-
-let gameLoadTimer=null,playoviaLogGame=null,activeRemoteGameSlug='';function launchGame(url,title,slug){activeRemoteGameSlug=String(slug||'').toLowerCase();releaseAllRemoteGameInputs();setControllerGameReady(false,{gameTitle:title,gameSlug:activeRemoteGameSlug});if(slug){playoviaLogGame={slug,title};window.playoviaTrackGame?.('game_open',slug,title)}try{history.pushState({playoviaGameOpen:true},location.href);gameHistoryPushed=true}catch(_){}if(slug){startGameSession(title,slug);rememberGame(slug);const plays=readPlays();plays[slug]=(plays[slug]||0)+1;try{localStorage.setItem(userStoreKey('plays'),JSON.stringify(plays))}catch(_){}renderGames(allGames)}else setPlayingPresence(title,slug);$('playingTitle').textContent=title;$('gameLoadingTitle').textContent='Starting '+title+'…';$('gameLoadingNote').textContent='Getting things ready';$('gameLoading').classList.remove('hidden');$('gameOverlay').classList.remove('hidden');$('gameOverlay').classList.remove('is-opening');void $('gameOverlay').offsetWidth;$('gameOverlay').classList.add('is-opening');document.body.style.overflow='hidden';keepGameScreenAwake();if(gameLoadTimer)clearTimeout(gameLoadTimer);gameLoadTimer=setTimeout(()=>{if(!$('gameOverlay').classList.contains('hidden'))$('gameLoadingNote').textContent='Taking longer than usual? The game may need a little more time.'},15000);const launchUrl=new URL(url,location.href);launchUrl.searchParams.set('playovia_refresh','20261113-30rounds');setControllerGameReady(false);playoviaExitConfirmed=false;playoviaPendingGameUrl=launchUrl.href;if(!playoviaHasRealVastTag()){$('gameFrame').src=playoviaPendingGameUrl;playoviaPendingGameUrl=''}else{let gameStartedAfterAd=false;const continueGame=()=>{if(gameStartedAfterAd||!playoviaPendingGameUrl||$('gameOverlay').classList.contains('hidden'))return;gameStartedAfterAd=true;hidePlayoviaAd();$('gameFrame').src=playoviaPendingGameUrl;playoviaPendingGameUrl=''};const adSafetyTimer=setTimeout(continueGame,22000);playPlayoviaVastAd('start').finally(()=>{clearTimeout(adSafetyTimer);continueGame()})}}}
-function closeGame(fromHistory=false){if($('gameOverlay').classList.contains('hidden'))return;if(!fromHistory&&!playoviaExitConfirmed&&!playoviaAdBusy&&playoviaHasRealVastTag()){playPlayoviaVastAd('exit');return;}if(playoviaAdBusy&&!playoviaExitConfirmed)return;if(!$('gameAiGlass')?.classList.contains('hidden'))aiClose();setControllerGameReady(false);if(remoteControllerSession)stopRemoteController();$('remoteControllerModal')?.classList.add('hidden');if(playoviaLogGame){window.playoviaTrackGame?.('game_exit',playoviaLogGame.slug,playoviaLogGame.title);playoviaLogGame=null}if(gameLoadTimer){clearTimeout(gameLoadTimer);gameLoadTimer=null}finishGameSession();clearPlayingPresence();$('gameOverlay').classList.remove('is-opening');$('gameOverlay').classList.add('hidden');releaseGameScreenWakeLock();$('gameLoading').classList.remove('hidden');document.body.style.overflow='';$('playingTitle').textContent='Playing';const frame=$('gameFrame');frame.src='about:blank';if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});if(gameHistoryPushed){gameHistoryPushed=false;if(!fromHistory){try{history.back()}catch(_){}}}}
+let gameLoadTimer=null,playoviaLogGame=null,activeRemoteGameSlug='';function launchGame(url,title,slug){activeRemoteGameSlug=String(slug||'').toLowerCase();releaseAllRemoteGameInputs();setControllerGameReady(false,{gameTitle:title,gameSlug:activeRemoteGameSlug});if(slug){playoviaLogGame={slug,title};window.playoviaTrackGame?.('game_open',slug,title)}try{history.pushState({playoviaGameOpen:true},location.href);gameHistoryPushed=true}catch(_){}if(slug){startGameSession(title,slug);rememberGame(slug);const plays=readPlays();plays[slug]=(plays[slug]||0)+1;try{localStorage.setItem(userStoreKey('plays'),JSON.stringify(plays))}catch(_){}renderGames(allGames)}else setPlayingPresence(title,slug);$('playingTitle').textContent=title;$('gameLoadingTitle').textContent='Starting '+title+'…';$('gameLoadingNote').textContent='Getting things ready';$('gameLoading').classList.remove('hidden');$('gameOverlay').classList.remove('hidden');$('gameOverlay').classList.remove('is-opening');void $('gameOverlay').offsetWidth;$('gameOverlay').classList.add('is-opening');document.body.style.overflow='hidden';keepGameScreenAwake();if(gameLoadTimer)clearTimeout(gameLoadTimer);gameLoadTimer=setTimeout(()=>{if(!$('gameOverlay').classList.contains('hidden'))$('gameLoadingNote').textContent='Taking longer than usual? The game may need a little more time.'},15000);const launchUrl=new URL(url,location.href);launchUrl.searchParams.set('playovia_refresh','20261113-30rounds');$('gameFrame').src=launchUrl.href;setControllerGameReady(false)}
+function closeGame(fromHistory=false){if($('gameOverlay').classList.contains('hidden'))return;if(!$('gameAiGlass')?.classList.contains('hidden'))aiClose();setControllerGameReady(false);if(remoteControllerSession)stopRemoteController();$('remoteControllerModal')?.classList.add('hidden');if(playoviaLogGame){window.playoviaTrackGame?.('game_exit',playoviaLogGame.slug,playoviaLogGame.title);playoviaLogGame=null}if(gameLoadTimer){clearTimeout(gameLoadTimer);gameLoadTimer=null}finishGameSession();clearPlayingPresence();$('gameOverlay').classList.remove('is-opening');$('gameOverlay').classList.add('hidden');releaseGameScreenWakeLock();$('gameLoading').classList.remove('hidden');document.body.style.overflow='';$('playingTitle').textContent='Playing';const frame=$('gameFrame');frame.src='about:blank';if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});if(gameHistoryPushed){gameHistoryPushed=false;if(!fromHistory){try{history.back()}catch(_){}}}}
 window.addEventListener('pagehide',()=>{if(typeof stopGameAiLiveListen==='function')stopGameAiLiveListen();if(!$('gameOverlay').classList.contains('hidden')){if(playoviaLogGame){window.playoviaTrackGame?.('game_exit',playoviaLogGame.slug,playoviaLogGame.title);playoviaLogGame=null}finishGameSession();clearPlayingPresence()}});
 $('gameFrame').addEventListener('load',()=>{if($('gameOverlay').classList.contains('hidden'))return;if(gameLoadTimer){clearTimeout(gameLoadTimer);gameLoadTimer=null}keepGameScreenAwake();setControllerGameReady(true);try{const frameUrl=new URL($('gameFrame').contentWindow.location.href);if(frameUrl.href==='about:blank'){closeGame();return}$('gameLoading').classList.add('hidden');if(playoviaLogGame)window.playoviaTrackGame?.('game_play',playoviaLogGame.slug,playoviaLogGame.title);const hubUrl=new URL('./',location.href);if(frameUrl.origin===location.origin){const frameDoc=$('gameFrame').contentDocument;const isHubPath=frameUrl.pathname===hubUrl.pathname||frameUrl.pathname===hubUrl.pathname+'index.html'||frameUrl.pathname.endsWith('/index.html')&&!!frameDoc?.querySelector('#playhubApp');if(isHubPath)closeGame()}}catch(_){}});window.addEventListener('popstate',()=>{if(!$('gameOverlay').classList.contains('hidden'))closeGame(true);else gameHistoryPushed=false});$('closeGameBtn').addEventListener('click',closeGame);
 
@@ -1991,7 +1895,7 @@ $('aiChangeBtn')?.addEventListener('click',()=>aiEngineModal(true));$('aiEngineC
 $('aiShareBtn')?.addEventListener('click',aiSharePlayovia);$('aiGameSearchSubmit')?.addEventListener('click',aiSearchGamesNow);$('aiGameSearchInput')?.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();aiSearchGamesNow()}});$('aiScreenshotSubmit')?.addEventListener('click',aiAnalyzeScreenshot);$('aiVoiceBtn')?.addEventListener('click',aiVoiceInput);$('aiTranslateSubmit')?.addEventListener('click',aiTranslateNow);document.querySelectorAll('[data-ai-action]').forEach(b=>b.addEventListener('click',()=>{const action=b.dataset.aiAction;if(action==='translate')aiToggleTranslator();if(action==='walkthrough')aiStartWalkthrough();if(action==='guide')aiStartGameGuide();if(action==='hint')aiStartSmartHint();if(action==='search')aiToggleGameSearch();if(action==='screenshot')aiToggleScreenshot()}));aiRestoreChat();
 $('playoviaAiLaunch')?.addEventListener('click',()=>{if($('playoviaAiPanel').classList.contains('hidden'))aiOpen();else aiClose()});$('aiCloseBtn')?.addEventListener('click',aiClose);$('aiClearBtn')?.addEventListener('click',aiClear);$('aiCompose')?.addEventListener('submit',e=>{e.preventDefault();aiSend($('aiInput').value)});$('aiInput')?.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();$('aiCompose').requestSubmit()}});document.querySelectorAll('[data-ai-prompt]').forEach(b=>b.addEventListener('click',()=>aiSend(b.dataset.aiPrompt)));
 
-// Firebase initialization is started near the top of this script.
+firebaseInitPromise=initFirebase();
 </script>
 
 <script>
