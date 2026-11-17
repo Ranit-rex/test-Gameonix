@@ -1489,7 +1489,7 @@ async function releaseGameScreenWakeLock(){const lock=playoviaScreenWakeLock;pla
 document.addEventListener('visibilitychange',()=>{if(document.hidden){if(playoviaScreenWakeLock)releaseGameScreenWakeLock()}else if(!document.getElementById('gameOverlay')?.classList.contains('hidden'))keepGameScreenAwake()});
 
 /* Playovia VAST video ads: game-start and exit interstitials. */
-const PLAYOVIA_VAST_TAG='https://youradexchange.com/video/select.php?r=12458482';
+const PLAYOVIA_VAST_TAG='https://youradexchange.com/video/select.php?r=12458558';
 function playoviaHasRealVastTag(){try{const u=new URL(PLAYOVIA_VAST_TAG);return /^https?:$/.test(u.protocol)&&!!u.hostname}catch(_){return false}}
 let playoviaAdPlayer=null,playoviaAdScriptsPromise=null,playoviaAdBusy=false,playoviaExitConfirmed=false,playoviaPendingGameUrl='';
 function ensurePlayoviaAdUI(){
