@@ -646,7 +646,7 @@ const server = http.createServer(async (req, res) => {
       const keySecret = String(process.env.RAZORPAY_KEY_SECRET || '').trim();
       if (!keyId || !keySecret) return send(res, 503, { error: 'Store payments are not configured yet.' }, origin);
       const admin = require('firebase-admin');
-      const rawServiceAccount = String(process.env.FIREBASE_SERVICE_ACCOUNT_JSON || '');
+      const rawServiceAccount = String(process.env.FIREBASE_SERVICE_ACCOUNT_JSON || process.env.FIREBASE_SERVICE_ACCOUNT_PLAY_HUB_688E || '');
       if (!rawServiceAccount) return send(res, 503, { error: 'Store account service is not configured.' }, origin);
       let serviceAccount;
       try { serviceAccount = JSON.parse(rawServiceAccount); } catch (_) { return send(res, 503, { error: 'Store account service configuration is invalid.' }, origin); }
