@@ -1504,9 +1504,16 @@ function ensurePlayoviaAdUI(){
 function loadPlayoviaAdScripts(){
  if(playoviaAdScriptsPromise)return playoviaAdScriptsPromise;
  playoviaAdScriptsPromise=new Promise((resolve,reject)=>{
-  const add=(src)=>new Promise((ok,bad)=>{const x=document.createElement('script');x.src=src;x.async=true;x.onload=ok;x.onerror=()=>bad(new Error('Could not load video ad player'));document.head.appendChild(x)});
-  let css=document.createElement('link');css.rel='stylesheet';css.href='https://vjs.zencdn.net/8.10.0/video-js.css';document.head.appendChild(css);
-  add('https://vjs.zencdn.net/8.10.0/video.min.js').then(()=>add('https://imasdk.googleapis.com/js/sdkloader/ima3.js')).then(()=>add('https://cdnjs.cloudflare.com/ajax/libs/videojs-ima/2.4.0/videojs.ima.min.js')).then(resolve).catch(reject);
+  const add=(src)=>new Promise((ok,bad)=>{const x=document.createElement('script');x.src=src;x.async=true;x.onload=ok;x.onerror=()=>bad(new Error('Could not load '+src));document.head.appendChild(x)});
+  const css=(href)=>{const x=document.createElement('link');x.rel='stylesheet';x.href=href;document.head.appendChild(x)};
+  css('https://vjs.zencdn.net/8.10.0/video-js.css');
+  css('https://cdnjs.cloudflare.com/ajax/libs/videojs-contrib-ads/6.9.0/videojs.ads.min.css');
+  css('https://cdn.jsdelivr.net/npm/videojs-ima@2.6.0/dist/videojs.ima.css');
+  add('https://vjs.zencdn.net/8.10.0/video.min.js')
+   .then(()=>add('https://cdnjs.cloudflare.com/ajax/libs/videojs-contrib-ads/6.9.0/videojs.ads.min.js'))
+   .then(()=>add('https://imasdk.googleapis.com/js/sdkloader/ima3.js'))
+   .then(()=>add('https://cdn.jsdelivr.net/npm/videojs-ima@2.6.0/dist/videojs.ima.min.js'))
+   .then(()=>resolve()).catch(reject);
  });
  return playoviaAdScriptsPromise;
 }
@@ -1529,7 +1536,7 @@ async function playPlayoviaVastAd(kind){
   if(typeof videojs!=='function'||!videojs.getPlugin('ima'))throw new Error('VAST player unavailable');
   const video=$('playoviaAdVideo');
   playoviaAdPlayer=videojs(video,{controls:true,autoplay:false,preload:'auto',fluid:false,fill:false,playsinline:true,controlBar:{volumePanel:true,fullscreenToggle:false}});
-  playoviaAdPlayer.ima({adTagUrl:PLAYOVIA_VAST_TAG,adsManagerLoadedTimeout:12000,timeout:12000});
+  playoviaAdPlayer.ima({id:'playoviaAdVideo',adTagUrl:PLAYOVIA_VAST_TAG,adsManagerLoadedTimeout:20000,timeout:20000,vastLoadTimeout:15000});
   playoviaAdPlayer.on('ads-ad-started',()=>{started=true;status.textContent='Video ad playing…';startBtn.style.display='none';});
   const done=()=>finish({completed:started,reason:started?'ended':'no-fill'});
   playoviaAdPlayer.on('ads-ad-ended',done);
