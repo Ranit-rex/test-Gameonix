@@ -1552,11 +1552,12 @@ async function playPlayoviaVastAd(kind){
     startBtn.style.display='none';
     status.textContent='Requesting video ad…';
     try{
+     // Start the watchdog before requesting ads: some mobile IMA requests never emit an error event.
+     timer=setTimeout(()=>finish({completed:false,reason:'timeout'}),18000);
      playoviaAdPlayer.ima.initializeAdDisplayContainer();
      playoviaAdPlayer.ima.requestAds();
-     timer=setTimeout(()=>finish({completed:false,reason:'timeout'}),45000);
      const p=playoviaAdPlayer.play();
-     if(p&&p.catch)p.catch(()=>{startBtn.style.display='block';status.textContent='Tap Play Ad to try again';if(timer){clearTimeout(timer);timer=null}});
+     if(p&&p.catch)p.catch(()=>{if(settled)return;startBtn.style.display='block';status.textContent='Playback blocked. Tap Play Ad to retry';if(timer){clearTimeout(timer);timer=null}});
     }catch(e){finish({completed:false,reason:e.message||'request-failed'})}
    };
   });
