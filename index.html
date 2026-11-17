@@ -721,6 +721,16 @@ body:has(#gameDetailsModal:not(.hidden)) #playoviaPageAd,body:has(#gameDetailsMo
 @media(max-width:360px){.store-banner-art,.membership-art{width:95px;flex-basis:95px;transform:scale(.68);margin-right:-15px}.store-banner,.membership-hero{padding:14px}.store-banner h2,.membership-hero h2{font-size:22px}.store-side-tab{gap:5px}.store-side-tab small{display:none}}
 @media(prefers-reduced-motion:reduce){.coin-stack,.coin-orbit,.coin-spark,.pack-glow,.pack-coins,.membership-ring,.membership-crown,.membership-star{animation:none!important}}
 </style>
+<style id="playovia-ad-exclusions">
+/* No ad placements on Home or over the active game surface. */
+#homePage.active #playoviaPageAd,
+body:has(#homePage.active) #playoviaPageAd,
+body:has(#homePage.active) .playovia-smartlink,
+body:has(#gameOverlay:not(.hidden)) #playoviaPageAd,
+body:has(#gameOverlay:not(.hidden)) #playoviaDisplayAdSlot,
+body:has(#gameOverlay:not(.hidden)) .playovia-smartlink,
+body:has(#gameOverlay:not(.hidden)) .playovia-native-ad{display:none!important}
+</style>
 </head>
 <body>
 <div id="loginGate" aria-label="Playovia sign in">
