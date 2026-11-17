@@ -677,12 +677,9 @@ body:has(#gameDetailsModal:not(.hidden)) #playoviaPageAd,body:has(#gameDetailsMo
 </style>
 <script id="playovia-monetag-loader">
 (function(){
- // Keep Monetag's non-click-triggered vignette placement.
- // The tag.min.js zones are OnClick/popunder-style and were opening ay267.com
- // when users pressed Play, so they are intentionally not loaded on game controls.
- const zones=[
-  {src:'https://n6wxm.com/vignette.min.js',zone:'12285825'}
- ];
+ // Keep the non-click-triggered Monetag vignette. Popunder zones stay disabled
+ // so tapping a game or Play never opens an unrelated ad tab.
+ const zones=[{src:'https://n6wxm.com/vignette.min.js',zone:'12285825'}];
  let loaded=false,queued=false;
  function loadZones(){
   if(loaded||queued)return;
@@ -690,24 +687,27 @@ body:has(#gameDetailsModal:not(.hidden)) #playoviaPageAd,body:has(#gameDetailsMo
   if(overlay&&!overlay.classList.contains('hidden')){setTimeout(loadZones,2500);return}
   queued=true;
   zones.forEach(item=>{
-   if(document.querySelector('script[data-playovia-monetag="'+item.zone+'"]'))return;
+   const existing=document.querySelector('script[data-playovia-monetag="'+item.zone+'"]');
+   if(existing&&!existing.dataset.loadError)return;
+   if(existing)existing.remove();
    const script=document.createElement('script');
    script.src=item.src;script.async=true;script.dataset.playoviaMonetag=item.zone;
-   if(item.zone!=='12285829')script.dataset.zone=item.zone;
-   script.setAttribute('data-cfasync','false');
-   script.onload=()=>{loaded=zones.every(z=>document.querySelector('script[data-playovia-monetag="'+z.zone+'"]'))};
-   script.onerror=()=>{script.dataset.loadError='true'};
+   script.dataset.zone=item.zone;script.setAttribute('data-cfasync','false');
+   script.onload=()=>{loaded=true;queued=false};
+   script.onerror=()=>{script.dataset.loadError='true';queued=false;setTimeout(schedule,15000)};
    document.head.appendChild(script);
+   setTimeout(()=>{if(!loaded)queued=false},12000);
   });
  }
  function schedule(){
   if(loaded||queued)return;
-  const run=()=>{queued=false;loadZones()};
+  const run=()=>loadZones();
   if('requestIdleCallback'in window)requestIdleCallback(run,{timeout:5000});
   else setTimeout(run,3000);
  }
- window.addEventListener('load',()=>setTimeout(schedule,2500),{once:true});
+ window.addEventListener('load',()=>setTimeout(schedule,1200),{once:true});
  document.addEventListener('playovia:game-closed',schedule);
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden)schedule()});
 })();
 </script>
 
