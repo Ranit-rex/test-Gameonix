@@ -1143,6 +1143,23 @@ async function discoverGames(){
 }
 function isMultiplayerGame(g){const id=String(g.slug||'').toLowerCase().replace(/[^a-z0-9]/g,'');const name=String(g.title||'').toLowerCase();return ['bombtag','flagfrenzy','guesslogo','ghostnight','ashgrave','riftbound','antarctic','dungeonhunter','guessthecapital','guessthelandmark','countrymapedition','guessthecurrency','guessthenationalanimal','guessthelanguage','scribbleparty',].includes(id)||/bomb tag|flag frenzy|ghost night|ashgrave|ash grave|circuit breaker|riftbound|antarctic|last signal/.test(name)}
 function gameMarkup(list){return list.length?list.map(g=>{const cover=coverFor(g),category=gameCategory(g),mode=isMultiplayerGame(g)?'Co-op':'Solo';return `<article class="game pv-grid-card" data-slug="${esc(g.slug)}" data-url="${esc(g.url)}" data-title="${esc(g.title)}"><button class="game-info-btn" type="button" aria-label="Game information" title="Game information" data-game-info="${esc(g.slug)}">ⓘ</button><div class="game-art pv-grid-art ${cover?'has-cover':''}">${cover?`<img src="${esc(cover)}" alt="${esc(g.title)} cover" loading="lazy" onerror="this.onerror=null;this.remove();this.parentElement.classList.remove('has-cover');this.parentElement.textContent='🎮'">`:'🎮'}<span class="pv-grid-rating">★ <b data-grid-rating="${esc(g.slug)}">…</b></span></div><div class="game-info pv-grid-info"><div class="pv-grid-meta"><span>${esc(category)}</span><span>${mode}</span></div><h3>${esc(g.title)}</h3><p>${esc(g.description||'Explore this game and enjoy a new adventure.')}</p><span class="tag pv-grid-play">▶ <b>Play Now</b></span></div></article>`}).join(''):'<div class="empty">No games found yet. Add a game folder containing index.html.</div>'}
+// Run at WINDOW capture phase before Monetag/page ad listeners can intercept game taps.
+window.addEventListener('click',function playoviaGameTapFirst(event){
+ const target=event.target instanceof Element?event.target:null;
+ if(!target)return;
+ const playButton=target.closest('#gameDetailsPlay, [data-play-game]');
+ const gameCard=target.closest('.game');
+ if(gameCard&&target.closest('.game-save'))return;
+ if(!playButton&&!gameCard)return;
+ event.preventDefault();
+ event.stopImmediatePropagation();
+ if(playButton){
+  if(playButton.id==='gameDetailsPlay')window.playoviaGuestStartFromButton?.();
+  else if(typeof window.playoviaGuestStart==='function'&&activeDetailsGame)window.playoviaGuestStart(activeDetailsGame);
+ }else if(gameCard){
+  openGameDetails(gameCard.dataset.slug);
+ }
+},true);
 // Protect game launch taps from page-level popunder handlers without swallowing gameplay actions.
 document.addEventListener('DOMContentLoaded',()=>{
  const protect=root=>{
