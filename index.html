@@ -1490,13 +1490,13 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden){if(playovi
 
 /* Playovia VAST video ads: game-start and exit interstitials. */
 const PLAYOVIA_VAST_TAG='https://youradexchange.com/video/select.php?r=12458482';
-function playoviaHasRealVastTag(){try{const u=new URL(PLAYOVIA_VAST_TAG);return /^https?:$/.test(u.protocol)&&!/(youradexchange\.com|example\.com|placeholder)/i.test(u.hostname)}catch(_){return false}}
+function playoviaHasRealVastTag(){try{const u=new URL(PLAYOVIA_VAST_TAG);return /^https?:$/.test(u.protocol)&&!!u.hostname}catch(_){return false}}
 let playoviaAdPlayer=null,playoviaAdScriptsPromise=null,playoviaAdBusy=false,playoviaExitConfirmed=false,playoviaPendingGameUrl='';
 function ensurePlayoviaAdUI(){
  if($('playoviaVideoAdLayer'))return;
  const style=document.createElement('style');style.id='playovia-video-ad-style';style.textContent='#playoviaVideoAdLayer{position:fixed;inset:0;z-index:10050;background:rgba(3,5,12,.97);display:none;align-items:center;justify-content:center;padding:16px}#playoviaVideoAdLayer.active{display:flex}#playoviaVideoAdCard{width:min(900px,100%);background:#101729;border:1px solid #394564;border-radius:18px;padding:16px;color:#fff;box-shadow:0 25px 90px #000b}#playoviaVideoAdTitle{font-weight:850;font-size:17px;margin:0 0 12px}#playoviaAdVideo{width:100%;max-height:65vh;aspect-ratio:16/9;background:#000;border-radius:12px}#playoviaAdStatus{font-size:12px;color:#aeb9d0;margin-top:10px;min-height:18px}#playoviaAdChoice{display:none;gap:10px;margin-top:14px}#playoviaAdChoice button{flex:1;border:0;border-radius:12px;padding:13px 16px;font-weight:850;color:#fff;background:linear-gradient(100deg,#a44cff,#327dff)}#playoviaAdChoice button:last-child{background:#29334b;border:1px solid #475574}';
  document.head.appendChild(style);
- const layer=document.createElement('div');layer.id='playoviaVideoAdLayer';layer.innerHTML='<div id="playoviaVideoAdCard"><div id="playoviaVideoAdTitle">Playovia Video Ad</div><video id="playoviaAdVideo" class="video-js vjs-default-skin" playsinline></video><div id="playoviaAdStatus" role="status">Loading video ad…</div><div id="playoviaAdChoice"><button id="playoviaAdResume" type="button">▶ Resume Game</button><button id="playoviaAdExit" type="button">Exit Game</button></div></div>';
+ const layer=document.createElement('div');layer.id='playoviaVideoAdLayer';layer.innerHTML='<div id="playoviaVideoAdCard"><div id="playoviaVideoAdTitle">Playovia Video Ad</div><video id="playoviaAdVideo" class="video-js vjs-default-skin" playsinline></video><div id="playoviaAdStatus" role="status">Loading video ad…</div><button id="playoviaAdStart" type="button" style="display:none;width:100%;margin-top:12px;border:0;border-radius:12px;padding:14px;background:linear-gradient(100deg,#a44cff,#327dff);color:#fff;font-weight:850">▶ Play Ad</button><div id="playoviaAdChoice"><button id="playoviaAdResume" type="button">▶ Resume Game</button><button id="playoviaAdExit" type="button">Exit Game</button></div></div>';
  document.body.appendChild(layer);
  $('playoviaAdResume').addEventListener('click',()=>{playoviaExitConfirmed=false;hidePlayoviaAd();});
  $('playoviaAdExit').addEventListener('click',()=>{playoviaExitConfirmed=true;hidePlayoviaAd();closeGame(false);});
@@ -1516,37 +1516,53 @@ function hidePlayoviaAd(){
  playoviaAdBusy=false;
 }
 async function playPlayoviaVastAd(kind){
- if(!playoviaHasRealVastTag())return {completed:false,reason:'missing-real-vast-tag'};
+ if(!playoviaHasRealVastTag())return {completed:false,reason:'missing-vast-tag'};
  if(playoviaAdBusy)return {completed:false,reason:'busy'};
  playoviaAdBusy=true;ensurePlayoviaAdUI();
- const layer=$('playoviaVideoAdLayer'),title=$('playoviaVideoAdTitle'),status=$('playoviaAdStatus'),choice=$('playoviaAdChoice');
+ const layer=$('playoviaVideoAdLayer'),title=$('playoviaVideoAdTitle'),status=$('playoviaAdStatus'),choice=$('playoviaAdChoice'),startBtn=$('playoviaAdStart');
  title.textContent=kind==='start'?'Ad before your game':'One short ad before you continue';
- status.textContent='Loading video ad…';choice.style.display='none';layer.classList.add('active');
+ status.textContent='Preparing video ad…';choice.style.display='none';startBtn.style.display='none';layer.classList.add('active');
  let settled=false,started=false,timer=null;
- const finish=(result)=>{if(settled)return;settled=true;if(timer)clearTimeout(timer);if(kind==='exit'){status.textContent='Ad finished. Resume or exit your game.';choice.style.display='flex';if(playoviaAdPlayer){try{playoviaAdPlayer.dispose()}catch(_){}playoviaAdPlayer=null}playoviaAdBusy=false;return result}hidePlayoviaAd();return result};
+ const finish=(result)=>{if(settled)return;settled=true;if(timer)clearTimeout(timer);startBtn.style.display='none';if(kind==='exit'){status.textContent=result.completed?'Ad finished. Resume or exit your game.':'No video ad available. Resume or exit your game.';choice.style.display='flex';if(playoviaAdPlayer){try{playoviaAdPlayer.dispose()}catch(_){}playoviaAdPlayer=null}playoviaAdBusy=false;return result}hidePlayoviaAd();return result};
  try{
   await loadPlayoviaAdScripts();
   if(typeof videojs!=='function'||!videojs.getPlugin('ima'))throw new Error('VAST player unavailable');
   const video=$('playoviaAdVideo');
   playoviaAdPlayer=videojs(video,{controls:true,autoplay:false,preload:'auto',fluid:false,fill:false,playsinline:true,controlBar:{volumePanel:true,fullscreenToggle:false}});
-  playoviaAdPlayer.ima({adTagUrl:PLAYOVIA_VAST_TAG,adsManagerLoadedTimeout:8000,timeout:8000});
-  playoviaAdPlayer.on('ads-ad-started',()=>{started=true;status.textContent='Video ad playing…';});
+  playoviaAdPlayer.ima({adTagUrl:PLAYOVIA_VAST_TAG,adsManagerLoadedTimeout:12000,timeout:12000});
+  playoviaAdPlayer.on('ads-ad-started',()=>{started=true;status.textContent='Video ad playing…';startBtn.style.display='none';});
   const done=()=>finish({completed:started,reason:started?'ended':'no-fill'});
   playoviaAdPlayer.on('ads-ad-ended',done);
   playoviaAdPlayer.on('ads-pod-ended',done);
   playoviaAdPlayer.on('ads-allpods-completed',done);
-  playoviaAdPlayer.on('ads-ad-skipped',done);
+  playoviaAdPlayer.on('ads-ad-skipped',()=>finish({completed:false,reason:'skipped'}));
   playoviaAdPlayer.on('ads-ad-error',()=>finish({completed:false,reason:'ad-error'}));
-  timer=setTimeout(()=>finish({completed:false,reason:'timeout'}),45000);
   playoviaAdPlayer.ready(()=>{
-   try{playoviaAdPlayer.ima.initializeAdDisplayContainer();playoviaAdPlayer.ima.requestAds();const p=playoviaAdPlayer.play();if(p&&p.catch)p.catch(()=>finish({completed:false,reason:'autoplay-blocked'}));}
-   catch(e){finish({completed:false,reason:e.message||'request-failed'})}
+   status.textContent='Tap Play Ad to start the video';
+   startBtn.style.display='block';
+   startBtn.onclick=()=>{
+    if(settled)return;
+    startBtn.style.display='none';
+    status.textContent='Requesting video ad…';
+    try{
+     playoviaAdPlayer.ima.initializeAdDisplayContainer();
+     playoviaAdPlayer.ima.requestAds();
+     timer=setTimeout(()=>finish({completed:false,reason:'timeout'}),45000);
+     const p=playoviaAdPlayer.play();
+     if(p&&p.catch)p.catch(()=>{startBtn.style.display='block';status.textContent='Tap Play Ad to try again';if(timer){clearTimeout(timer);timer=null}});
+    }catch(e){finish({completed:false,reason:e.message||'request-failed'})}
+   };
   });
   return await new Promise(resolve=>{
    const poll=()=>{if(settled){resolve({completed:started,reason:'finished'});return}setTimeout(poll,100)};
    poll();
   });
- }catch(e){console.warn('Playovia VAST ad unavailable:',e);status.textContent='Ad unavailable — continuing';setTimeout(()=>{if(kind==='exit'){choice.style.display='flex';status.textContent='Ad unavailable. Resume or exit your game.';playoviaAdBusy=false}else hidePlayoviaAd()},650);return {completed:false,reason:'unavailable'}}
+ }catch(e){
+  console.warn('Playovia VAST ad unavailable:',e);
+  status.textContent='Video ad unavailable — continuing';
+  setTimeout(()=>{if(kind==='exit'){choice.style.display='flex';status.textContent='No video ad available. Resume or exit your game.';playoviaAdBusy=false}else hidePlayoviaAd()},650);
+  return {completed:false,reason:'unavailable'};
+ }
 }
 
 let gameLoadTimer=null,playoviaLogGame=null,activeRemoteGameSlug='';function launchGame(url,title,slug){activeRemoteGameSlug=String(slug||'').toLowerCase();releaseAllRemoteGameInputs();setControllerGameReady(false,{gameTitle:title,gameSlug:activeRemoteGameSlug});if(slug){playoviaLogGame={slug,title};window.playoviaTrackGame?.('game_open',slug,title)}try{history.pushState({playoviaGameOpen:true},location.href);gameHistoryPushed=true}catch(_){}if(slug){startGameSession(title,slug);rememberGame(slug);const plays=readPlays();plays[slug]=(plays[slug]||0)+1;try{localStorage.setItem(userStoreKey('plays'),JSON.stringify(plays))}catch(_){}renderGames(allGames)}else setPlayingPresence(title,slug);$('playingTitle').textContent=title;$('gameLoadingTitle').textContent='Starting '+title+'…';$('gameLoadingNote').textContent='Getting things ready';$('gameLoading').classList.remove('hidden');$('gameOverlay').classList.remove('hidden');$('gameOverlay').classList.remove('is-opening');void $('gameOverlay').offsetWidth;$('gameOverlay').classList.add('is-opening');document.body.style.overflow='hidden';keepGameScreenAwake();if(gameLoadTimer)clearTimeout(gameLoadTimer);gameLoadTimer=setTimeout(()=>{if(!$('gameOverlay').classList.contains('hidden'))$('gameLoadingNote').textContent='Taking longer than usual? The game may need a little more time.'},15000);const launchUrl=new URL(url,location.href);launchUrl.searchParams.set('playovia_refresh','20261113-30rounds');setControllerGameReady(false);playoviaExitConfirmed=false;playoviaPendingGameUrl=launchUrl.href;if(!playoviaHasRealVastTag()){$('gameFrame').src=playoviaPendingGameUrl;playoviaPendingGameUrl=''}else playPlayoviaVastAd('start').finally(()=>{if(!$('gameOverlay').classList.contains('hidden')&&playoviaPendingGameUrl){$('gameFrame').src=playoviaPendingGameUrl;playoviaPendingGameUrl=''}})}
