@@ -1557,7 +1557,7 @@ async function playPlayoviaVastAd(kind){
      playoviaAdPlayer.ima.initializeAdDisplayContainer();
      playoviaAdPlayer.ima.requestAds();
      const p=playoviaAdPlayer.play();
-     if(p&&p.catch)p.catch(()=>{if(settled)return;startBtn.style.display='block';status.textContent='Playback blocked. Tap Play Ad to retry';if(timer){clearTimeout(timer);timer=null}});
+     if(p&&p.catch)p.catch(()=>{if(settled)return;startBtn.style.display='block';status.textContent='Playback blocked. Tap Play Ad to retry';/* Keep watchdog active so the game cannot remain stuck. */});
     }catch(e){finish({completed:false,reason:e.message||'request-failed'})}
    };
   });
