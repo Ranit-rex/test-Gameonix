@@ -1140,15 +1140,24 @@ async function discoverGames(){
 }
 function isMultiplayerGame(g){const id=String(g.slug||'').toLowerCase().replace(/[^a-z0-9]/g,'');const name=String(g.title||'').toLowerCase();return ['bombtag','flagfrenzy','guesslogo','ghostnight','ashgrave','riftbound','antarctic','dungeonhunter','guessthecapital','guessthelandmark','countrymapedition','guessthecurrency','guessthenationalanimal','guessthelanguage','scribbleparty',].includes(id)||/bomb tag|flag frenzy|ghost night|ashgrave|ash grave|circuit breaker|riftbound|antarctic|last signal/.test(name)}
 function gameMarkup(list){return list.length?list.map(g=>{const cover=coverFor(g),category=gameCategory(g),mode=isMultiplayerGame(g)?'Co-op':'Solo';return `<article class="game pv-grid-card" data-slug="${esc(g.slug)}" data-url="${esc(g.url)}" data-title="${esc(g.title)}"><button class="game-info-btn" type="button" aria-label="Game information" title="Game information" data-game-info="${esc(g.slug)}">ⓘ</button><div class="game-art pv-grid-art ${cover?'has-cover':''}">${cover?`<img src="${esc(cover)}" alt="${esc(g.title)} cover" loading="lazy" onerror="this.onerror=null;this.remove();this.parentElement.classList.remove('has-cover');this.parentElement.textContent='🎮'">`:'🎮'}<span class="pv-grid-rating">★ <b data-grid-rating="${esc(g.slug)}">…</b></span></div><div class="game-info pv-grid-info"><div class="pv-grid-meta"><span>${esc(category)}</span><span>${mode}</span></div><h3>${esc(g.title)}</h3><p>${esc(g.description||'Explore this game and enjoy a new adventure.')}</p><span class="tag pv-grid-play">▶ <b>Play Now</b></span></div></article>`}).join(''):'<div class="empty">No games found yet. Add a game folder containing index.html.</div>'}
-// Keep Monetag's click-triggered ads away from game launch controls.
-// stopPropagation at the target capture phase preserves the button/card's own handler
-// while preventing the click from bubbling to page-level popunder listeners.
+// Protect game launch taps from page-level popunder handlers without swallowing gameplay actions.
 document.addEventListener('DOMContentLoaded',()=>{
  const protect=root=>{
   root.querySelectorAll('.game, #gameDetailsPlay, [data-play-game]').forEach(el=>{
    if(el.dataset.playoviaAdShield)return;
    el.dataset.playoviaAdShield='1';
-   el.addEventListener('click',event=>event.stopPropagation(),true);
+   el.addEventListener('click',event=>{
+    if(el.matches('.game') && event.target.closest('.game-save'))return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    if(el.matches('.game')){
+     openGameDetails(el.dataset.slug);
+    }else if(el.id==='gameDetailsPlay'){
+     if(typeof window.playoviaGuestStartFromButton==='function')window.playoviaGuestStartFromButton();
+    }else if(typeof window.playoviaGuestStart==='function' && activeDetailsGame){
+     window.playoviaGuestStart(activeDetailsGame);
+    }
+   },true);
   });
  };
  protect(document);
