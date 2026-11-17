@@ -677,10 +677,10 @@ body:has(#gameDetailsModal:not(.hidden)) #playoviaPageAd,body:has(#gameDetailsMo
 </style>
 <script id="playovia-monetag-loader">
 (function(){
+ // Keep Monetag's non-click-triggered vignette placement.
+ // The tag.min.js zones are OnClick/popunder-style and were opening ay267.com
+ // when users pressed Play, so they are intentionally not loaded on game controls.
  const zones=[
-  {src:'https://5gvci.com/act/files/tag.min.js?z=12285829',zone:'12285829'},
-  {src:'https://al5sm.com/tag.min.js',zone:'12285824'},
-  {src:'https://nap5k.com/tag.min.js',zone:'12248040'},
   {src:'https://n6wxm.com/vignette.min.js',zone:'12285825'}
  ];
  let loaded=false,queued=false;
