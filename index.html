@@ -905,7 +905,12 @@ async function initFirebase(){
   if(!window.firebase||!firebase.auth)throw new Error('Firebase Auth SDK did not register its global API');
   if(!firebase.apps.length)firebase.initializeApp(FIREBASE_CONFIG);
   auth=firebase.auth();
-  await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+  // Some mobile browsers stall Firebase LOCAL persistence (especially with
+  // restricted storage). Never let that block the auth observer or login UI.
+  await Promise.race([
+   auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL),
+   new Promise((_,reject)=>setTimeout(()=>reject(new Error('Firebase persistence timed out')),7000))
+  ]).catch(e=>console.warn('Firebase persistence unavailable; continuing with browser default:',e.message));
 
   // Start the app's auth observer immediately. Optional data SDKs must never
   // hold the sign-in screen hostage while they download.
@@ -1984,6 +1989,15 @@ $('aiShareBtn')?.addEventListener('click',aiSharePlayovia);$('aiGameSearchSubmit
 $('playoviaAiLaunch')?.addEventListener('click',()=>{if($('playoviaAiPanel').classList.contains('hidden'))aiOpen();else aiClose()});$('aiCloseBtn')?.addEventListener('click',aiClose);$('aiClearBtn')?.addEventListener('click',aiClear);$('aiCompose')?.addEventListener('submit',e=>{e.preventDefault();aiSend($('aiInput').value)});$('aiInput')?.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();$('aiCompose').requestSubmit()}});document.querySelectorAll('[data-ai-prompt]').forEach(b=>b.addEventListener('click',()=>aiSend(b.dataset.aiPrompt)));
 
 firebaseInitPromise=initFirebase();
+setTimeout(()=>{
+ const gate=$('gateStatus'),btn=$('gateLoginBtn');
+ if(gate&&gate.textContent.includes('Connecting securely')){
+  gate.textContent='Secure connection is taking too long. You can retry Google sign-in or refresh Playovia.';
+  gate.className='gate-status error';
+  btn?.classList.remove('hidden');
+  if(btn)btn.disabled=false;
+ }
+},16000);
 </script>
 
 <script>
