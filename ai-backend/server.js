@@ -78,6 +78,118 @@ async function verifyAdminToken(token) {
   } catch (_) { return false; }
 }
 
+const ADCASH_API_BASE = 'https://adcash.myadcash.com/api/v2';
+let adcashAccessToken = '';
+let adcashAccessTokenExpiresAt = 0;
+let adcashTokenPromise = null;
+
+async function getAdcashAccessToken(forceRefresh = false) {
+  const apiToken = String(process.env.ADCASH_PUBLISHER_API_TOKEN || '').trim();
+  if (!apiToken) throw Object.assign(new Error('Adcash Publisher API token is not configured on Render.'), { status: 503 });
+  if (!forceRefresh && adcashAccessToken && adcashAccessTokenExpiresAt > Date.now() + 30000) return adcashAccessToken;
+  if (adcashTokenPromise) return adcashTokenPromise;
+  const pending = (async () => {
+    const response = await fetch(ADCASH_API_BASE + '/auth/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({ api_token: apiToken }),
+      signal: AbortSignal.timeout(12000)
+    });
+    const body = await response.json().catch(() => ({}));
+    const accessToken = String(body?.data?.access_token || '');
+    if (!response.ok || !accessToken) {
+      const message = body?.error?.message || body?.message || 'Adcash could not issue an access token.';
+      throw Object.assign(new Error(String(message).slice(0, 220)), { status: response.status === 429 ? 429 : 502 });
+    }
+    const expiresIn = Math.max(60, Number(body?.data?.expires_in) || 900);
+    adcashAccessToken = accessToken;
+    adcashAccessTokenExpiresAt = Date.now() + expiresIn * 1000;
+    return accessToken;
+  })();
+  adcashTokenPromise = pending;
+  try { return await pending; }
+  finally { if (adcashTokenPromise === pending) adcashTokenPromise = null; }
+}
+
+async function adcashRequest(path) {
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const accessToken = await getAdcashAccessToken(attempt > 0);
+    const response = await fetch(ADCASH_API_BASE + path, {
+      headers: { Authorization: 'Bearer ' + accessToken, Accept: 'application/json' },
+      signal: AbortSignal.timeout(15000)
+    });
+    const body = await response.json().catch(() => ({}));
+    if (response.status === 401 && attempt === 0) {
+      adcashAccessToken = '';
+      adcashAccessTokenExpiresAt = 0;
+      continue;
+    }
+    if (!response.ok) {
+      const message = body?.error?.message || body?.message || 'Adcash reporting request failed.';
+      throw Object.assign(new Error(String(message).slice(0, 220)), { status: response.status === 429 ? 429 : 502 });
+    }
+    return body;
+  }
+  throw Object.assign(new Error('Adcash access token expired. Refresh and try again.'), { status: 502 });
+}
+
+function adcashReportQuery(url) {
+  const today = new Date().toISOString().slice(0, 10);
+  const defaultStart = new Date(Date.now() - 6 * 86400000).toISOString().slice(0, 10);
+  const startDate = String(url.searchParams.get('start_date') || defaultStart);
+  const endDate = String(url.searchParams.get('end_date') || today);
+  const validDate = value => /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(value + 'T00:00:00Z'));
+  if (!validDate(startDate) || !validDate(endDate) || startDate > endDate || endDate > today) {
+    throw Object.assign(new Error('Use valid start_date and end_date values in YYYY-MM-DD format; future dates are not allowed.'), { status: 400 });
+  }
+  if (Date.parse(today + 'T00:00:00Z') - Date.parse(startDate + 'T00:00:00Z') > 120 * 86400000) {
+    throw Object.assign(new Error('Adcash reports can only start within the last 120 days.'), { status: 400 });
+  }
+  const allowedGroups = new Set(['site','zone','country','date','week','month','device_type','sub1','sub2']);
+  const groups = String(url.searchParams.get('group_by') || 'site').split(',').map(x => x.trim()).filter(Boolean);
+  if (!groups.length || groups.length > 2 || groups.some(x => !allowedGroups.has(x)) || new Set(groups).size !== groups.length) {
+    throw Object.assign(new Error('Choose one or two valid Adcash grouping fields.'), { status: 400 });
+  }
+  const allowedSort = new Set(['earnings','imps','unique_users','clicks','imps_ecpm','imps_fallback','imps_rejected','imps_overcapped','unique_users_ecpm','unique_users_fallback','unique_users_rejected','unique_users_overcapped']);
+  const sortBy = String(url.searchParams.get('sort_by') || '-earnings');
+  if (!/^ -/.test(sortBy) && !allowedSort.has(sortBy) && !(sortBy.startsWith('-') && allowedSort.has(sortBy.slice(1)))) {
+    throw Object.assign(new Error('Invalid Adcash sort_by field.'), { status: 400 });
+  }
+  const params = new URLSearchParams({ start_date: startDate, end_date: endDate, group_by: groups.join(','), sort_by: sortBy });
+  for (const key of ['site','zone','country','device_type']) {
+    const value = String(url.searchParams.get('filters[' + key + ']') || '').trim();
+    if (!value) continue;
+    const values = value.split(',').map(x => x.trim()).filter(Boolean);
+    const valid = values.length > 0 && values.length <= 100 && values.every(x => /^[A-Za-z0-9_-]{1,40}$/.test(x));
+    if (!valid || (key === 'country' && values.some(x => !/^[A-Za-z]{2}$/.test(x)))) {
+      throw Object.assign(new Error('Invalid Adcash ' + key + ' filter.'), { status: 400 });
+    }
+    params.set('filters[' + key + ']', values.join(','));
+  }
+  return { query: params.toString(), startDate, endDate, groupBy: groups };
+}
+
+async function getAdcashReport(url) {
+  const selection = adcashReportQuery(url);
+  const [reportResult, balanceResult] = await Promise.allSettled([
+    adcashRequest('/publishers/reports?' + selection.query),
+    adcashRequest('/publishers/balance')
+  ]);
+  if (reportResult.status === 'rejected') throw reportResult.reason;
+  const report = reportResult.value || {};
+  const balance = balanceResult.status === 'fulfilled' ? (balanceResult.value?.data || null) : null;
+  return {
+    ok: true,
+    period: { start_date: selection.startDate, end_date: selection.endDate },
+    group_by: selection.groupBy,
+    report: report.data || {},
+    meta: report.meta || {},
+    balance,
+    balanceError: balanceResult.status === 'rejected' ? String(balanceResult.reason?.message || 'Balance unavailable.') : null,
+    fetchedAt: new Date().toISOString()
+  };
+}
+
 function buildMessages(system, history, message) {
   const messages = [{ role: 'system', content: system }];
   for (const item of history) {
@@ -264,6 +376,22 @@ const server = http.createServer(async (req, res) => {
 
   const url = new URL(req.url, 'http://localhost');
   if (await discordAdmin.handle(req, res, origin, send)) return;
+  if (req.method === 'GET' && url.pathname === '/api/admin/adcash-report') {
+    if (!process.env.FIREBASE_WEB_API_KEY) return send(res, 503, { error: 'Admin authentication is not configured on the backend.' }, origin);
+    const token = bearerToken(req);
+    if (!(await verifyAdminToken(token))) return send(res, 403, { error: 'Admin access required.' }, origin);
+    try { return send(res, 200, await getAdcashReport(url), origin); }
+    catch (error) { return send(res, Number(error.status) || 502, { error: String(error.message || 'Adcash report unavailable.').slice(0, 220) }, origin); }
+  }
+
+  if (req.method === 'GET' && url.pathname === '/api/discord/adcash') {
+    const expected = String(process.env.DISCORD_INTEGRATION_TOKEN || '');
+    if (!safeTokenEqual(bearerToken(req), expected)) return send(res, 401, { error: 'Unauthorized.' }, origin);
+    try { return send(res, 200, await getAdcashReport(url), origin); }
+    catch (error) { return send(res, Number(error.status) || 502, { error: String(error.message || 'Adcash report unavailable.').slice(0, 220) }, origin); }
+  }
+
+
   if (req.method === 'POST' && url.pathname === '/api/analytics/game-event') {
     const ip = String(req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
     if (rateLimited('game-event:' + ip)) return send(res, 429, { error: 'Too many game events.' }, origin);
