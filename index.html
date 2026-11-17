@@ -1,9 +1,6 @@
 <!doctype html>
 <html lang="en">
 <head>
-<script src="https://5gvci.com/act/files/tag.min.js?z=12285829" data-cfasync="false" async></script>
-<script>(function(s){s.dataset.zone='12285824',s.src='https://al5sm.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
-<script>(function(s){s.dataset.zone='12248040',s.src='https://nap5k.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
 
 
 
@@ -675,7 +672,42 @@ html.low-performance #playhubApp .hero{animation:siteHeroIn .2s ease-out both}
 #gameOverlay .game-ai-strip-answer.has-answer{display:block!important}
 #gameOverlay .game-ai-glass{background:rgba(5,9,18,.02)!important;border-color:rgba(220,230,255,.12)!important;box-shadow:none!important;backdrop-filter:blur(1px)!important;-webkit-backdrop-filter:blur(1px)!important}
 #gameOverlay .game-ai-strip{min-height:24px!important;padding:2px 4px!important}
-</style></head>
+</style><script id="playovia-monetag-loader">
+(function(){
+ const zones=[
+  {src:'https://5gvci.com/act/files/tag.min.js?z=12285829',zone:'12285829'},
+  {src:'https://al5sm.com/tag.min.js',zone:'12285824'},
+  {src:'https://nap5k.com/tag.min.js',zone:'12248040'},
+  {src:'https://n6wxm.com/vignette.min.js',zone:'12285825'}
+ ];
+ let loaded=false,queued=false;
+ function loadZones(){
+  if(loaded||queued)return;
+  const overlay=document.getElementById('gameOverlay');
+  if(overlay&&!overlay.classList.contains('hidden')){setTimeout(loadZones,2500);return}
+  queued=true;
+  zones.forEach((item,index)=>{
+   if(document.querySelector('script[data-playovia-monetag="'+item.zone+'"]'))return;
+   const script=document.createElement('script');
+   script.src=item.src;script.async=true;script.dataset.playoviaMonetag=item.zone;
+   if(item.zone!=='12285829')script.dataset.zone=item.zone;
+   script.setAttribute('data-cfasync','false');
+   script.onload=()=>{loaded=zones.every(z=>document.querySelector('script[data-playovia-monetag="'+z.zone+'"]'))};
+   script.onerror=()=>{script.dataset.loadError='true'};
+   document.head.appendChild(script);
+  });
+ }
+ function schedule(){
+  if(loaded||queued)return;
+  const run=()=>{queued=false;loadZones()};
+  if('requestIdleCallback'in window)requestIdleCallback(run,{timeout:5000});
+  else setTimeout(run,3000);
+ }
+ window.addEventListener('load',()=>setTimeout(schedule,2500),{once:true});
+ document.addEventListener('playovia:game-closed',schedule);
+})();
+</script>
+</head>
 <body>
 <div id="loginGate" aria-label="Playovia sign in">
  <div class="gate-card">
@@ -1067,7 +1099,26 @@ async function discoverGames(){
  allGames=allGames.filter(g=>!isRetiredPlayoviaGame(g));discoveredGames=allGames.slice();renderGames(allGames);$('gameCount').textContent=allGames.length+' GAMES';$('gamesMeta').textContent=allGames.length+' games';
 }
 function isMultiplayerGame(g){const id=String(g.slug||'').toLowerCase().replace(/[^a-z0-9]/g,'');const name=String(g.title||'').toLowerCase();return ['bombtag','flagfrenzy','guesslogo','ghostnight','ashgrave','riftbound','antarctic','dungeonhunter','guessthecapital','guessthelandmark','countrymapedition','guessthecurrency','guessthenationalanimal','guessthelanguage','scribbleparty',].includes(id)||/bomb tag|flag frenzy|ghost night|ashgrave|ash grave|circuit breaker|riftbound|antarctic|last signal/.test(name)}
-function gameMarkup(list){return list.length?list.map(g=>{const cover=coverFor(g),category=gameCategory(g),mode=isMultiplayerGame(g)?'Co-op':'Solo';return `<article class="game pv-grid-card" data-slug="${esc(g.slug)}" data-url="${esc(g.url)}" data-title="${esc(g.title)}"><button class="game-info-btn" type="button" aria-label="Game information" title="Game information" data-game-info="${esc(g.slug)}">ⓘ</button><div class="game-art pv-grid-art ${cover?'has-cover':''}">${cover?`<img src="${esc(cover)}" alt="${esc(g.title)} cover" loading="lazy" onerror="this.onerror=null;this.remove();this.parentElement.classList.remove('has-cover');this.parentElement.textContent='🎮'">`:'🎮'}<span class="pv-grid-rating">★ <b data-grid-rating="${esc(g.slug)}">…</b></span></div><div class="game-info pv-grid-info"><div class="pv-grid-meta"><span>${esc(category)}</span><span>${mode}</span></div><h3>${esc(g.title)}</h3><p>${esc(g.description||'Explore this game and enjoy a new adventure.')}</p><span class="tag pv-grid-play">▶ <b>Play Now</b></span></div></article>`}).join(''):'<div class="empty">No games found yet. Add a game folder containing index.html.</div>'}function wireGameCards(root){root.querySelectorAll('.game').forEach(card=>{card.addEventListener('click',e=>{if(e.target.closest('.game-info-btn'))return;openGameDetails(card.dataset.slug)});const info=card.querySelector('.game-info-btn');info?.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();openGameDetails(card.dataset.slug)})})}
+function gameMarkup(list){return list.length?list.map(g=>{const cover=coverFor(g),category=gameCategory(g),mode=isMultiplayerGame(g)?'Co-op':'Solo';return `<article class="game pv-grid-card" data-slug="${esc(g.slug)}" data-url="${esc(g.url)}" data-title="${esc(g.title)}"><button class="game-info-btn" type="button" aria-label="Game information" title="Game information" data-game-info="${esc(g.slug)}">ⓘ</button><div class="game-art pv-grid-art ${cover?'has-cover':''}">${cover?`<img src="${esc(cover)}" alt="${esc(g.title)} cover" loading="lazy" onerror="this.onerror=null;this.remove();this.parentElement.classList.remove('has-cover');this.parentElement.textContent='🎮'">`:'🎮'}<span class="pv-grid-rating">★ <b data-grid-rating="${esc(g.slug)}">…</b></span></div><div class="game-info pv-grid-info"><div class="pv-grid-meta"><span>${esc(category)}</span><span>${mode}</span></div><h3>${esc(g.title)}</h3><p>${esc(g.description||'Explore this game and enjoy a new adventure.')}</p><span class="tag pv-grid-play">▶ <b>Play Now</b></span></div></article>`}).join(''):'<div class="empty">No games found yet. Add a game folder containing index.html.</div>'}
+// Keep Monetag's click-triggered ads away from game launch controls.
+// stopPropagation at the target capture phase preserves the button/card's own handler
+// while preventing the click from bubbling to page-level popunder listeners.
+document.addEventListener('DOMContentLoaded',()=>{
+ const protect=root=>{
+  root.querySelectorAll('.game, #gameDetailsPlay, [data-play-game]').forEach(el=>{
+   if(el.dataset.playoviaAdShield)return;
+   el.dataset.playoviaAdShield='1';
+   el.addEventListener('click',event=>event.stopPropagation(),true);
+  });
+ };
+ protect(document);
+ const observer=new MutationObserver(records=>records.forEach(record=>record.addedNodes.forEach(node=>{
+  if(node.nodeType===1){if(node.matches?.('.game, #gameDetailsPlay, [data-play-game]'))protect(node.parentElement||document);else protect(node)}
+ })));
+ observer.observe(document.documentElement,{childList:true,subtree:true});
+});
+
+function wireGameCards(root){root.querySelectorAll('.game').forEach(card=>{card.addEventListener('click',e=>{if(e.target.closest('.game-info-btn'))return;openGameDetails(card.dataset.slug)});const info=card.querySelector('.game-info-btn');info?.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();openGameDetails(card.dataset.slug)})})}
 let activeDetailsGame=null,activeDetailsRating=0,activeDetailsHasRating=false;
 function gameDetailsStars(value){const rounded=Math.max(0,Math.min(5,Math.round(Number(value)||0)));return '★'.repeat(rounded)+'☆'.repeat(5-rounded)}
 function openGameDetails(slug){
@@ -1497,7 +1548,7 @@ async function releaseGameScreenWakeLock(){const lock=playoviaScreenWakeLock;pla
 document.addEventListener('visibilitychange',()=>{if(document.hidden){if(playoviaScreenWakeLock)releaseGameScreenWakeLock()}else if(!document.getElementById('gameOverlay')?.classList.contains('hidden'))keepGameScreenAwake()});
 /* Playovia game session state (ads remain disabled). */
 let gameLoadTimer=null,playoviaLogGame=null,activeRemoteGameSlug='',playoviaExitConfirmed=false;function launchGame(url,title,slug){activeRemoteGameSlug=String(slug||'').toLowerCase();releaseAllRemoteGameInputs();setControllerGameReady(false,{gameTitle:title,gameSlug:activeRemoteGameSlug});if(slug){playoviaLogGame={slug,title};window.playoviaTrackGame?.('game_open',slug,title)}try{history.pushState({playoviaGameOpen:true},location.href);gameHistoryPushed=true}catch(_){}if(slug){startGameSession(title,slug);rememberGame(slug);const plays=readPlays();plays[slug]=(plays[slug]||0)+1;try{localStorage.setItem(userStoreKey('plays'),JSON.stringify(plays))}catch(_){}renderGames(allGames)}else setPlayingPresence(title,slug);$('playingTitle').textContent=title;$('gameLoadingTitle').textContent='Starting '+title+'…';$('gameLoadingNote').textContent='Getting things ready';$('gameLoading').classList.remove('hidden');$('gameOverlay').classList.remove('hidden');$('gameOverlay').classList.remove('is-opening');void $('gameOverlay').offsetWidth;$('gameOverlay').classList.add('is-opening');document.body.style.overflow='hidden';keepGameScreenAwake();if(gameLoadTimer)clearTimeout(gameLoadTimer);gameLoadTimer=setTimeout(()=>{if(!$('gameOverlay').classList.contains('hidden'))$('gameLoadingNote').textContent='Taking longer than usual? The game may need a little more time.'},15000);const launchUrl=new URL(url,location.href);launchUrl.searchParams.set('playovia_refresh','20261113-30rounds');$('gameFrame').src=launchUrl.href;setControllerGameReady(false)}
-function closeGame(fromHistory=false){if($('gameOverlay').classList.contains('hidden'))return;if(!$('gameAiGlass')?.classList.contains('hidden'))aiClose();setControllerGameReady(false);if(remoteControllerSession)stopRemoteController();$('remoteControllerModal')?.classList.add('hidden');if(playoviaLogGame){window.playoviaTrackGame?.('game_exit',playoviaLogGame.slug,playoviaLogGame.title);playoviaLogGame=null}if(gameLoadTimer){clearTimeout(gameLoadTimer);gameLoadTimer=null}finishGameSession();clearPlayingPresence();$('gameOverlay').classList.remove('is-opening');$('gameOverlay').classList.add('hidden');releaseGameScreenWakeLock();$('gameLoading').classList.remove('hidden');document.body.style.overflow='';$('playingTitle').textContent='Playing';const frame=$('gameFrame');frame.src='about:blank';if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});if(gameHistoryPushed){gameHistoryPushed=false;if(!fromHistory){try{history.back()}catch(_){}}}}
+function closeGame(fromHistory=false){if($('gameOverlay').classList.contains('hidden'))return;if(!$('gameAiGlass')?.classList.contains('hidden'))aiClose();setControllerGameReady(false);if(remoteControllerSession)stopRemoteController();$('remoteControllerModal')?.classList.add('hidden');if(playoviaLogGame){window.playoviaTrackGame?.('game_exit',playoviaLogGame.slug,playoviaLogGame.title);playoviaLogGame=null}if(gameLoadTimer){clearTimeout(gameLoadTimer);gameLoadTimer=null}finishGameSession();clearPlayingPresence();$('gameOverlay').classList.remove('is-opening');$('gameOverlay').classList.add('hidden');releaseGameScreenWakeLock();$('gameLoading').classList.remove('hidden');document.body.style.overflow='';$('playingTitle').textContent='Playing';const frame=$('gameFrame');frame.src='about:blank';if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});if(gameHistoryPushed){gameHistoryPushed=false;if(!fromHistory){try{history.back()}catch(_){}}}document.dispatchEvent(new Event('playovia:game-closed'))}
 window.addEventListener('pagehide',()=>{if(typeof stopGameAiLiveListen==='function')stopGameAiLiveListen();if(!$('gameOverlay').classList.contains('hidden')){if(playoviaLogGame){window.playoviaTrackGame?.('game_exit',playoviaLogGame.slug,playoviaLogGame.title);playoviaLogGame=null}finishGameSession();clearPlayingPresence()}});
 $('gameFrame').addEventListener('load',()=>{if($('gameOverlay').classList.contains('hidden'))return;if(gameLoadTimer){clearTimeout(gameLoadTimer);gameLoadTimer=null}keepGameScreenAwake();setControllerGameReady(true);try{const frameUrl=new URL($('gameFrame').contentWindow.location.href);if(frameUrl.href==='about:blank'){closeGame();return}$('gameLoading').classList.add('hidden');if(playoviaLogGame)window.playoviaTrackGame?.('game_play',playoviaLogGame.slug,playoviaLogGame.title);const hubUrl=new URL('./',location.href);if(frameUrl.origin===location.origin){const frameDoc=$('gameFrame').contentDocument;const isHubPath=frameUrl.pathname===hubUrl.pathname||frameUrl.pathname===hubUrl.pathname+'index.html'||frameUrl.pathname.endsWith('/index.html')&&!!frameDoc?.querySelector('#playhubApp');if(isHubPath)closeGame()}}catch(_){}});window.addEventListener('popstate',()=>{if(!$('gameOverlay').classList.contains('hidden'))closeGame(true);else gameHistoryPushed=false});$('closeGameBtn').addEventListener('click',closeGame);
 
@@ -1951,6 +2002,5 @@ if ('serviceWorker' in navigator || 'caches' in window) {
 <script>if("serviceWorker" in navigator){navigator.serviceWorker.getRegistrations().then(regs=>Promise.all(regs.filter(r=>[r.active,r.waiting,r.installing].some(w=>{try{return w&&new URL(w.scriptURL).origin===location.origin&&new URL(w.scriptURL).pathname==="/sw.js"}catch(_){return false}})).map(r=>r.unregister()))).catch(()=>{})}</script>
 <script src="./analytics.js?v=6" defer></script>
 
-<script>(function(s){s.dataset.zone='12285825',s.src='https://n6wxm.com/vignette.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
 </body></html>
 <style id="playovia-controller-host-fix">.remote-controller-backdrop.connected{display:none!important}</style>
