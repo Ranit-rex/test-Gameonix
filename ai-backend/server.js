@@ -138,7 +138,7 @@ function adcashReportQuery(url) {
   const defaultStart = new Date(Date.now() - 6 * 86400000).toISOString().slice(0, 10);
   const startDate = String(url.searchParams.get('start_date') || defaultStart);
   const endDate = String(url.searchParams.get('end_date') || today);
-  const validDate = value => /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(value + 'T00:00:00Z'));
+  const validDate = value => { if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false; const parsed = Date.parse(value + 'T00:00:00Z'); return !Number.isNaN(parsed) && new Date(parsed).toISOString().slice(0, 10) === value; };
   if (!validDate(startDate) || !validDate(endDate) || startDate > endDate || endDate > today) {
     throw Object.assign(new Error('Use valid start_date and end_date values in YYYY-MM-DD format; future dates are not allowed.'), { status: 400 });
   }
@@ -152,7 +152,7 @@ function adcashReportQuery(url) {
   }
   const allowedSort = new Set(['earnings','imps','unique_users','clicks','imps_ecpm','imps_fallback','imps_rejected','imps_overcapped','unique_users_ecpm','unique_users_fallback','unique_users_rejected','unique_users_overcapped']);
   const sortBy = String(url.searchParams.get('sort_by') || '-earnings');
-  if (!/^ -/.test(sortBy) && !allowedSort.has(sortBy) && !(sortBy.startsWith('-') && allowedSort.has(sortBy.slice(1)))) {
+  if (!(allowedSort.has(sortBy) || (sortBy.startsWith("-") && allowedSort.has(sortBy.slice(1))))) {
     throw Object.assign(new Error('Invalid Adcash sort_by field.'), { status: 400 });
   }
   const params = new URLSearchParams({ start_date: startDate, end_date: endDate, group_by: groups.join(','), sort_by: sortBy });
