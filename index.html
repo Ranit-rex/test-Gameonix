@@ -1,13 +1,6 @@
 <!doctype html>
 <html lang="en">
 <head>
-<script id="aclib" type="text/javascript" src="//acscdn.com/script/aclib.js"></script>
-<script type="text/javascript">
-    aclib.runAutoTag({
-        zoneId: 'naflm0pcvy',
-    });
-</script>
-
 <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96.png">
 <link rel="shortcut icon" type="image/png" href="/favicon-96.png">
 <link rel="apple-touch-icon" href="/favicon-96.png">
@@ -1986,84 +1979,8 @@ firebaseInitPromise=initFirebase();
 </script>
 
 
-<script id="playoviaAdcashIntegration">
-(function(){
- 'use strict';
- const ZONES={vast:'https://youradexchange.com/video/select.php?r=12458558',videoSlider:'12458718',interstitial:'12458722',inPagePush:'12458750',banner:'12458758'};
- const KEY='playovia_adcash_v1';
- const read=(key)=>{try{return sessionStorage.getItem(KEY+'_'+key)}catch(_){return null}};
- const write=(key,value)=>{try{sessionStorage.setItem(KEY+'_'+key,String(value))}catch(_){}};
- const wait=(ms)=>new Promise(resolve=>setTimeout(resolve,ms));
- let zoneQueue=null,pendingInterstitial=false;
- function ready(){return !!(window.aclib&&typeof window.aclib==='object')}
- function loadLibrary(){
-  if(ready())return Promise.resolve(true);
-  const existing=document.getElementById('aclib');
-  return new Promise(resolve=>{
-   let settled=false;
-   const done=()=>{if(settled)return;settled=true;resolve(ready())};
-   if(existing){existing.addEventListener('load',done,{once:true});existing.addEventListener('error',done,{once:true});}
-   else{const script=document.createElement('script');script.id='aclib';script.src='https://acscdn.com/script/aclib.js';script.onload=done;script.onerror=done;document.head.appendChild(script)}
-   setTimeout(done,8000);
-  });
- }
- function callZone(method,config){
-  if(!ready()||typeof window.aclib[method]!=='function')return false;
-  try{window.aclib[method](config);return true}catch(error){console.warn('Adcash '+method+' zone failed:',error);return false}
- }
- function initBanner(){
-  const host=document.getElementById('playoviaAdcashBanner');
-  if(!host||host.dataset.loaded==='1')return;
-  if(!ready())return;
-  const tag=document.createElement('script');
-  tag.type='text/javascript';
-  tag.text='aclib.runBanner({zoneId: \' '+ZONES.banner+' \'.trim()});';
-  host.appendChild(tag);
-  host.dataset.loaded='1';
- }
- function showInterstitial(){
-  if(!ready())return;
-  // Site-side cooldown removed; Adcash controls any provider-side countdown.
-  callZone('runInterstitial',{zoneId:ZONES.interstitial});
- }
- // Trigger zones quickly in sequence. Slider and push can retry on later page visits.
- function initNonHome(fromUser){
-  pendingInterstitial=pendingInterstitial||!!fromUser;
-  if(zoneQueue)return zoneQueue;
-  zoneQueue=(async()=>{
-   if(!ready())return;
-   initBanner();await wait(500);
-   callZone('runVideoSlider',{zoneId:ZONES.videoSlider});
-   await wait(500);
-   callZone('runInPagePush',{zoneId:ZONES.inPagePush,maxAds:2});
-   await wait(500);
-   if(pendingInterstitial){pendingInterstitial=false;showInterstitial()}
-  })().finally(()=>{zoneQueue=null});
-  return zoneQueue;
- }
- function wrapPageNavigation(){
-  if(typeof window.setPage!=='function'||window.setPage.__playoviaAdcash)return;
-  const original=window.setPage;
-  const wrapped=function(page){
-   const fromUser=!!(navigator.userActivation&&navigator.userActivation.isActive);
-   const result=original.apply(this,arguments);
-   if(page==='home')return result;
-   loadLibrary().then(ok=>{if(ok)initNonHome(fromUser)});
-   return result;
-  };
-  wrapped.__playoviaAdcash=true;window.setPage=wrapped;
- }
- loadLibrary().then(ok=>{
-  if(!ok){console.warn('Adcash library did not load; ad zones remain inactive.');return}
-  wrapPageNavigation();
-  // Pop-under zone intentionally disabled: no game-launch redirect/new-tab ads.
-  // The app starts on Home: no display zone is invoked until the player navigates away.
- });
-})();
-</script>
-
-<script>
-// Remove legacy service workers and their stale cached app shell.
+<!-- Adcash temporarily disabled: publisher requested a pause. -->
+ice workers and their stale cached app shell.
 if ('serviceWorker' in navigator || 'caches' in window) {
   window.addEventListener('load', async function () {
     let changed = false;
