@@ -728,6 +728,7 @@ html.low-performance #playhubApp .hero{animation:siteHeroIn .2s ease-out both}
  <button class="navbtn" data-page="party" aria-label="Party lobby">⚔<small>Party</small></button>
  <button class="navbtn" data-page="globalChat" aria-label="Global chat">💬<small>Chat</small></button>
  <button class="navbtn" data-page="saved" aria-label="Saved games">★<small>Saved</small></button>
+ <button class="navbtn" data-page="store" aria-label="Playovia Store">🛍<small>Store</small></button>
  <button class="navbtn" data-page="nova" aria-label="Open Playovia AI">✦<small>AI</small></button>
  <button class="navbtn hidden" data-page="admin" id="adminNav" aria-label="Admin dashboard">🛡<small>Admin</small></button>
  <div class="navspacer"></div>
@@ -810,6 +811,18 @@ html.low-performance #playhubApp .hero{animation:siteHeroIn .2s ease-out both}
  <section id="globalChatPage" class="page"><div class="eyebrow">PLAYOVIA COMMUNITY</div><h1 class="welcome">Chat</h1><p class="sub">Global conversations and your friend messages.</p><div class="chat-switcher"><button class="chat-tab active" data-chat-view="global">Global Chat</button><button class="chat-tab" data-chat-view="friends">Friend Chats</button></div><div id="globalChatView" class="chat-view"><div class="panel"><div id="globalMessages" class="chat-messages"><div class="empty">Loading global chat…</div></div><form id="globalChatForm" class="chat-compose"><input id="globalChatInput" class="field" maxlength="500" placeholder="Message everyone…" autocomplete="off"><button class="login" type="submit">Send</button></form></div></div><div id="friendChatsView" class="chat-view hidden"><div class="chat-layout"><div class="panel friend-chat-list-panel"><h2>Your Friends</h2><div id="friendChatList" class="friend-chat-list">Loading friends…</div></div><div class="panel friend-chat-room" id="friendChatPanel"><div class="empty">Select a friend to start chatting.</div></div></div></div></section>
  <section id="savedPage" class="page"><div class="eyebrow">YOUR COLLECTION</div><h1 class="welcome">Saved Games</h1><p class="sub">Your personal game library.</p><div id="savedGames" class="grid"><div class="empty">Open a game’s ⓘ info to add it to your saved library.</div></div></section>
  <section id="studioPage" class="page"><div class="eyebrow">CREATE YOUR OWN WORLDS</div><h1 class="welcome">Studio</h1><p class="sub">Create and publish your own games on Playovia.</p><div class="panel"><h2>Game creator</h2><p class="muted">The creator workspace is coming soon.</p></div></section>
+ <section id="storePage" class="page">
+  <div class="eyebrow">PLAYOVIA STORE</div><h1 class="welcome">Get more coins</h1><p class="sub">Choose a coin pack. Your coins are added only after payment is securely verified.</p>
+  <div class="panel" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:18px 0"><div><div class="muted">Your balance</div><strong id="storeCoinBalance" style="font-size:25px">— coins</strong></div><span class="pill">🪙 Playovia Coins</span></div>
+  <div id="storePackGrid" class="grid" style="grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px">
+   <article class="panel store-pack"><span class="pill">STARTER</span><h2>100 coins</h2><p class="muted">A little boost for your wallet.</p><button class="primary store-buy" data-pack="starter">Buy for ₹29</button></article>
+   <article class="panel store-pack" style="border-color:#a45cff"><span class="pill">POPULAR</span><h2>250 coins</h2><p class="muted">A popular choice for players.</p><button class="primary store-buy" data-pack="popular">Buy for ₹59</button></article>
+   <article class="panel store-pack"><span class="pill">PRO</span><h2>500 coins</h2><p class="muted">More coins for more rewards.</p><button class="primary store-buy" data-pack="pro">Buy for ₹99</button></article>
+   <article class="panel store-pack"><span class="pill">MEGA</span><h2>1,200 coins</h2><p class="muted">Best value coin bundle.</p><button class="primary store-buy" data-pack="mega">Buy for ₹199</button></article>
+  </div>
+  <div id="storeStatus" class="status" role="status" style="margin-top:16px">Sign in to purchase coins.</div>
+  <p class="muted" style="font-size:12px;margin-top:12px">Payments are processed securely by Razorpay. Test-mode payments do not charge real money.</p>
+ </section>
  <section id="settingsPage" class="page"><div class="eyebrow">ACCOUNT PREFERENCES</div><h1 class="welcome">Settings</h1><p class="sub">Manage your Playovia profile, account and app preferences.</p><div class="settings-tabs" role="tablist" aria-label="Settings sections"><button type="button" class="settings-tab active" data-settings-tab="profile">👤 Profile</button><button type="button" class="settings-tab" data-settings-tab="account">🔐 Account</button><button type="button" class="settings-tab" data-settings-tab="preferences">⚙ Preferences</button><button type="button" class="settings-tab" data-settings-tab="device">📱 Device Info</button></div><div id="settingsProfilePanel" class="settings-panel"><div id="profileContent" class="panel"><div class="empty">Loading your profile...</div></div></div><div id="settingsAccountPanel" class="settings-panel hidden"><div class="panel"><h2>Account information</h2><div id="accountDetails" class="settings-details"><div class="empty">Loading account details...</div></div></div><div class="panel"><h2>Sign out</h2><p class="muted">Sign out of this Google account on this device. Your Playovia profile and saved games will remain linked to your account.</p><button id="settingsLogoutBtn" class="logout" type="button">Sign out</button></div></div><div id="settingsPreferencesPanel" class="settings-panel hidden"><div class="panel"><h2>App preferences</h2><div class="settings-option"><div><strong>Reduce animations</strong><p class="muted">Turn off most interface transitions for a simpler experience.</p></div><label class="settings-switch"><input id="reduceMotionSetting" type="checkbox"><span></span></label></div><div class="settings-option"><div><strong>Compact interface</strong><p class="muted">Use tighter spacing across Playovia panels.</p></div><label class="settings-switch"><input id="compactUiSetting" type="checkbox"><span></span></label></div><p class="muted settings-note">These preferences are saved on this device and browser.</p></div></div><div id="settingsDevicePanel" class="settings-panel hidden"><div class="panel"><h2>Live device monitor</h2><p class="muted">Live estimates available to this browser. Some hardware details are hidden by your device/browser.</p><div class="device-metrics">
 <div><small>Phone / device model</small><strong id="deviceModel">Detecting…</strong></div>
 <div><small>Operating system</small><strong id="deviceOs">—</strong></div>
@@ -2002,5 +2015,35 @@ if ('serviceWorker' in navigator || 'caches' in window) {
 <script>if("serviceWorker" in navigator){navigator.serviceWorker.getRegistrations().then(regs=>Promise.all(regs.filter(r=>[r.active,r.waiting,r.installing].some(w=>{try{return w&&new URL(w.scriptURL).origin===location.origin&&new URL(w.scriptURL).pathname==="/sw.js"}catch(_){return false}})).map(r=>r.unregister()))).catch(()=>{})}</script>
 <script src="./analytics.js?v=6" defer></script>
 
+<script>
+(function(){
+ const storeApi='https://playovia-ai.onrender.com';
+ let checkoutLoading=null;
+ function storeStatus(message,error){const el=document.getElementById('storeStatus');if(el){el.textContent=message;el.style.color=error?'#ff8794':'var(--muted)';}}
+ function storeBalance(){const user=(window.firebase&&firebase.auth&&firebase.auth().currentUser)||null;if(!user||!window.firebase.firestore)return;firebase.firestore().collection('users').doc(user.uid).get().then(doc=>{const n=Number(doc.exists?(doc.data().currencyBalance||0):0).toLocaleString('en-IN')+' coins';const a=document.getElementById('storeCoinBalance');const b=document.getElementById('homeCurrencyBalance');if(a)a.textContent=n;if(b)b.textContent=Number(doc.exists?(doc.data().currencyBalance||0):0).toLocaleString('en-IN');}).catch(()=>{});}
+ function loadCheckout(){if(window.Razorpay)return Promise.resolve();if(checkoutLoading)return checkoutLoading;checkoutLoading=new Promise((resolve,reject)=>{const script=document.createElement('script');script.src='https://checkout.razorpay.com/v1/checkout.js';script.onload=resolve;script.onerror=()=>reject(new Error('Razorpay Checkout could not load.'));document.head.appendChild(script);});return checkoutLoading;}
+ async function buyCoins(packId,button){
+  const user=(window.firebase&&firebase.auth&&firebase.auth().currentUser)||null;
+  if(!user){storeStatus('Please sign in before buying coins.',true);if(typeof startGoogleLogin==='function')startGoogleLogin();return;}
+  const buttons=[...document.querySelectorAll('.store-buy')];buttons.forEach(b=>b.disabled=true);storeStatus('Creating secure payment order…');
+  try{
+   await loadCheckout();
+   const token=await user.getIdToken();
+   const response=await fetch(storeApi+'/api/store/create-order',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({packId})});
+   const order=await response.json();if(!response.ok||!order.ok)throw new Error(order.error||'Could not start payment.');
+   const checkout=new Razorpay({key:order.keyId,amount:order.amount,currency:order.currency, name:'Playovia',description:order.description,order_id:order.orderId,handler:async function(result){
+    try{storeStatus('Verifying payment securely…');const freshToken=await user.getIdToken(true);const verified=await fetch(storeApi+'/api/store/verify-payment',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+freshToken},body:JSON.stringify(result)});const data=await verified.json();if(!verified.ok||!data.ok)throw new Error(data.error||'Payment verification failed.');storeStatus('Payment verified! '+(data.coins||order.coins)+' coins added.');storeBalance();}
+    catch(e){storeStatus(e.message||'Payment verification pending. Contact support with your Razorpay payment ID.',true);}
+    finally{buttons.forEach(b=>b.disabled=false);}
+   },prefill:{name:user.displayName||'',email:user.email||''},theme:{color:'#9257f5'},modal:{ondismiss:function(){buttons.forEach(b=>b.disabled=false);storeStatus('Payment window closed. No coins were added.');}}});
+   checkout.on('payment.failed',function(){buttons.forEach(b=>b.disabled=false);storeStatus('Payment failed. No coins were added.',true);});checkout.open();
+  }catch(e){buttons.forEach(b=>b.disabled=false);storeStatus(e.message||'Unable to start payment.',true);}
+ }
+ document.addEventListener('click',e=>{const b=e.target.closest('.store-buy');if(!b)return;buyCoins(b.dataset.pack,b);});
+ document.addEventListener('click',e=>{const nav=e.target.closest('.navbtn[data-page="store"]');if(nav){setTimeout(()=>{storeBalance();if(!firebase.auth().currentUser)storeStatus('Please sign in to purchase coins.');},0);}});
+ document.addEventListener('playovia-auth-ready',storeBalance);
+ if(window.firebase&&firebase.auth){firebase.auth().onAuthStateChanged(()=>{if(document.getElementById('storePage')?.classList.contains('active'))storeBalance();});}
+})();
+</script>
 </body></html>
 <style id="playovia-controller-host-fix">.remote-controller-backdrop.connected{display:none!important}</style>
