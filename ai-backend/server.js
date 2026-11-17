@@ -628,6 +628,88 @@ const server = http.createServer(async (req, res) => {
     return send(res, 404, { error: 'Controller endpoint not found.' }, origin);
   }
 
+  // Playovia Store: server-created Razorpay orders and verified, idempotent coin credit.
+  const storePacks = {
+    starter: { amount: 2900, coins: 100, title: 'Starter' },
+    popular: { amount: 5900, coins: 250, title: 'Popular' },
+    pro: { amount: 9900, coins: 500, title: 'Pro' },
+    mega: { amount: 19900, coins: 1200, title: 'Mega' }
+  };
+  if ((req.method === 'POST' && (url.pathname === '/api/store/create-order' || url.pathname === '/api/store/verify-payment'))) {
+    const ip = String(req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
+    if (rateLimited('store:' + ip, 12)) return send(res, 429, { error: 'Too many store requests. Please try again shortly.' }, origin);
+    try {
+      const input = await readJsonBody(req, 12000);
+      const user = await verifyFirebaseUserToken(bearerToken(req));
+      if (!user) return send(res, 401, { error: 'Please sign in again to use the store.' }, origin);
+      const keyId = String(process.env.RAZORPAY_KEY_ID || '').trim();
+      const keySecret = String(process.env.RAZORPAY_KEY_SECRET || '').trim();
+      if (!keyId || !keySecret) return send(res, 503, { error: 'Store payments are not configured yet.' }, origin);
+      const admin = require('firebase-admin');
+      const rawServiceAccount = String(process.env.FIREBASE_SERVICE_ACCOUNT_JSON || '');
+      if (!rawServiceAccount) return send(res, 503, { error: 'Store account service is not configured.' }, origin);
+      let serviceAccount;
+      try { serviceAccount = JSON.parse(rawServiceAccount); } catch (_) { return send(res, 503, { error: 'Store account service configuration is invalid.' }, origin); }
+      const firebaseApp = admin.apps.length ? admin.app() : admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+      const database = admin.firestore(firebaseApp);
+      if (url.pathname === '/api/store/create-order') {
+        const pack = storePacks[String(input.packId || '')];
+        if (!pack) return send(res, 400, { error: 'Choose a valid coin pack.' }, origin);
+        const receipt = 'pv_' + crypto.randomBytes(12).toString('hex');
+        const response = await fetch('https://api.razorpay.com/v1/orders', {
+          method: 'POST',
+          headers: { 'Authorization': 'Basic ' + Buffer.from(keyId + ':' + keySecret).toString('base64'), 'Content-Type': 'application/json' },
+          body: JSON.stringify({ amount: pack.amount, currency: 'INR', receipt, notes: { uid: user.uid, packId: String(input.packId), coins: String(pack.coins) } }),
+          signal: AbortSignal.timeout(15000)
+        });
+        const order = await response.json().catch(() => ({}));
+        if (!response.ok || !order.id) {
+          console.error('[Playovia Store] Razorpay order creation failed:', response.status, order.error?.code || '');
+          return send(res, 502, { error: 'Could not create payment order. Please try again.' }, origin);
+        }
+        await database.collection('storeOrders').doc(order.id).set({
+          uid: user.uid, packId: String(input.packId), coins: pack.coins, amount: pack.amount,
+          currency: 'INR', status: 'created', createdAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+        return send(res, 200, { ok: true, keyId, orderId: order.id, amount: pack.amount, currency: 'INR', coins: pack.coins, name: 'Playovia', description: pack.title + ' Coin Pack' }, origin);
+      }
+      const orderId = String(input.razorpay_order_id || '');
+      const paymentId = String(input.razorpay_payment_id || '');
+      const signature = String(input.razorpay_signature || '');
+      if (!/^order_[A-Za-z0-9]+$/.test(orderId) || !/^pay_[A-Za-z0-9]+$/.test(paymentId) || !signature) return send(res, 400, { error: 'Payment details are incomplete.' }, origin);
+      const expected = crypto.createHmac('sha256', keySecret).update(orderId + '|' + paymentId).digest('hex');
+      const sigA = Buffer.from(expected), sigB = Buffer.from(signature);
+      if (sigA.length !== sigB.length || !crypto.timingSafeEqual(sigA, sigB)) return send(res, 400, { error: 'Payment signature could not be verified.' }, origin);
+      const orderRef = database.collection('storeOrders').doc(orderId);
+      const orderSnap = await orderRef.get();
+      if (!orderSnap.exists || orderSnap.data().uid !== user.uid) return send(res, 404, { error: 'Payment order was not found for this account.' }, origin);
+      const storedOrder = orderSnap.data();
+      if (storedOrder.status === 'paid') return send(res, 200, { ok: true, alreadyCredited: true, coins: storedOrder.coins });
+      const paymentResponse = await fetch('https://api.razorpay.com/v1/payments/' + encodeURIComponent(paymentId), {
+        headers: { 'Authorization': 'Basic ' + Buffer.from(keyId + ':' + keySecret).toString('base64') },
+        signal: AbortSignal.timeout(15000)
+      });
+      const payment = await paymentResponse.json().catch(() => ({}));
+      if (!paymentResponse.ok || payment.order_id !== orderId || payment.status !== 'captured' || Number(payment.amount) !== Number(storedOrder.amount) || payment.currency !== 'INR') {
+        return send(res, 409, { error: 'Payment is not captured yet. Coins have not been added.' }, origin);
+      }
+      await database.runTransaction(async tx => {
+        const freshOrder = await tx.get(orderRef);
+        if (!freshOrder.exists || freshOrder.data().uid !== user.uid) throw Object.assign(new Error('Payment order is invalid.'), { status: 404 });
+        if (freshOrder.data().status === 'paid') return;
+        const userRef = database.collection('users').doc(user.uid);
+        const userSnap = await tx.get(userRef);
+        if (!userSnap.exists) throw Object.assign(new Error('Player profile was not found.'), { status: 404 });
+        tx.update(userRef, { currencyBalance: admin.firestore.FieldValue.increment(Number(freshOrder.data().coins)) });
+        tx.update(orderRef, { status: 'paid', paymentId, paidAt: admin.firestore.FieldValue.serverTimestamp() });
+      });
+      return send(res, 200, { ok: true, coins: Number(storedOrder.coins) }, origin);
+    } catch (error) {
+      console.error('[Playovia Store]', error);
+      return send(res, Number(error.status) || 500, { error: String(error.message || 'Store request failed.').slice(0, 180) }, origin);
+    }
+  }
+
   if (req.method === 'GET' && url.pathname === '/health') {
     return send(res, 200, { ok: true, service: 'Playovia AI', providers: ['gemini', 'groq', 'openrouter'] }, origin);
   }
