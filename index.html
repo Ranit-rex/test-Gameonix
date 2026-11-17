@@ -2017,7 +2017,7 @@ if ('serviceWorker' in navigator || 'caches' in window) {
 
 <script>
 (function(){
- const storeApi='https://playovia-ai.onrender.com';
+ const storeApi='https://test-gameonix.onrender.com';
  let checkoutLoading=null;
  function storeStatus(message,error){const el=document.getElementById('storeStatus');if(el){el.textContent=message;el.style.color=error?'#ff8794':'var(--muted)';}}
  function storeBalance(){const user=(window.firebase&&firebase.auth&&firebase.auth().currentUser)||null;if(!user||!window.firebase.firestore)return;firebase.firestore().collection('users').doc(user.uid).get().then(doc=>{const n=Number(doc.exists?(doc.data().currencyBalance||0):0).toLocaleString('en-IN')+' coins';const a=document.getElementById('storeCoinBalance');const b=document.getElementById('homeCurrencyBalance');if(a)a.textContent=n;if(b)b.textContent=Number(doc.exists?(doc.data().currencyBalance||0):0).toLocaleString('en-IN');}).catch(()=>{});}
