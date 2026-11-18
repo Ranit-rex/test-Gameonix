@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720">
+<defs>
+ <linearGradient id="sky" x2="0" y2="1"><stop stop-color="#201044"/><stop offset=".52" stop-color="#8a3d52"/><stop offset="1" stop-color="#f6a13b"/></linearGradient>
+ <radialGradient id="sun"><stop stop-color="#fff8b5"/><stop offset=".48" stop-color="#ffc83d"/><stop offset="1" stop-color="#ed6b20" stop-opacity=".12"/></radialGradient>
+ <linearGradient id="stone" x2="0" y2="1"><stop stop-color="#f8c65a"/><stop offset="1" stop-color="#8d421f"/></linearGradient>
+ <linearGradient id="cape" x2="1" y2="1"><stop stop-color="#ffb24c"/><stop offset="1" stop-color="#b82e22"/></linearGradient>
+ <linearGradient id="vest" x2="0" y2="1"><stop stop-color="#2e91d2"/><stop offset="1" stop-color="#12345e"/></linearGradient>
+ <filter id="glow"><feGaussianBlur stdDeviation="18"/></filter>
+</defs>
+<rect width="1280" height="720" fill="url(#sky)"/>
+<circle cx="880" cy="235" r="195" fill="#ffbf40" opacity=".35" filter="url(#glow)"/>
+<circle cx="880" cy="235" r="138" fill="url(#sun)"/>
+<circle cx="880" cy="235" r="70" fill="#21102e"/>
+<path d="M0 440 145 245 265 425 390 280 520 465 650 330 790 470 930 300 1090 450 1200 280 1280 390V720H0Z" fill="#33275c" opacity=".9"/>
+<path d="M0 520 160 370 310 520 470 365 625 540 780 390 930 535 1090 370 1280 530V720H0Z" fill="#1c2444"/>
+<g fill="url(#stone)" stroke="#6d321b" stroke-width="9">
+ <path d="M610 570V325h60V245h80v-72h180v72h80v80h60v245Z"/>
+ <path d="M580 325h500l-42-48H622Z"/>
+ <path d="M705 173 840 82l135 91Z"/>
+ <path d="M760 570V370h165v200Z" fill="#55213b"/>
+ <path d="M790 570V410h105v160Z" fill="#ffcf57"/>
+ <path d="M820 570V435h45v135Z" fill="#351c45"/>
+ <path d="M560 390h570v28H560Z"/>
+ <path d="M635 300h440v25H635Z"/>
+</g>
+<g fill="#ffdd73" opacity=".9"><path d="M850 88v-52h-18V14h36v22h-18v52Z"/><circle cx="840" cy="260" r="20"/><circle cx="925" cy="260" r="20"/></g>
+<g fill="#153b36"><path d="M0 610q120-170 240 0v110H0Z"/><path d="M1050 610q110-180 230 0v110h-230Z"/></g>
+<g transform="translate(250 165)">
+ <path d="M80 255Q-10 310 35 445L175 425 300 470 385 440Q320 335 275 255Z" fill="url(#cape)" stroke="#5b1d23" stroke-width="12"/>
+ <path d="M100 125Q80 55 145 15Q225-15 275 50L295 155 245 205 115 190Z" fill="#3a201d"/>
+ <ellipse cx="195" cy="128" rx="82" ry="92" fill="#b96a3e"/>
+ <path d="M117 108Q135 10 240 50L285 108 245 82 190 90 140 150Z" fill="#241a25"/>
+ <path d="M148 122q18-15 38 0M211 120q18-15 36 0" fill="none" stroke="#2a1720" stroke-width="9" stroke-linecap="round"/>
+ <circle cx="171" cy="130" r="7" fill="#fff"/><circle cx="233" cy="128" r="7" fill="#fff"/>
+ <path d="M185 171q22 12 43-2" fill="none" stroke="#5b2020" stroke-width="7" stroke-linecap="round"/>
+ <path d="M150 36 190 4 245 34 267 80 205 62 160 80Z" fill="#1d1725"/>
+ <path d="M176 35 188 4 200 37Z" fill="#ffd35a"/>
+ <path d="M108 218 265 205 318 420 120 420Z" fill="url(#vest)" stroke="#d8a33c" stroke-width="10"/>
+ <path d="M185 240 210 275 236 240 225 328 195 328Z" fill="#ffcf42"/>
+ <circle cx="211" cy="294" r="21" fill="#ffdb61" stroke="#8b451d" stroke-width="7"/>
+ <path d="M126 420 108 575 165 580 205 435M245 425 285 565 345 555 300 400" fill="#e9d8b6" stroke="#5c2e20" stroke-width="12"/>
+ <path d="M105 570h78l25 44H70ZM280 555h76l40 50h-95Z" fill="#302039" stroke="#e4ae54" stroke-width="9"/>
+ <path d="M105 250Q-10 220-48 110Q70 155 128 180Z" fill="url(#cape)"/>
+ <path d="M265 315 445 475" stroke="#633016" stroke-width="25" stroke-linecap="round"/>
+ <path d="M420 455 510 520" stroke="#9b5a28" stroke-width="33" stroke-linecap="round"/>
+</g>
+<g transform="translate(1040 500)">
+ <path d="M0 135Q-15 30 75 15Q165 10 180 115Q175 185 0 135Z" fill="#6739a6" stroke="#2a1749" stroke-width="12"/>
+ <ellipse cx="63" cy="83" rx="17" ry="24" fill="#ffe35b"/><ellipse cx="120" cy="83" rx="17" ry="24" fill="#ffe35b"/>
+ <path d="M58 132q36 18 70-4" fill="none" stroke="#25133f" stroke-width="10" stroke-linecap="round"/>
+</g>
+<g fill="#ffe477"><path d="m475 510 28-70 28 70-28 45Z"/><path d="m1120 345 22-54 22 54-22 35Z"/><path d="m570 230 17-43 17 43-17 28Z"/></g>
+<path d="M0 655Q250 610 450 665T850 650T1280 650V720H0Z" fill="#130e2b" opacity=".75"/>
+<text x="48" y="70" fill="#ffe9a5" font-family="Arial,sans-serif" font-size="24" font-weight="800" letter-spacing="7">PLAYOVIA ORIGINAL ADVENTURE</text>
+<text x="48" y="670" fill="#fff1c4" font-family="Georgia,serif" font-size="54" font-weight="900">VEER AND THE SUN TEMPLE</text>
+</svg>
