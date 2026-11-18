@@ -677,10 +677,13 @@ body:has(#gameDetailsModal:not(.hidden)) .playovia-smartlink{display:none!import
 </style>
 <script id="playovia-monetag-loader">
 (function(){
- // Only the non-click-trigger Monetag vignette is permitted.
- // Popunder/tag.min.js zones can hijack user taps and are disabled to protect every game control.
- // Vignette is loaded only on non-home pages and never during a game session.
+ // Keep every Monetag earning zone enabled on normal, non-home website pages.
+ // Never inject Monetag scripts while a game is open.
+ // The game iframe sandbox below blocks popups and top-level navigation.
  const zones=[
+  {src:'https://5gvci.com/act/files/tag.min.js?z=12285829',zone:'12285829'},
+  {src:'https://al5sm.com/tag.min.js',zone:'12285824'},
+  {src:'https://nap5k.com/tag.min.js',zone:'12248040'},
   {src:'https://n6wxm.com/vignette.min.js',zone:'12285825'}
  ];
  const loaded=new Set();let queued=false;
@@ -1621,7 +1624,7 @@ async function keepGameScreenAwake(){
 }
 async function releaseGameScreenWakeLock(){const lock=playoviaScreenWakeLock;playoviaScreenWakeLock=null;if(lock)try{await lock.release()}catch(_){}}
 document.addEventListener('visibilitychange',()=>{if(document.hidden){if(playoviaScreenWakeLock)releaseGameScreenWakeLock()}else if(!document.getElementById('gameOverlay')?.classList.contains('hidden'))keepGameScreenAwake()});
-/* Playovia game session state (ads remain disabled). */
+/* Playovia game session state; website ads stay enabled outside the game overlay. */
 let gameLoadTimer=null,playoviaLogGame=null,activeRemoteGameSlug='',playoviaExitConfirmed=false;function launchGame(url,title,slug){activeRemoteGameSlug=String(slug||'').toLowerCase();releaseAllRemoteGameInputs();setControllerGameReady(false,{gameTitle:title,gameSlug:activeRemoteGameSlug});if(slug){playoviaLogGame={slug,title};window.playoviaTrackGame?.('game_open',slug,title)}try{history.pushState({playoviaGameOpen:true},location.href);gameHistoryPushed=true}catch(_){}if(slug){startGameSession(title,slug);rememberGame(slug);const plays=readPlays();plays[slug]=(plays[slug]||0)+1;try{localStorage.setItem(userStoreKey('plays'),JSON.stringify(plays))}catch(_){}renderGames(allGames)}else setPlayingPresence(title,slug);$('playingTitle').textContent=title;$('gameLoadingTitle').textContent='Starting '+title+'…';$('gameLoadingNote').textContent='Getting things ready';$('gameLoading').classList.remove('hidden');$('gameOverlay').classList.remove('hidden');$('gameOverlay').classList.remove('is-opening');void $('gameOverlay').offsetWidth;$('gameOverlay').classList.add('is-opening');document.body.style.overflow='hidden';keepGameScreenAwake();if(gameLoadTimer)clearTimeout(gameLoadTimer);gameLoadTimer=setTimeout(()=>{if(!$('gameOverlay').classList.contains('hidden'))$('gameLoadingNote').textContent='Taking longer than usual? The game may need a little more time.'},15000);const launchUrl=new URL(url,location.href);launchUrl.searchParams.set('playovia_refresh','20261113-30rounds');$('gameFrame').src=launchUrl.href;setControllerGameReady(false)}
 function closeGame(fromHistory=false){if($('gameOverlay').classList.contains('hidden'))return;if(!$('gameAiGlass')?.classList.contains('hidden'))aiClose();setControllerGameReady(false);if(remoteControllerSession)stopRemoteController();$('remoteControllerModal')?.classList.add('hidden');if(playoviaLogGame){window.playoviaTrackGame?.('game_exit',playoviaLogGame.slug,playoviaLogGame.title);playoviaLogGame=null}if(gameLoadTimer){clearTimeout(gameLoadTimer);gameLoadTimer=null}finishGameSession();clearPlayingPresence();$('gameOverlay').classList.remove('is-opening');$('gameOverlay').classList.add('hidden');releaseGameScreenWakeLock();$('gameLoading').classList.remove('hidden');document.body.style.overflow='';$('playingTitle').textContent='Playing';const frame=$('gameFrame');frame.src='about:blank';if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});if(gameHistoryPushed){gameHistoryPushed=false;if(!fromHistory){try{history.back()}catch(_){}}}document.dispatchEvent(new Event('playovia:game-closed'))}
 window.addEventListener('pagehide',()=>{if(typeof stopGameAiLiveListen==='function')stopGameAiLiveListen();if(!$('gameOverlay').classList.contains('hidden')){if(playoviaLogGame){window.playoviaTrackGame?.('game_exit',playoviaLogGame.slug,playoviaLogGame.title);playoviaLogGame=null}finishGameSession();clearPlayingPresence()}});
