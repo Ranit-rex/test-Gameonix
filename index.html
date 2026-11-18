@@ -677,12 +677,10 @@ body:has(#gameDetailsModal:not(.hidden)) .playovia-smartlink{display:none!import
 </style>
 <script id="playovia-monetag-loader">
 (function(){
- // All Monetag formats are enabled on normal non-home pages only.
- // Never inject any Monetag zone while the game overlay is open.
+ // Only the non-click-trigger Monetag vignette is permitted.
+ // Popunder/tag.min.js zones can hijack user taps and are disabled to protect every game control.
+ // Vignette is loaded only on non-home pages and never during a game session.
  const zones=[
-  {src:'https://5gvci.com/act/files/tag.min.js?z=12285829',zone:'12285829'},
-  {src:'https://al5sm.com/tag.min.js',zone:'12285824'},
-  {src:'https://nap5k.com/tag.min.js',zone:'12248040'},
   {src:'https://n6wxm.com/vignette.min.js',zone:'12285825'}
  ];
  const loaded=new Set();let queued=false;
