@@ -1123,13 +1123,13 @@ function isRetiredPlayoviaGame(game){
  return ['mobalegends','disasterrush','clashbrawl','chess','8ballpool','bobbleleague'].includes(slug)||['mobalegends','disasterrush','clashbrawl','chess','8ballpool','bobbleleague'].includes(title);
 }
 async function discoverGames(){
- const cacheKey='playovia_game_catalog_v25',cacheMaxAge=60*60*1000;let catalog=null;
- try{for(let v=1;v<=13;v++)localStorage.removeItem('playovia_game_catalog_v'+v)}catch(_){}
+ const cacheKey='playovia_game_catalog_v26',cacheMaxAge=60*60*1000;let catalog=null;
+ try{for(let v=1;v<=25;v++)localStorage.removeItem('playovia_game_catalog_v'+v)}catch(_){}
  try{const cached=JSON.parse(localStorage.getItem(cacheKey)||'null');if(cached&&Date.now()-cached.savedAt<cacheMaxAge&&Array.isArray(cached.games))catalog=cached.games.filter(g=>!isRetiredPlayoviaGame(g))}catch(_){}
  if(catalog){allGames=catalog;discoveredGames=catalog.slice();renderGames(allGames);$('gameCount').textContent=allGames.length+' GAMES';$('gamesMeta').textContent=allGames.length+' games'}
  try{
   if(!catalog){
-   const r=await fetch('https://api.github.com/repos/Ranit-rex/test-Gameonix/git/trees/main?recursive=1&playovia_catalog=20261113-6',{cache:'no-store'});
+   const r=await fetch('https://api.github.com/repos/Ranit-rex/test-Gameonix/git/trees/main?recursive=1&playovia_catalog=20261118-1',{cache:'no-store'});
    if(!r.ok)throw new Error('Game list unavailable ('+r.status+')');
    const data=await r.json();
    const files=(data.tree||[]).filter(x=>/^games\/[^/]+\/[^/]+\/[^/]+\/index\.html$/.test(x.path)&&Number(x.size)>0&&!isRetiredPlayoviaGame({slug:(GAME_CATALOG_META[x.path.split('/')[3]]||{}).slug||x.path.split('/')[3]}));
@@ -1146,7 +1146,7 @@ async function discoverGames(){
   }
  }catch(e){if(!catalog){console.error('Game discovery:',e);$('homeGames').innerHTML='<div class="empty">Could not load games. Check connection and refresh.</div>';$('allGames').innerHTML='<div class="empty">Could not load games.</div>';$('gamesMeta').textContent='Game list unavailable';return}}
  try{if(!db&&typeof firestorePromise!=='undefined')await firestorePromise}catch(_){}
- if(db){try{const overrides=await db.collection('games').get(),bySlug={};overrides.forEach(d=>bySlug[d.id]=d.data());const updated=allGames.filter(g=>!isRetiredPlayoviaGame(g)&&bySlug[g.slug]?.enabled!==false).map(g=>({...g,...(bySlug[g.slug]||{}),title:g.title,description:g.description,category:g.category,url:g.url,thumbnail:g.thumbnail}));allGames=updated;discoveredGames=updated.slice();renderGames(allGames);$('gameCount').textContent=allGames.length+' GAMES';$('gamesMeta').textContent=allGames.length+' games'}catch(e){console.warn('Game overrides unavailable:',e.message)}}
+ if(db){try{const overrides=await db.collection('games').get(),bySlug={};overrides.forEach(d=>bySlug[d.id]=d.data());const updated=allGames.filter(g=>!isRetiredPlayoviaGame(g)&&(g.slug==='veer-and-the-sun-temple'||bySlug[g.slug]?.enabled!==false)).map(g=>({...g,...(bySlug[g.slug]||{}),title:g.title,description:g.description,category:g.category,url:g.url,thumbnail:g.thumbnail}));allGames=updated;discoveredGames=updated.slice();renderGames(allGames);$('gameCount').textContent=allGames.length+' GAMES';$('gamesMeta').textContent=allGames.length+' games'}catch(e){console.warn('Game overrides unavailable:',e.message)}}
  allGames=allGames.filter(g=>!isRetiredPlayoviaGame(g));discoveredGames=allGames.slice();renderGames(allGames);$('gameCount').textContent=allGames.length+' GAMES';$('gamesMeta').textContent=allGames.length+' games';
 }
 function isMultiplayerGame(g){const id=String(g.slug||'').toLowerCase().replace(/[^a-z0-9]/g,'');const name=String(g.title||'').toLowerCase();return ['bombtag','flagfrenzy','guesslogo','ghostnight','ashgrave','riftbound','antarctic','dungeonhunter','guessthecapital','guessthelandmark','countrymapedition','guessthecurrency','guessthenationalanimal','guessthelanguage','scribbleparty',].includes(id)||/bomb tag|flag frenzy|ghost night|ashgrave|ash grave|circuit breaker|riftbound|antarctic|last signal/.test(name)}
