@@ -766,6 +766,79 @@ body:has(#gameOverlay:not(.hidden)) .playovia-native-ad{display:none!important}
   #playhubApp .page.active{display:block!important;visibility:visible!important;opacity:1}
 }
 </style>
+
+<style id="playovia-mobile-first-redesign">
+.mobile-primary-nav,.mobile-more-backdrop,.mobile-more-sheet{display:none}
+@media(max-width:700px){
+ html,body{min-height:100%;background:#080b15!important}
+ body{overflow-x:hidden}
+ #playhubApp{min-height:100vh;min-height:100dvh;background:radial-gradient(ellipse at 50% -18%,#35245e44,transparent 43%),#080b15}
+ #playhubApp>.sidebar{display:none!important}
+ #playhubApp>.main{display:block!important;width:100%!important;max-width:none!important;margin:0!important;padding:10px 15px calc(100px + env(safe-area-inset-bottom))!important}
+ #playhubApp .topline{position:sticky;top:0;z-index:40;height:58px;margin:0 -3px 17px;padding:5px 3px;gap:8px;background:#080b15ed;border-bottom:1px solid #ffffff12;backdrop-filter:blur(20px)}
+ #playhubApp .searchwrap{height:43px;min-width:0;flex:1;border-radius:14px;padding:0 12px;background:#141b2b;border:1px solid #2a3550}
+ #playhubApp .searchwrap input{font-size:13px}
+ #playhubApp .account{gap:6px}
+ #playhubApp .account .login{height:39px;min-width:62px;padding:0 12px;font-size:11px;border-radius:12px}
+ #playhubApp .account .avatar{width:35px;height:35px}
+ #playhubApp .wallet-mini{padding:7px 8px;border-radius:11px}
+ #playhubApp .notification-bell{width:36px;height:36px}
+ #playhubApp .status{font-size:11px}
+ #playhubApp .eyebrow{font-size:9px;letter-spacing:1.8px;margin:10px 0 7px}
+ #playhubApp .welcome{font-size:27px;letter-spacing:-1px;line-height:1.1}
+ #playhubApp .sub{font-size:12px;line-height:1.55;margin:7px 0 15px}
+ #playhubApp .hero{min-height:260px;padding:22px 19px;border-radius:21px;overflow:hidden}
+ #playhubApp .hero:before{width:260px;height:260px;right:-85px;top:12px}
+ #playhubApp .hero:after{font-size:82px;right:7px;top:30px;opacity:.5}
+ #playhubApp .hero-content{position:relative;z-index:1;max-width:88%}
+ #playhubApp .hero h2{font-size:clamp(32px,9vw,43px);line-height:1.03;letter-spacing:-1.5px;margin:17px 0 10px}
+ #playhubApp .hero p{font-size:12px;line-height:1.55;max-width:260px;margin-bottom:16px}
+ #playhubApp .hero .primary,#playhubApp .hero .logout{width:auto;min-height:42px;padding:11px 14px;font-size:11px;border-radius:12px}
+ #playhubApp .pill{font-size:9px;padding:7px 10px}
+ #playhubApp .recent-title{font-size:16px}
+ #playhubApp .sectionhead{margin:26px 0 12px;gap:8px}
+ #playhubApp .sectionhead h2{font-size:17px;letter-spacing:-.3px}
+ #playhubApp .sectionhead p{font-size:10px;line-height:1.4}
+ #playhubApp .count{font-size:8px;padding:7px 8px}
+ #playhubApp .filters{display:flex;gap:7px;overflow-x:auto;flex-wrap:nowrap;margin:12px 0 14px;padding-bottom:3px;scrollbar-width:none}
+ #playhubApp .filters::-webkit-scrollbar{display:none}
+ #playhubApp .filter{flex:0 0 auto;padding:8px 12px;font-size:10px;border-radius:30px}
+ #playhubApp .games-meta{font-size:10px;margin-bottom:12px}
+ #playhubApp .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+ #playhubApp .game{min-width:0;border-radius:14px}
+ #playhubApp .game-art{height:clamp(100px,30vw,140px)}
+ #playhubApp .game-info{padding:9px 10px 11px}
+ #playhubApp .game-info h3{font-size:11px;line-height:1.35}
+ #playhubApp .game-info p{font-size:9px;line-height:1.4}
+ #playhubApp .tag{font-size:8px}
+ #playhubApp .panel{border-radius:16px;padding:13px}
+ #playhubApp .page{min-width:0}
+ .mobile-primary-nav{display:flex!important;position:fixed!important;z-index:2147482000!important;left:12px!important;right:12px!important;bottom:calc(9px + env(safe-area-inset-bottom))!important;width:auto!important;height:65px!important;padding:5px!important;gap:4px!important;align-items:stretch!important;justify-content:space-around!important;border:1px solid #ffffff1c!important;border-radius:20px!important;background:#121a2cf2!important;box-shadow:0 12px 38px #0009,0 1px #ffffff12 inset!important;backdrop-filter:blur(24px)!important;-webkit-backdrop-filter:blur(24px)!important
+ }
+ .mobile-nav-item{appearance:none!important;flex:1 1 0!important;min-width:0!important;border:0!important;border-radius:14px!important;background:transparent!important;color:#98a7c1!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:3px!important;padding:4px 2px!important;font:inherit!important}
+ .mobile-nav-item .mobile-nav-icon{font-size:21px!important;line-height:22px!important;font-weight:600}
+ .mobile-nav-item small{font-size:9px!important;line-height:12px!important;font-weight:650!important}
+ .mobile-nav-item.active{color:#fff!important;background:linear-gradient(145deg,#38295b,#203958)!important;box-shadow:inset 0 2px #bd91ff,0 4px 13px #0004!important}
+ .mobile-more-backdrop{display:block;position:fixed;inset:0;z-index:2147482001;background:#02040bc2;backdrop-filter:blur(3px)}
+ .mobile-more-sheet{display:block;position:fixed;z-index:2147482002;left:10px;right:10px;bottom:calc(83px + env(safe-area-inset-bottom));padding:10px 15px 17px;border:1px solid #35425f;border-radius:22px;background:linear-gradient(155deg,#1a2540,#0d1424);box-shadow:0 18px 55px #000a}
+ .mobile-sheet-handle{width:38px;height:4px;border-radius:9px;background:#687895;margin:0 auto 12px}
+ .mobile-sheet-heading{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;color:#f4f6ff;font-size:15px}
+ .mobile-sheet-heading button{border:0;background:#ffffff12;color:#fff;border-radius:10px;width:30px;height:30px;font-size:21px}
+ .mobile-more-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+ .mobile-more-grid button{min-width:0;min-height:70px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;border:1px solid #ffffff12;border-radius:13px;background:#ffffff08;color:#e4eaf7;font-size:10px;font-weight:650}
+ .mobile-more-grid button span{font-size:20px;line-height:22px}
+ .mobile-more-grid button:active{background:#60438d}
+ #playhubApp .gamebar{height:52px}
+}
+@media(max-width:380px){
+ #playhubApp>.main{padding-left:11px!important;padding-right:11px!important}
+ #playhubApp .hero{min-height:245px;padding:19px 16px}
+ #playhubApp .hero-content{max-width:94%}
+ #playhubApp .grid{gap:8px}
+ .mobile-primary-nav{left:8px!important;right:8px!important;height:62px!important}
+ .mobile-more-grid{gap:6px}
+}
+</style>
 </head>
 <body>
 <div id="loginGate" aria-label="Playovia sign in">
@@ -794,6 +867,26 @@ body:has(#gameOverlay:not(.hidden)) .playovia-native-ad{display:none!important}
  <button class="navbtn" data-page="settings" aria-label="Settings">⚙<small>Settings</small></button>
  <button class="navbtn" data-page="about" id="aboutBtn" aria-label="About">ⓘ<small>About</small></button>
 </aside>
+<nav id="mobilePrimaryNav" class="mobile-primary-nav" aria-label="Main navigation">
+ <button type="button" class="mobile-nav-item active" data-mobile-page="home"><span class="mobile-nav-icon">⌂</span><small>Home</small></button>
+ <button type="button" class="mobile-nav-item" data-mobile-page="games"><span class="mobile-nav-icon">◈</span><small>Explore</small></button>
+ <button type="button" class="mobile-nav-item" data-mobile-page="friends"><span class="mobile-nav-icon">♧</span><small>Social</small></button>
+ <button type="button" id="mobileMoreToggle" class="mobile-nav-item" aria-expanded="false" aria-controls="mobileMoreSheet"><span class="mobile-nav-icon">•••</span><small>More</small></button>
+</nav>
+<div id="mobileMoreBackdrop" class="mobile-more-backdrop hidden"></div>
+<section id="mobileMoreSheet" class="mobile-more-sheet hidden" aria-label="More Playovia sections">
+ <div class="mobile-sheet-handle"></div><div class="mobile-sheet-heading"><strong>More on Playovia</strong><button type="button" id="mobileMoreClose" aria-label="Close menu">×</button></div>
+ <div class="mobile-more-grid">
+  <button type="button" data-mobile-page="party"><span>⚔</span>Party</button>
+  <button type="button" data-mobile-page="globalChat"><span>💬</span>Chat</button>
+  <button type="button" data-mobile-page="saved"><span>★</span>Saved</button>
+  <button type="button" data-mobile-page="store"><span>🛍</span>Store</button>
+  <button type="button" data-mobile-page="nova"><span>✦</span>Playovia AI</button>
+  <button type="button" data-mobile-page="settings"><span>⚙</span>Settings</button>
+  <button type="button" data-mobile-page="about"><span>ⓘ</span>About</button>
+  <button type="button" data-mobile-page="admin" id="mobileAdminNav" class="hidden"><span>🛡</span>Admin</button>
+ </div>
+</section>
 <main class="main">
  <div class="topline">
   <label class="searchwrap"><span>⌕</span><input id="globalSearch" placeholder="Search games..." autocomplete="off"></label>
@@ -2364,5 +2457,37 @@ button:active{transform:scale(.975)}
 }
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.page{animation:none}button,.game{transition:none}}
 </style>
+
+<script id="playovia-mobile-nav-controller">
+(()=>{
+ const $=id=>document.getElementById(id);
+ const nav=$('mobilePrimaryNav'),sheet=$('mobileMoreSheet'),backdrop=$('mobileMoreBackdrop'),toggle=$('mobileMoreToggle');
+ if(!nav||!sheet||!toggle)return;
+ const close=()=>{sheet.classList.add('hidden');backdrop.classList.add('hidden');toggle.setAttribute('aria-expanded','false')};
+ const open=()=>{sheet.classList.remove('hidden');backdrop.classList.remove('hidden');toggle.setAttribute('aria-expanded','true')};
+ toggle.addEventListener('click',()=>sheet.classList.contains('hidden')?open():close());
+ $('mobileMoreClose')?.addEventListener('click',close);
+ backdrop?.addEventListener('click',close);
+ document.querySelectorAll('[data-mobile-page]').forEach(btn=>btn.addEventListener('click',()=>{
+  const page=btn.dataset.mobilePage;
+  if(page==='home'||page==='games'||page==='friends'){}
+  const target=document.querySelector('.sidebar .navbtn[data-page="'+page+'"]');
+  if(target)target.click();
+  close();
+  document.querySelectorAll('.mobile-nav-item').forEach(x=>x.classList.toggle('active',x.dataset.mobilePage===page));
+  if(!['home','games','friends'].includes(page))toggle.classList.add('active');else toggle.classList.remove('active');
+ }));
+ const sync=()=>{
+  const active=document.querySelector('.sidebar .navbtn.active');
+  const page=active?.dataset.page||'home';
+  document.querySelectorAll('.mobile-nav-item').forEach(x=>x.classList.toggle('active',x.dataset.mobilePage===page));
+  if(!['home','games','friends'].includes(page))toggle.classList.add('active');
+ };
+ new MutationObserver(sync).observe(document.querySelector('.sidebar'),{subtree:true,attributes:true,attributeFilter:['class']});
+ const admin=document.querySelector('#adminNav:not(.hidden)');
+ if(admin)$('mobileAdminNav')?.classList.remove('hidden');
+ window.addEventListener('resize',close,{passive:true});
+})();
+</script>
 </body></html>
 <style id="playovia-controller-host-fix">.remote-controller-backdrop.connected{display:none!important}</style>
