@@ -2218,5 +2218,135 @@ document.addEventListener('click',function(event){
  if(membership){membership.hidden=view!=='membership';membership.classList.toggle('active',view==='membership');}
 });
 </script>
+<style id="playovia-global-ui-revamp">
+/* Playovia 2026 full-site visual refresh — presentation only; app logic and ad rules remain untouched */
+:root{--bg:#080b16;--surface:#10182a;--surface2:#17223a;--line:#273653;--text:#f4f7ff;--muted:#9aa9c2;--purple:#a978ff;--blue:#55a7ff;--green:#55e4ad;--ui-radius:18px}
+html{scroll-behavior:smooth;scroll-padding-top:92px}
+body{background:radial-gradient(ellipse at 72% -18%,#35245e55,transparent 36%),radial-gradient(ellipse at 8% 55%,#102f4b35,transparent 34%),var(--bg);letter-spacing:.005em}
+button,a,input,select,textarea{ -webkit-tap-highlight-color:transparent}
+button{transition:transform .18s ease,border-color .18s ease,background .18s ease,box-shadow .18s ease}
+button:active{transform:scale(.975)}
+.sidebar{width:88px;padding:20px 10px;gap:10px;background:#0a1020ed;border-right:1px solid #ffffff10;backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px)}
+.brand{width:54px;height:54px;border-radius:17px;margin:0 0 12px;font-size:29px;box-shadow:0 9px 30px #7548df44}
+.navbtn{width:66px;height:62px;border-radius:15px;font-size:21px;gap:4px;color:#8999b6}
+.navbtn small{font-size:9px;font-weight:750;letter-spacing:.02em}
+.navbtn:hover{background:#ffffff0b;color:#fff}
+.navbtn.active{background:linear-gradient(140deg,#38275d,#1c3151);box-shadow:inset 3px 0 #b58aff,0 7px 22px #0003;color:#fff}
+.main{margin-left:88px;max-width:none;padding:22px clamp(18px,3vw,48px) 72px}
+.topline{position:sticky;top:0;z-index:18;height:70px;margin:0 -4px 26px;padding:8px 4px;background:#080d19d9;border-bottom:1px solid #ffffff0c;backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px)}
+.searchwrap{height:48px;max-width:620px;border-radius:15px;padding:0 17px;background:#111b2e;border-color:#2c3c5b;box-shadow:inset 0 1px #ffffff08}
+.searchwrap:focus-within{border-color:#9871ed;box-shadow:0 0 0 3px #a978ff1b}
+.searchwrap input{font-size:14px}
+.account{gap:10px}
+.account .login,.login{border-radius:13px;padding:11px 17px;background:linear-gradient(115deg,#9361ed,#397fe9);box-shadow:0 7px 22px #6742ff30}
+.avatar{width:42px;height:42px}
+.wallet-mini{padding:9px 12px;border:1px solid #35415e;border-radius:12px;background:#151d31}
+.eyebrow{font-size:10px;letter-spacing:2.3px;margin:16px 0 10px;color:#b99aff}
+.welcome{font-size:clamp(28px,3.5vw,39px);letter-spacing:-1.5px}
+.sub{font-size:14px;line-height:1.65;max-width:720px}
+.hero{min-height:310px;border-radius:25px;padding:clamp(24px,4vw,46px);border-color:#51417b;background:radial-gradient(ellipse at 83% 20%,#8556d766,transparent 35%),radial-gradient(ellipse at 93% 100%,#087da755,transparent 42%),linear-gradient(115deg,#211d42,#151e37 58%,#0b344b);box-shadow:0 18px 60px #0003,inset 0 1px #ffffff13}
+.hero:before{width:360px;height:360px;right:5%;top:-70px;box-shadow:0 0 0 28px #ffffff08,0 0 0 58px #ffffff05}
+.hero:after{right:9%;top:48px;font-size:clamp(80px,11vw,132px);filter:drop-shadow(0 20px 30px #0005)}
+.hero-content{max-width:590px}
+.pill{padding:8px 13px;font-size:10px;letter-spacing:1.1px;border-radius:30px;background:#ffffff12}
+.hero h2{font-size:clamp(36px,5vw,58px);letter-spacing:-2px;line-height:1.02;margin:22px 0 14px}
+.hero p{font-size:15px;line-height:1.7;max-width:450px;margin-bottom:22px}
+.primary{border-radius:13px;padding:13px 21px;font-size:14px;background:linear-gradient(110deg,#9c62ef,#367ee9);box-shadow:0 9px 24px #7148d944}
+.logout{border-radius:13px;padding:12px 16px}
+.sectionhead{margin:34px 0 16px}
+.sectionhead h2{font-size:21px;letter-spacing:-.5px}
+.sectionhead p{font-size:12px;line-height:1.5}
+.count{padding:9px 13px;font-size:10px;background:#2b2047;border:1px solid #60468a}
+.filters{gap:8px;margin:18px 0 22px;flex-wrap:wrap}
+.filter,.category-chip{border-radius:30px;background:#111b2e;border-color:#2b3b58;color:#b9c6dc}
+.filter{padding:9px 15px;font-size:12px}
+.filter.active,.category-chip.active{background:#33234f;border-color:#9164dc;color:#fff;box-shadow:inset 0 1px #ffffff12}
+.category-bar{gap:8px;margin:12px 0 16px}
+.category-chip{padding:8px 12px;font-size:11px}
+.games-meta{font-size:12px;margin:0 0 16px}
+.grid{grid-template-columns:repeat(auto-fill,minmax(205px,1fr));gap:15px}
+.game{border:1px solid #263653;border-radius:17px;background:linear-gradient(155deg,#141e33,#0f1728);box-shadow:0 8px 24px #0002;transition:transform .22s,border-color .22s,box-shadow .22s}
+.game:hover{transform:translateY(-4px);border-color:#8b68d6;box-shadow:0 15px 32px #0004,0 0 0 1px #a978ff18}
+.game-art{height:158px;background:radial-gradient(circle at 50% 65%,#087da477,transparent 65%),linear-gradient(135deg,#30234f,#142c50)}
+.game-info{padding:13px 14px 15px}
+.game-info h3{font-size:14px;letter-spacing:-.2px}
+.game-info p{font-size:11px;line-height:1.5}
+.tag{font-size:9px;letter-spacing:.7px}
+.panel,.challenge-card,.about-card,.settings-panel,.store-side-nav,.store-main{border-color:#293a58}
+.panel{border-radius:18px;background:linear-gradient(145deg,#141e32,#0f1728);box-shadow:0 8px 25px #0002}
+.field{border-radius:12px;background:#0b1323;border-color:#30415f}
+.field:focus,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid #a978ff88;outline-offset:2px}
+.empty{border-radius:15px;background:#101a2c66}
+.page{animation:pvPageIn .28s ease both}
+@keyframes pvPageIn{from{opacity:.55;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.gameoverlay{background:#050812}
+.gamebar{background:#0a1020;border-bottom:1px solid #ffffff12}
+.gamebar button{border-radius:11px;background:#17233a;border:1px solid #344563;color:#eef3ff;padding:9px 13px}
+.recent-card{border-radius:11px;border-color:#30415d}
+.store-heading,.library-heading{gap:16px}
+.store-balance{border:1px solid #394665;border-radius:15px;background:linear-gradient(135deg,#1a2540,#121a2d);padding:12px 16px}
+.store-banner{border-radius:20px}
+.store-side-tab,.settings-tab{border-radius:12px}
+#gameDetailsModal .modal-card,#gameDetailsModal .modal-content{border-radius:22px}
+:focus-visible{outline-color:#b58aff}
+@media(min-width:1200px){.main{padding-left:clamp(30px,4vw,64px);padding-right:clamp(30px,4vw,64px)}.hero{min-height:340px}.grid{grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}}
+@media(max-width:700px){
+ .sidebar{inset:auto 0 0;width:100%;height:68px;padding:6px 8px calc(6px + env(safe-area-inset-bottom));gap:5px;flex-direction:row;justify-content:flex-start;align-items:center;overflow-x:auto;overflow-y:hidden;border-right:0;border-top:1px solid #ffffff15;background:#0a1020f2;z-index:100;scrollbar-width:none}
+ .sidebar::-webkit-scrollbar{display:none}
+ .brand{display:none}
+ .navspacer{display:none}
+ .navbtn{width:58px;min-width:58px;height:52px;flex:0 0 58px;border-radius:12px;font-size:18px;gap:2px}
+ .navbtn small{font-size:8px}
+ .navbtn.active{box-shadow:inset 0 2px #b58aff,0 4px 14px #0003}
+ .main{margin:0;padding:12px 14px calc(88px + env(safe-area-inset-bottom))}
+ .topline{height:58px;margin:0 -2px 18px;padding:5px 2px;gap:8px}
+ .searchwrap{height:43px;min-width:0;padding:0 11px;border-radius:13px;gap:8px}
+ .searchwrap input{font-size:12px}
+ .account{gap:6px}
+ .account .login{height:40px;min-width:0;padding:0 12px;font-size:11px}
+ .account .avatar{width:36px;height:36px}
+ .wallet-mini{padding:7px 8px}
+ .wallet-mini span,.wallet-mini strong{font-size:10px}
+ .eyebrow{margin-top:10px}
+ .welcome{font-size:28px}
+ .sub{font-size:12px;margin-bottom:17px}
+ .hero{min-height:270px;padding:23px 20px;border-radius:19px}
+ .hero:before{right:-55%;top:4px;width:300px;height:300px}
+ .hero:after{right:1%;top:24px;font-size:82px}
+ .hero-content{max-width:85%}
+ .hero h2{font-size:clamp(34px,9vw,44px);margin:19px 0 12px}
+ .hero p{font-size:12px;line-height:1.55;margin-bottom:17px}
+ .primary{width:auto;padding:12px 16px;font-size:12px}
+ .sectionhead{margin:27px 0 13px;align-items:flex-end}
+ .sectionhead h2{font-size:18px}
+ .sectionhead p{font-size:10px}
+ .count{font-size:9px;padding:8px 9px}
+ .filters{margin:14px 0 17px;gap:6px}
+ .filter{padding:8px 11px;font-size:10px}
+ .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+ .game{border-radius:13px}
+ .game-art{height:clamp(100px,29vw,142px)}
+ .game-info{padding:10px}
+ .game-info h3{font-size:12px}
+ .game-info p{font-size:10px}
+ .tag{margin-top:9px;font-size:8px}
+ .panel{padding:15px;margin:10px 0}
+ .profile-menu{z-index:130}
+ .gamebar{height:54px;padding:6px 8px}
+ .gamebar button{font-size:11px;padding:8px 9px}
+}
+@media(max-width:380px){
+ .main{padding-left:10px;padding-right:10px}
+ .navbtn{width:54px;min-width:54px;flex-basis:54px}
+ .hero{min-height:255px;padding:20px 16px}
+ .hero-content{max-width:92%}
+ .hero:after{opacity:.10}
+ .grid{gap:8px}
+ .game-art{height:105px}
+ .game-info{padding:8px}
+ .account .login{padding:0 9px}
+}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.page{animation:none}button,.game{transition:none}}
+</style>
 </body></html>
 <style id="playovia-controller-host-fix">.remote-controller-backdrop.connected{display:none!important}</style>
