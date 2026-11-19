@@ -2441,5 +2441,32 @@ button:active{transform:scale(.975)}
 </style>
 
 
+
+<style id="playovia-mobile-left-sidebar-final-fix">
+@media (max-width:700px){
+  #playhubApp>.sidebar{
+    display:flex!important;position:fixed!important;inset:0 auto 0 0!important;
+    width:76px!important;height:100dvh!important;min-height:100dvh!important;
+    padding:12px 6px calc(12px + env(safe-area-inset-bottom))!important;
+    flex-direction:column!important;align-items:center!important;justify-content:flex-start!important;
+    gap:6px!important;overflow-x:hidden!important;overflow-y:auto!important;
+    background:#0b1020f5!important;border-right:1px solid #ffffff18!important;border-top:0!important;
+    z-index:2147483000!important;transform:none!important;scrollbar-width:none!important;
+  }
+  #playhubApp>.sidebar::-webkit-scrollbar{display:none!important}
+  #playhubApp>.sidebar .brand{display:grid!important;width:46px!important;height:46px!important;min-height:46px!important;flex:0 0 46px!important;margin:0 0 8px!important}
+  #playhubApp>.sidebar .navspacer{display:block!important;flex:1 0 8px!important;min-height:8px!important}
+  #playhubApp>.sidebar .navbtn{display:flex!important;flex:0 0 54px!important;width:62px!important;min-width:62px!important;height:54px!important;min-height:54px!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:3px!important;border-radius:13px!important;font-size:19px!important}
+  #playhubApp>.sidebar .navbtn small{display:block!important;font-size:8px!important;line-height:1.1!important}
+  #playhubApp>.sidebar .navbtn.active{background:linear-gradient(140deg,#38275d,#1c3151)!important;box-shadow:inset 3px 0 #b58aff!important;color:#fff!important}
+  #playhubApp>.main{display:block!important;width:auto!important;max-width:none!important;margin:0 0 0 76px!important;padding:10px 12px 28px!important}
+}
+@media(max-width:420px){
+  #playhubApp>.sidebar{width:64px!important;padding-left:4px!important;padding-right:4px!important}
+  #playhubApp>.sidebar .brand{width:42px!important;height:42px!important;min-height:42px!important;flex-basis:42px!important}
+  #playhubApp>.sidebar .navbtn{width:56px!important;min-width:56px!important;flex-basis:52px!important;height:52px!important;min-height:52px!important}
+  #playhubApp>.main{margin-left:64px!important;padding-left:9px!important;padding-right:9px!important}
+}
+</style>
 </body></html>
 <style id="playovia-controller-host-fix">.remote-controller-backdrop.connected{display:none!important}</style>
