@@ -750,6 +750,22 @@ body:has(#gameOverlay:not(.hidden)) .playovia-native-ad{display:none!important}
 #gameFullscreenReminder button{padding:5px 7px;font-size:10px}
 @media(max-width:520px){.playovia-fullscreen-reminder{gap:7px;padding:9px;font-size:10px}.playovia-fullscreen-reminder button{font-size:9px}}
 </style>
+<style id="playovia-mobile-layout-hotfix">
+@media (max-width:700px){
+  #playhubApp{min-height:100vh;min-height:100dvh}
+  #playhubApp>.sidebar{
+    position:fixed!important;top:auto!important;right:0!important;bottom:0!important;left:0!important;
+    width:100%!important;height:68px!important;min-height:68px!important;
+    display:flex!important;flex-direction:row!important;align-items:center!important;
+    justify-content:flex-start!important;overflow-x:auto!important;overflow-y:hidden!important;
+    z-index:2147483000!important;transform:none!important;
+  }
+  #playhubApp>.sidebar .brand,#playhubApp>.sidebar .navspacer{display:none!important}
+  #playhubApp>.sidebar .navbtn{flex:0 0 58px!important;width:58px!important;min-width:58px!important;height:52px!important}
+  #playhubApp>.main{margin:0!important;padding:12px 14px calc(88px + env(safe-area-inset-bottom))!important;width:100%!important;max-width:none!important}
+  #playhubApp .page.active{display:block!important;visibility:visible!important;opacity:1}
+}
+</style>
 </head>
 <body>
 <div id="loginGate" aria-label="Playovia sign in">
