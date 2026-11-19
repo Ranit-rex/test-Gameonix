@@ -867,27 +867,6 @@ body:has(#gameOverlay:not(.hidden)) .playovia-native-ad{display:none!important}
  <button class="navbtn" data-page="settings" aria-label="Settings">⚙<small>Settings</small></button>
  <button class="navbtn" data-page="about" id="aboutBtn" aria-label="About">ⓘ<small>About</small></button>
 </aside>
-<nav id="mobilePrimaryNav" class="mobile-primary-nav" aria-label="Main navigation">
- <button type="button" class="mobile-nav-item active" data-mobile-page="home"><span class="mobile-nav-icon">⌂</span><small>Home</small></button>
- <button type="button" class="mobile-nav-item" data-mobile-page="games"><span class="mobile-nav-icon">◈</span><small>Explore</small></button>
- <button type="button" class="mobile-nav-item" data-mobile-page="friends"><span class="mobile-nav-icon">♧</span><small>Social</small></button>
- <button type="button" class="mobile-nav-item" data-mobile-page="store"><span class="mobile-nav-icon">▣</span><small>Store</small></button>
- <button type="button" id="mobileMoreToggle" class="mobile-nav-item" aria-expanded="false" aria-controls="mobileMoreSheet"><span class="mobile-nav-icon">⋯</span><small>More</small></button>
-</nav>
-<div id="mobileMoreBackdrop" class="mobile-more-backdrop hidden"></div>
-<section id="mobileMoreSheet" class="mobile-more-sheet hidden" aria-label="More Playovia sections">
- <div class="mobile-sheet-handle"></div><div class="mobile-sheet-heading"><strong>More on Playovia</strong><button type="button" id="mobileMoreClose" aria-label="Close menu">×</button></div>
- <div class="mobile-more-grid">
-  <button type="button" data-mobile-page="party"><span>⚔</span>Party</button>
-  <button type="button" data-mobile-page="globalChat"><span>💬</span>Chat</button>
-  <button type="button" data-mobile-page="saved"><span>★</span>Saved</button>
-  <button type="button" data-mobile-page="store"><span>🛍</span>Store</button>
-  <button type="button" data-mobile-page="nova"><span>✦</span>Playovia AI</button>
-  <button type="button" data-mobile-page="settings"><span>⚙</span>Settings</button>
-  <button type="button" data-mobile-page="about"><span>ⓘ</span>About</button>
-  <button type="button" data-mobile-page="admin" id="mobileAdminNav" class="hidden"><span>🛡</span>Admin</button>
- </div>
-</section>
 <main class="main">
  <div class="topline">
   <label class="searchwrap"><span>⌕</span><input id="globalSearch" placeholder="Search games..." autocomplete="off"></label>
@@ -2401,94 +2380,66 @@ button:active{transform:scale(.975)}
 :focus-visible{outline-color:#b58aff}
 @media(min-width:1200px){.main{padding-left:clamp(30px,4vw,64px);padding-right:clamp(30px,4vw,64px)}.hero{min-height:340px}.grid{grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}}
 @media(max-width:700px){
- .sidebar{inset:auto 0 0;width:100%;height:68px;padding:6px 8px calc(6px + env(safe-area-inset-bottom));gap:5px;flex-direction:row;justify-content:flex-start;align-items:center;overflow-x:auto;overflow-y:hidden;border-right:0;border-top:1px solid #ffffff15;background:#0a1020f2;z-index:100;scrollbar-width:none}
+ .sidebar{inset:0 auto 0 0;width:76px;height:100dvh;padding:16px 7px calc(14px + env(safe-area-inset-bottom));gap:7px;flex-direction:column;justify-content:flex-start;align-items:center;overflow-y:auto;overflow-x:hidden;border-right:1px solid #ffffff14;border-top:0;background:#0a1020f2;z-index:100;scrollbar-width:none}
  .sidebar::-webkit-scrollbar{display:none}
- .brand{display:none}
- .navspacer{display:none}
- .navbtn{width:58px;min-width:58px;height:52px;flex:0 0 58px;border-radius:12px;font-size:18px;gap:2px}
- .navbtn small{font-size:8px}
- .navbtn.active{box-shadow:inset 0 2px #b58aff,0 4px 14px #0003}
- .main{margin:0;padding:12px 14px calc(88px + env(safe-area-inset-bottom))}
- .topline{height:58px;margin:0 -2px 18px;padding:5px 2px;gap:8px}
- .searchwrap{height:43px;min-width:0;padding:0 11px;border-radius:13px;gap:8px}
+ .brand{display:grid;width:48px;height:48px;min-height:48px;border-radius:15px;margin:0 0 10px;font-size:25px}
+ .navspacer{display:block;flex:1;min-height:8px}
+ .navbtn{width:62px;min-width:62px;height:57px;min-height:57px;flex:0 0 57px;border-radius:13px;font-size:19px;gap:3px}
+ .navbtn small{font-size:8px;line-height:1.1;font-weight:750}
+ .navbtn.active{box-shadow:inset 3px 0 #b58aff,0 4px 14px #0003}
+ .main{margin-left:76px;padding:12px 13px 30px}
+ .topline{position:sticky;top:0;height:56px;margin:0 -2px 17px;padding:5px 2px;gap:7px}
+ .searchwrap{height:42px;min-width:0;padding:0 10px;border-radius:12px;gap:7px}
  .searchwrap input{font-size:12px}
  .account{gap:6px}
- .account .login{height:40px;min-width:0;padding:0 12px;font-size:11px}
- .account .avatar{width:36px;height:36px}
- .wallet-mini{padding:7px 8px}
- .wallet-mini span,.wallet-mini strong{font-size:10px}
+ .account .login{height:39px;min-width:0;padding:0 10px;font-size:10px}
+ .account .avatar{width:35px;height:35px}
+ .wallet-mini{padding:6px 7px}
+ .wallet-mini span,.wallet-mini strong{font-size:9px}
  .eyebrow{margin-top:10px}
- .welcome{font-size:28px}
- .sub{font-size:12px;margin-bottom:17px}
- .hero{min-height:270px;padding:23px 20px;border-radius:19px}
- .hero:before{right:-55%;top:4px;width:300px;height:300px}
- .hero:after{right:1%;top:24px;font-size:82px}
- .hero-content{max-width:85%}
- .hero h2{font-size:clamp(34px,9vw,44px);margin:19px 0 12px}
- .hero p{font-size:12px;line-height:1.55;margin-bottom:17px}
- .primary{width:auto;padding:12px 16px;font-size:12px}
- .sectionhead{margin:27px 0 13px;align-items:flex-end}
+ .welcome{font-size:27px}
+ .sub{font-size:12px;margin-bottom:16px}
+ .hero{min-height:260px;padding:22px 18px;border-radius:18px}
+ .hero:before{right:-55%;top:4px;width:290px;height:290px}
+ .hero:after{right:1%;top:22px;font-size:78px}
+ .hero-content{max-width:88%}
+ .hero h2{font-size:clamp(32px,8vw,42px);margin:18px 0 11px}
+ .hero p{font-size:12px;line-height:1.55;margin-bottom:16px}
+ .primary{width:auto;padding:11px 15px;font-size:12px}
+ .sectionhead{margin:25px 0 12px;align-items:flex-end}
  .sectionhead h2{font-size:18px}
  .sectionhead p{font-size:10px}
  .count{font-size:9px;padding:8px 9px}
- .filters{margin:14px 0 17px;gap:6px}
- .filter{padding:8px 11px;font-size:10px}
- .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+ .filters{margin:13px 0 16px;gap:6px}
+ .filter{padding:8px 10px;font-size:10px}
+ .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
  .game{border-radius:13px}
- .game-art{height:clamp(100px,29vw,142px)}
- .game-info{padding:10px}
+ .game-art{height:clamp(96px,27vw,135px)}
+ .game-info{padding:9px}
  .game-info h3{font-size:12px}
  .game-info p{font-size:10px}
- .tag{margin-top:9px;font-size:8px}
- .panel{padding:15px;margin:10px 0}
+ .tag{margin-top:8px;font-size:8px}
+ .panel{padding:14px;margin:9px 0}
  .profile-menu{z-index:130}
  .gamebar{height:54px;padding:6px 8px}
  .gamebar button{font-size:11px;padding:8px 9px}
 }
-@media(max-width:380px){
- .main{padding-left:10px;padding-right:10px}
- .navbtn{width:54px;min-width:54px;flex-basis:54px}
- .hero{min-height:255px;padding:20px 16px}
+@media(max-width:420px){
+ .sidebar{width:66px;padding-left:5px;padding-right:5px}
+ .brand{width:44px;min-height:44px;height:44px}
+ .navbtn{width:56px;min-width:56px;flex-basis:54px;height:54px;min-height:54px;font-size:18px}
+ .main{margin-left:66px;padding-left:9px;padding-right:9px}
+ .hero{min-height:245px;padding:19px 15px}
  .hero-content{max-width:92%}
  .hero:after{opacity:.10}
- .grid{gap:8px}
- .game-art{height:105px}
+ .grid{gap:7px}
+ .game-art{height:100px}
  .game-info{padding:8px}
- .account .login{padding:0 9px}
+ .account .login{padding:0 8px}
 }
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.page{animation:none}button,.game{transition:none}}
 </style>
 
-<script id="playovia-mobile-nav-controller">
-(()=>{
- const $=id=>document.getElementById(id);
- const nav=$('mobilePrimaryNav'),sheet=$('mobileMoreSheet'),backdrop=$('mobileMoreBackdrop'),toggle=$('mobileMoreToggle');
- if(!nav||!sheet||!toggle)return;
- const close=()=>{sheet.classList.add('hidden');backdrop.classList.add('hidden');toggle.setAttribute('aria-expanded','false')};
- const open=()=>{sheet.classList.remove('hidden');backdrop.classList.remove('hidden');toggle.setAttribute('aria-expanded','true')};
- toggle.addEventListener('click',()=>sheet.classList.contains('hidden')?open():close());
- $('mobileMoreClose')?.addEventListener('click',close);
- backdrop?.addEventListener('click',close);
- document.querySelectorAll('[data-mobile-page]').forEach(btn=>btn.addEventListener('click',()=>{
-  const page=btn.dataset.mobilePage;
-  if(page==='home'||page==='games'||page==='friends'){}
-  const target=document.querySelector('.sidebar .navbtn[data-page="'+page+'"]');
-  if(target)target.click();
-  close();
-  document.querySelectorAll('.mobile-nav-item').forEach(x=>x.classList.toggle('active',x.dataset.mobilePage===page));
-  if(!['home','games','friends'].includes(page))toggle.classList.add('active');else toggle.classList.remove('active');
- }));
- const sync=()=>{
-  const active=document.querySelector('.sidebar .navbtn.active');
-  const page=active?.dataset.page||'home';
-  document.querySelectorAll('.mobile-nav-item').forEach(x=>x.classList.toggle('active',x.dataset.mobilePage===page));
-  if(!['home','games','friends'].includes(page))toggle.classList.add('active');
- };
- new MutationObserver(sync).observe(document.querySelector('.sidebar'),{subtree:true,attributes:true,attributeFilter:['class']});
- const admin=document.querySelector('#adminNav:not(.hidden)');
- if(admin)$('mobileAdminNav')?.classList.remove('hidden');
- window.addEventListener('resize',close,{passive:true});
-})();
-</script>
+
 </body></html>
 <style id="playovia-controller-host-fix">.remote-controller-backdrop.connected{display:none!important}</style>
