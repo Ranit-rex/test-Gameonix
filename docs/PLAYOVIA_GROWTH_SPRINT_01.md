@@ -131,10 +131,10 @@ Record each post after 24 hours and again after 7 days:
 | Shares and saves | Whether viewers found it worth passing on |
 | Profile visits | Brand interest |
 | Website link clicks | Traffic intent |
-| Landing page sessions by UTM | Actual site visits attributed to a post |
+| Landing page sessions by UTM | Actual site visits attributed to a post; requires GA4 or backend UTM capture |
 | Game starts / return visits | Whether visitors actually play and return |
 
-Do not judge a post only by views. Repeat the strongest topic and hook style after comparing retention, shares and website sessions.
+Do not judge a post only by views. Repeat the strongest topic and hook style after comparing retention, shares and website sessions.\n\n**Tracking gap to fix:** the current custom `analytics.js` visit event sends only the page path and skips `/games/` page visits; it does not send UTM parameters. Therefore, UTM-tagged links are prepared in this kit, but attributed social sessions will not appear in the existing custom analytics until UTM capture is added or GA4 is configured and verified. Do not report UTM attribution as working before that check.
 
 ## 6. Publishing checklist
 
